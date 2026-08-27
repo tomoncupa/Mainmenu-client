@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MAIN MENU</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="theme-color" content="#0B0E14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- The shared foundation. The home screen used to carry its own colours, its
+     own dialog and its own toast; now it wears the same ones as every app, so
+     a theme picked here is the theme everywhere. mobile.js before ui.js. -->
+<script src="shared/skins.js?v=ef908823"></script>
+<script src="shared/day.js?v=ef908823"></script>
+<script src="shared/records.js?v=ef908823"></script>
+<script src="shared/mobile.js?v=ef908823"></script>
+<script src="shared/sound.js?v=ef908823"></script>
+<script src="shared/ui.js?v=ef908823"></script>
+<script src="shared/io.js?v=ef908823"></script>
+<script src="shared/icons.js?v=ef908823"></script>
+<style>
+:root{
+  /* ── the bridge ──
+     These were fixed hex codes, which meant the home screen was one theme and
+     the apps were another. They are now aliases onto the shared skin tokens,
+     so every rule below this line follows whatever theme is picked and every
+     colour edit in Settings reaches the home screen too.
+
+     Nothing else in this file had to change for that to work, which is the
+     point of naming colours by their job rather than by their value.        */
+  --panel:var(--surface-1); --panel2:var(--surface-2);
+  --line:var(--border);     --line2:var(--border-strong);
+  --txt:var(--text-1);      --dim:var(--text-2);   --dim2:var(--text-muted);
+  --acc:var(--accent);      --acc-d:var(--border-strong);
+  --bad:var(--danger);      --good:var(--success);
+  /* --bg and --warn are already skin tokens under exactly these names. */
+  --f1:var(--font-display); --f2:var(--font-body);
+  --gap:var(--s-3,12px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  /* The wash follows the accent instead of being two fixed blues, so it is
+     still there on a light theme rather than turning into a bruise. */
+  background:
+    radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb,var(--accent) 12%,var(--bg)) 0%, transparent 60%),
+    radial-gradient(900px 500px at 0% 100%, color-mix(in srgb,var(--data-3) 9%,var(--bg)) 0%, transparent 55%),
+    var(--bg);
+  color:var(--txt); font-family:var(--f2); font-size:var(--f-2,14px); overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+@media (hover:hover) and (pointer:fine){
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+}
+
+/* dvh, not vh: on a phone vh is the tallest the viewport ever gets, so the
+   bottom of a 100vh column sits behind the browser's own bar. */
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ---------- dock ---------- */
+header{
+  display:flex;align-items:center;gap:var(--s-3,12px);flex:0 0 auto;
+  padding:calc(var(--s-2,8px) + var(--safe-t,0px)) var(--s-4,14px) var(--s-2,8px);
+  background:color-mix(in srgb,var(--surface-1) 88%,transparent);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:var(--e-1),var(--rim);
+}
+.logo{font-family:var(--f1);font-weight:700;font-size:17px;letter-spacing:.2em;display:flex;align-items:center;gap:9px;cursor:pointer}
+.logo b{color:var(--acc)}
+.logo .mark{color:var(--acc);font-size:15px;filter:drop-shadow(0 0 6px rgba(126,232,250,.5))}
+nav{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#0a1018}
+nav button{
+  padding:5px 14px;border-radius:6px;font-family:var(--f1);font-size:12px;letter-spacing:.1em;color:var(--dim);
+  display:flex;align-items:center;gap:7px;white-space:nowrap;
+}
+@media (hover:hover) and (pointer:fine){ nav button:hover{color:var(--txt)} }
+nav button.on{background:color-mix(in srgb,var(--accent) 14%,var(--surface-2));color:var(--acc);box-shadow:0 0 0 1px var(--acc-d)}
+nav button .k{font-size:9px;opacity:.5}
+nav button.dead{color:#43535f}
+/* dragging the dock into the order you want */
+nav button[draggable]{cursor:grab}
+nav button.dragging{opacity:.4;cursor:grabbing}
+nav button.dropinto{box-shadow:inset 2px 0 0 var(--acc)}
+.spacer{flex:1}
+.clock{font-family:var(--f1);font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:right;line-height:1.35}
+.clock b{display:block;color:var(--txt);font-size:14px;letter-spacing:.14em}
+.hbtn{
+  min-height:var(--tap,44px);padding:0 var(--s-3,12px);border:1px solid var(--line);
+  border-radius:var(--radius-md,10px);background:var(--panel);
+  font-family:var(--f1);font-size:var(--f-1,12px);font-weight:var(--w-bold,700);
+  letter-spacing:.08em;color:var(--dim);white-space:nowrap;
+}
+@media (hover:hover) and (pointer:fine){ .hbtn:hover{border-color:var(--acc);color:var(--acc)} }
+.hbtn.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));color:var(--warn)}
+.hbtn .sm{display:none}
+
+/* ── the bottom tab bar ──
+   The top dock is six small targets in a row, which is fine with a mouse and
+   hopeless with a thumb. On a phone the same six become a bar at the bottom,
+   inside reach and above the home indicator. It is a flex child of the column
+   rather than a fixed overlay, so nothing has to guess its height. */
+#tabs{display:none}
+@media (max-width:820px){
+  header nav{display:none}
+  .clock{display:none}
+  .hbtn .lg{display:none}
+  .hbtn .sm{display:inline}
+  #tabs{
+    display:flex;flex:0 0 auto;background:var(--panel);
+    box-shadow:var(--e-3),var(--rim);
+    padding-bottom:var(--safe-b,0px);
+  }
+  #tabs button{
+    flex:1;min-height:54px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:3px;color:var(--dim2);
+    font-family:var(--f1);font-size:9.5px;font-weight:var(--w-bold,700);letter-spacing:.12em;
+  }
+  #tabs button .g{font-size:18px;line-height:1}
+  #tabs button.on{color:var(--acc)}
+  #tabs button.dead{opacity:.4}
+  #home{padding:var(--s-3,12px) var(--s-3,12px) var(--s-6,32px)}
+}
+
+/* ---------- stage ---------- */
+#stage{flex:1;position:relative;min-height:0}
+#home{position:absolute;inset:0;overflow:auto;padding:14px 14px 60px}
+.frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+.frame.hide{display:none}
+
+/* ---------- widget grid ---------- */
+#grid{
+  display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap);
+  max-width:1680px;margin:0 auto;align-items:start;
+}
+@media(max-width:820px){ #grid{grid-template-columns:repeat(4,1fr)} }
+.w{
+  grid-column:span var(--cw,4);
+  border-radius:var(--radius-lg,14px);background:var(--panel);
+  box-shadow:var(--e-2),var(--rim);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  height:calc(var(--ch,3) * 84px);min-height:120px;
+}
+/* On a phone a card is as tall as what is in it. A fixed height means either
+   a scrollbar inside a scrolling page — two scrolls fighting over one finger —
+   or a card that is mostly empty. */
+@media(max-width:820px){ .w{grid-column:span 4;height:auto;min-height:0} }
+.w:before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc-d),transparent);pointer-events:none}
+.w.drag{opacity:.35;outline:1px dashed var(--acc)}
+.w.over{outline:1px solid var(--acc)}
+.w-head{
+  display:flex;align-items:center;gap:9px;padding:12px 13px 9px;flex:0 0 auto;
+  font-family:var(--f1);font-size:var(--f-1,12px);font-weight:var(--w-bold,700);
+  letter-spacing:.2em;color:var(--dim);
+}
+/* Only a mouse can drag by the title. On a touch screen that gesture and the
+   page scroll are the same gesture, so the card is rearranged from the
+   REARRANGE mode instead, with buttons that cannot be mistaken for a scroll. */
+@media (hover:hover) and (pointer:fine){
+  .w-head{cursor:grab}
+  .w-head:active{cursor:grabbing}
+}
+.w-head .c{color:var(--acc);letter-spacing:.06em}
+.w-head .sub{margin-left:auto;font-family:var(--f2);font-size:11px;letter-spacing:0;color:var(--dim2);white-space:nowrap}
+.w-head .x,.w-head .mv{display:none;color:var(--dim2);font-size:15px;line-height:1;
+  width:32px;height:32px;flex:0 0 auto;border-radius:var(--radius-sm,6px);background:var(--panel2)}
+/* Controls appear when you say you are rearranging, and not before. A control
+   that only exists on hover does not exist at all on a phone. */
+body.editing .w-head .x,body.editing .w-head .mv{display:block}
+body.editing .w-head .x{color:var(--bad)}
+body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
+@media (hover:hover) and (pointer:fine){
+  .w:hover .w-head .x{display:block;opacity:.6}
+  .w-head .x:hover{opacity:1;color:var(--bad)}
+}
+/* A scrolling box inside a scrolling page means two scrolls arguing over one
+   finger, and the inner one always wins by accident. On a phone the card is
+   as tall as its contents instead, so there is only ever one thing to scroll.
+   With a mouse and a fixed-height card the inner scroll is fine. */
+.w-body{flex:1;padding:0 13px 13px;min-height:0;overflow:visible}
+@media (hover:hover) and (pointer:fine){ .w-body{overflow:auto} }
+/* Resize is a mouse affordance and nothing else — a phone card is as wide as
+   the screen and as tall as its contents, so there is nothing to resize. */
+.w-size{display:none}
+@media (hover:hover) and (pointer:fine){
+  .w-size{
+    display:block;position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;opacity:0;
+    background:linear-gradient(135deg,transparent 46%,var(--line2) 46%,var(--line2) 54%,transparent 54%,transparent 70%,var(--line2) 70%,var(--line2) 78%,transparent 78%);
+  }
+  .w:hover .w-size{opacity:1}
+}
+.w-size:hover{background:linear-gradient(135deg,transparent 46%,var(--acc) 46%,var(--acc) 54%,transparent 54%,transparent 70%,var(--acc) 70%,var(--acc) 78%,transparent 78%)}
+#ghost{position:fixed;pointer-events:none;z-index:80;opacity:.9;border:1px solid var(--acc);border-radius:var(--radius-lg,12px);background:var(--panel2);box-shadow:var(--e-5);display:none}
+.empty{color:var(--dim2);font-size:12px;line-height:1.7}
+.empty b{color:var(--dim)}
+.link{color:var(--acc);cursor:pointer;border-bottom:1px dotted var(--acc-d)}
+
+/* ---------- shared widget bits ---------- */
+.rowlist{display:flex;flex-direction:column;gap:5px}
+.row{display:flex;align-items:center;gap:10px;padding:8px 9px;min-height:var(--tap,44px);
+  border-radius:var(--radius-md,10px);background:var(--panel2);position:relative}
+@media (hover:hover) and (pointer:fine){ .row:hover{background:var(--surface-3)} }
+.row .bar{position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--acc)}
+.row .t{font-family:var(--f1);font-size:11px;letter-spacing:.06em;color:var(--dim);width:60px;flex:0 0 auto;padding-left:8px}
+.row .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .d{font-size:10px;color:var(--dim2);font-family:var(--f1);letter-spacing:.06em;flex:0 0 auto}
+.row.done{opacity:.5}
+.row.done .n{text-decoration:line-through;text-decoration-color:var(--dim2);color:var(--dim)}
+.chk{width:26px;height:26px;flex:0 0 auto;border:2px solid var(--line2);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;
+  transition:background-color var(--dur-fast,140ms) var(--ease-out,ease),
+    border-color var(--dur-fast,140ms) var(--ease-out,ease),color var(--dur-fast,140ms)}
+@media (hover:hover) and (pointer:fine){ .chk:hover{border-color:var(--acc)} }
+.chk.on{background:var(--acc);border-color:var(--acc);color:var(--accent-fg)}
+.tag{font-size:9px;font-family:var(--f1);letter-spacing:.1em;color:var(--dim2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.ringwrap{display:flex;align-items:center;gap:16px;margin-bottom:11px}
+.ring{position:relative;width:70px;height:70px;flex:0 0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--f1);font-size:16px;letter-spacing:.04em;color:var(--acc)}
+.ring .num i{font-style:normal;font-size:9px;color:var(--dim2);letter-spacing:.14em}
+.stats{display:flex;gap:16px;flex-wrap:wrap}
+.stat b{display:block;font-family:var(--f1);font-size:19px;color:var(--txt);letter-spacing:.04em;line-height:1.15}
+.stat span{font-size:10px;letter-spacing:.14em;color:var(--dim2);font-family:var(--f1)}
+.stat.acc b{color:var(--acc)}
+.hrow{display:flex;align-items:center;gap:10px;padding:6px 2px}
+.hrow+.hrow{border-top:1px solid var(--line)}
+.hrow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow .n small{display:block;color:var(--dim2);font-size:10px;font-family:var(--f1);letter-spacing:.08em}
+.dots{display:flex;gap:3px;flex:0 0 auto}
+.dots i{width:10px;height:10px;border-radius:3px;background:var(--panel2);border:1px solid var(--line)}
+.dots i.on{background:var(--acc);border-color:var(--acc)}
+.dots i.miss{background:color-mix(in srgb,var(--danger) 16%,var(--panel2));
+  border-color:color-mix(in srgb,var(--danger) 28%,var(--line))}
+.dots i.na{opacity:.35}
+.streak{font-family:var(--f1);font-size:12px;color:var(--warn);letter-spacing:.04em;width:40px;text-align:right;flex:0 0 auto}
+.streak.zero{color:var(--dim2)}
+.heat{display:flex;gap:3px;overflow-x:auto;padding-bottom:4px}
+.heat .wk{display:flex;flex-direction:column;gap:3px}
+/* Four steps of one colour, mixed toward the card rather than picked by eye,
+   so the ramp holds together in whatever theme is on. */
+.heat b{width:13px;height:13px;border-radius:3px;background:var(--panel2);border:1px solid var(--line);display:block}
+.heat b.l1{background:color-mix(in srgb,var(--acc) 22%,var(--panel2));border-color:transparent}
+.heat b.l2{background:color-mix(in srgb,var(--acc) 45%,var(--panel2));border-color:transparent}
+.heat b.l3{background:color-mix(in srgb,var(--acc) 70%,var(--panel2));border-color:transparent}
+.heat b.l4{background:var(--acc);border-color:var(--acc)}
+.heat b.fut{opacity:.25}
+.legend{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:10px;color:var(--dim2);font-family:var(--f1);letter-spacing:.1em}
+.legend b{width:10px;height:10px;border-radius:3px;display:block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
+.tile{border-radius:var(--radius-md,11px);background:var(--panel2);padding:var(--s-3,12px);
+  min-height:var(--tap,44px);text-align:left;display:flex;flex-direction:column;gap:4px;
+  transition:transform var(--dur-tap,90ms) var(--ease-out,ease),box-shadow var(--dur-fast,140ms)}
+@media (hover:hover) and (pointer:fine){
+  .tile:hover{transform:translateY(-2px);box-shadow:var(--e-2)}
+}
+.tile .ic{font-size:17px;line-height:1;color:var(--acc)}
+.tile .nm{font-family:var(--f1);font-size:12px;letter-spacing:.16em}
+.tile .ds{font-size:10px;color:var(--dim2);line-height:1.4}
+.tile.missing{opacity:.45}
+.logline{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:var(--f-2,13px)}
+.logline:last-child{border-bottom:0}
+.logline .tm{font-family:var(--f1);font-size:10px;color:var(--dim2);width:48px;flex:0 0 auto}
+.logline .src{font-size:9px;font-family:var(--f1);letter-spacing:.1em;color:var(--dim2);margin-left:auto}
+/* a time somebody stated, rather than the moment a button was pressed */
+.logline .tm.said{color:var(--acc)}
+.logline .dur{font-style:normal;font-family:var(--f1);font-size:10px;color:var(--dim2);margin-left:5px}
+
+/* The modal and the toast used to be built here, in this file's own shapes.
+   They are ui.js's job now: a sheet from the bottom on a phone, a card in the
+   middle on a laptop, and one snackbar the whole suite shares. The panels
+   below still assemble their contents into #modal — openModal() hands that to
+   UI.dialog rather than showing a box of its own. */
+#modal{display:none}
+.opt .ic{font-size:15px;color:var(--acc);flex:0 0 auto;width:20px;text-align:center}
+.opt.danger .ic{color:var(--warn)}
+kbd{font-family:var(--f1);font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:0 4px;color:var(--dim)}
+@media (hover:hover) and (pointer:fine){ kbd{display:inline} }
+@media (pointer:coarse){ kbd{display:none} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <!-- What this screen is, said plainly. It is the thing you land on and
+         pick an app from; "LifeOS" was a project name, not a label. -->
+    <div class="logo" onclick="go('home')"><span class="mark">◈</span>MAIN <b>MENU</b></div>
+    <nav id="nav"></nav>
+    <div class="spacer"></div>
+    <div class="clock"><b id="cDate">—</b><span id="cSub">—</span></div>
+    <button class="hbtn mb-press mb-tap" id="btnWidget" title="Add a widget to the home screen"><span class="lg">+ WIDGET</span><span class="sm" id="wIco"></span></button>
+    <button class="hbtn mb-press mb-tap" id="btnData" title="Backup, restore and export your data"><span class="lg">DATA</span><span class="sm" data-icon="backup" data-icon-size="16"></span></button>
+  </header>
+  <main id="stage">
+    <section id="home" class="mb-scroll"><div id="grid"></div></section>
+  </main>
+  <!-- the same six apps as the top dock, where a thumb can reach them -->
+  <nav id="tabs" aria-label="Apps"></nav>
+</div>
+<div id="ghost"></div>
+<div id="modal"></div>
+<input type="file" id="fileIn" accept="application/json" style="display:none">
+
+<script>
+/* ══════════════════════════ LIFEOS KERNEL v2 ══════════════════════════
+   Identical in every app that shares data — edit the copy in index.html and
+   re-run the sync script.
+
+   v1 kept the shared state as ONE JSON blob and broadcast it whole, with the
+   shell as the single writer and a postMessage broker underneath. That is the
+   shape the brief forbids and the shape SystemOS died of, so v2 is a thin view
+   over `shared/records.js` instead:
+
+     activities → one `activity` row each
+     habits     → one `habit` row each
+     ticks      → one `tick` row per activity per day
+     today      → one dated `plan` row, published by whoever owns the schedule
+
+   Every app now writes directly. There is no broker and no hosted/solo split,
+   because every app on this origin reads and writes the same rows. What remains
+   is a nudge: frames opened from a folder do not reliably get storage events, so
+   a writer tells its neighbours to look again. It sends no data.
+
+   The API is unchanged from v1 on purpose — the apps did not have to move.
+
+   Load order in the page, before this block:
+     shared/day.js  then  shared/records.js
+   (written without tags on purpose: a literal closing script tag inside an
+    inline script ends the script element, even inside a comment)
+                                                                            */
+window.LifeOS = (function () {
+  if (!window.Rec || !window.Day) {
+    console.error('[lifeos] records.js and day.js must load first');
+    return { broken: 1, ready: function () {}, on: function () { return function () {}; },
+             doc: function () { return { activities: {}, habits: {}, log: {}, today: null }; },
+             isDone: function () { return false; }, dayLog: function () { return {}; },
+             done: function () { return Promise.resolve(); }, acts: function () { return Promise.resolve(); } };
+  }
+
+  const HOSTED = (function () { try { return !!(window.parent && window.parent !== window); } catch (e) { return false; } })();
+  let doc = null, subs = [], booted = false, bootQ = [];
+
+  /* ─── the view: rows assembled into the shape the apps already expect ─── */
+  function build() {
+    const d = { v: 2, ts: Date.now(), activities: {}, habits: {}, log: {}, today: null };
+    Rec.all('activity').forEach(r => { d.activities[r.key] = Object.assign({ id: r.key }, r.payload); });
+    Rec.all('habit').forEach(r => { d.habits[r.key] = Object.assign({ id: r.key }, r.payload); });
+    /* the row carries the time now, but callers still expect payload.ts */
+    Rec.all('tick').forEach(r => {
+      (d.log[r.date] || (d.log[r.date] = {}))[r.key] =
+        Object.assign({ ts: Date.parse(r.updated_at) || 0 }, r.payload);
+    });
+    d.today = Rec.get('plan', Day.today(), 'routine');
+    return d;
+  }
+  function refresh() {
+    doc = build();
+    if (!booted) { booted = true; bootQ.splice(0).forEach(f => { try { f(doc); } catch (e) { console.warn('[lifeos]', e); } }); }
+    subs.forEach(f => { try { f(doc); } catch (e) { console.warn('[lifeos]', e); } });
+  }
+
+  /* ─── neighbours ───
+     Same storage, but a frame loaded from a folder may never see the storage
+     event. A write pokes everyone else; they re-read for themselves. */
+  function poke() {
+    const msg = { lifeos: 2, poke: 1 };
+    try { if (HOSTED) window.parent.postMessage(msg, '*'); } catch (e) {}
+    document.querySelectorAll('iframe').forEach(f => { try { f.contentWindow.postMessage(msg, '*'); } catch (e) {} });
+  }
+  window.addEventListener('message', e => {
+    const m = e.data;
+    if (!m || m.lifeos !== 2 || !m.poke) return;
+    Rec.reload();
+    /* pass it on once, so a frame's sibling hears about it too */
+    if (!m.relay) {
+      const on = { lifeos: 2, poke: 1, relay: 1 };
+      try { if (HOSTED && e.source !== window.parent) window.parent.postMessage(on, '*'); } catch (err) {}
+      document.querySelectorAll('iframe').forEach(f => { try { if (f.contentWindow !== e.source) f.contentWindow.postMessage(on, '*'); } catch (err) {} });
+    }
+  });
+  const wrote = v => { poke(); return Promise.resolve(v); };
+
+  /* ─── one-time move off the v1 blob ───
+     Copies, never moves: `lifeos_v1` is left exactly where it is, so the old
+     data is its own backup if anything here is wrong. */
+  function migrate() {
+    if (Rec.setting('lifeos', 'migrated')) return 0;
+    let old = null;
+    try { old = JSON.parse(localStorage.getItem('lifeos_v1')); } catch (e) {}
+    let n = 0;
+    if (old && old.v) {
+      Object.keys(old.activities || {}).forEach(id => {
+        const a = old.activities[id];
+        Rec.set('activity', null, id, { name: a.name, cat: a.cat || '', dur: a.dur || 0, color: a.color || '', energy: a.energy || 2 }); n++;
+      });
+      Object.keys(old.habits || {}).forEach(id => { Rec.set('habit', null, id, old.habits[id]); n++; });
+      Object.keys(old.log || {}).forEach(date => {
+        const day = old.log[date] || {};
+        Object.keys(day).forEach(k => { Rec.set('tick', date, k, day[k]); n++; });
+      });
+      console.info('[lifeos] moved ' + n + ' things off the old blob; lifeos_v1 left in place as a backup');
+    }
+    Rec.setting('lifeos', 'migrated', new Date().toISOString());
+    return n;
+  }
+
+  const API = {
+    v: 2,
+    hosted: HOSTED,
+    day: d => Day.of(d), slug: s => Day && String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'x',
+    shift: (date, n) => Day.shift(date, n),
+    ready(fn) { booted ? fn(doc) : bootQ.push(fn); },
+    doc: () => doc || (doc = build()),
+    on(f) { subs.push(f); if (booted) f(doc); return () => { const i = subs.indexOf(f); if (i > -1) subs.splice(i, 1); }; },
+
+    /** upsert activities — the shared vocabulary */
+    acts(list) {
+      (list || []).forEach(a => {
+        if (!a || !a.name) return;
+        const id = a.id || API.slug(a.name);
+        const prev = doc.activities[id] || {};
+        Rec.set('activity', null, id, Object.assign({ name: a.name, cat: '', dur: 0, color: '', energy: 2 }, prev, a, { id: undefined }));
+      });
+      return wrote(doc);
+    },
+    act: id => (doc.activities[id] || null),
+
+    /** the one tick, everywhere. One row: one activity, one day. */
+    done(actId, date, on, meta) {
+      if (!actId) return Promise.resolve(doc);
+      const d = date || Day.today();
+      if (on === false) Rec.del('tick', d, actId);
+      else Rec.set('tick', d, actId, Object.assign({ src: '?' }, meta || {}));
+      return wrote(doc);
+    },
+    isDone: (actId, date) => Rec.has('tick', date || Day.today(), actId),
+    dayLog: date => (doc.log[date || Day.today()] || {}),
+
+    habit(h) { if (!h || !h.id) return Promise.resolve(doc); Rec.set('habit', null, h.id, Object.assign({ created: Day.today(), archived: false, cadence: { type: 'daily', days: [1, 1, 1, 1, 1, 1, 1], target: 7 } }, doc.habits[h.id], h)); return wrote(doc); },
+    habitDel(id) { Rec.del('habit', null, id); return wrote(doc); },
+
+    /** whoever owns the schedule publishes today's plan for everyone else */
+    publishToday(t) { if (t && t.date) Rec.set('plan', t.date, 'routine', t); return wrote(doc); },
+
+    /** local-only housekeeping: really drop ancient ticks, no tombstones */
+    prune(days) { return Rec.purge('tick', Day.shift(Day.today(), -(days || 800))); },
+
+    /** consecutive due-days ending today (today still counts as open, not broken) */
+    streak(actId, cadence) {
+      const due = d => (!cadence || cadence.type !== 'days') ? true : !!cadence.days[Day.dow(d)];
+      let n = 0, d = Day.today(), guard = 0;
+      if (!API.isDone(actId, d)) d = Day.shift(d, -1);
+      while (guard++ < 900) {
+        if (!due(d)) { d = Day.shift(d, -1); continue; }
+        if (!API.isDone(actId, d)) break;
+        n++; d = Day.shift(d, -1);
+      }
+      return n;
+    },
+    count(actId, n) {
+      let c = 0, d = Day.today();
+      for (let i = 0; i < (n || 30); i++) { if (API.isDone(actId, d)) c++; d = Day.shift(d, -1); }
+      return c;
+    },
+
+    /** rows persist themselves; kept so v1 callers do not break */
+    get persist() { return null; }, set persist(f) {},
+    /** restore path: a v1-shaped doc becomes rows */
+    _adopt(d) {
+      d = d || {};
+      Object.keys(d.activities || {}).forEach(id => Rec.set('activity', null, id, d.activities[id]));
+      Object.keys(d.habits || {}).forEach(id => Rec.set('habit', null, id, d.habits[id]));
+      Object.keys(d.log || {}).forEach(date => Object.keys(d.log[date]).forEach(k => Rec.set('tick', date, k, d.log[date][k])));
+      if (d.today && d.today.date) Rec.set('plan', d.today.date, 'routine', d.today);
+      poke(); refresh();
+    },
+    rows: () => Rec,
+  };
+
+  Rec.on(refresh);
+  migrate();
+  refresh();
+  return API;
+})();
+/* ════════════════════════ END LIFEOS KERNEL ════════════════════════ */
+
+
+
+
+
+/* ══════════════ shell: durability ══════════════
+   localStorage is the fast synchronous copy the kernel already keeps. IndexedDB
+   is the one that survives a big log — same doctrine as ARC: load the sync copy
+   first, then swap in IDB if its stamp is newer. */
+const IDB = (function () {
+  let dbp = null;
+  function db() {
+    return dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('lifeos', 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('kv')) r.result.createObjectStore('kv'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+  }
+  return {
+    get(k) { return db().then(d => new Promise((res, rej) => { const r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); },
+    set(k, v) { return db().then(d => new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); })); },
+  };
+})();
+let persistT;
+LifeOS.persist = d => { clearTimeout(persistT); const snap = JSON.stringify(d); persistT = setTimeout(() => IDB.set('doc', snap).catch(() => {}), 400); };
+IDB.get('doc').then(raw => {
+  if (!raw) return;
+  const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  if (d && d.ts > LifeOS.doc().ts) LifeOS._adopt(d);
+}).catch(() => {});
+
+/* ══════════════ the app roster ══════════════
+   Adding an app to LifeOS is one entry here plus (if it wants to share data)
+   the kernel block pasted into it. Nothing else in the shell knows their names. */
+const APPS = [
+  { id: 'home',   nm: 'HOME',   ic: '◈', file: null,                ds: 'today, streaks, everything at a glance' },
+  { id: 'arc',    nm: 'ARC',    ic: '◇', file: 'arc/index.html',    ds: 'mind canvas — think, map, plan',            solo: 1 },
+  { id: 'block',  nm: 'BLOCK',  ic: '▦', file: 'block/index.html',  ds: 'build the day out of blocks',               shares: 'routine + ticks' },
+  { id: 'status', nm: 'STATUS', ic: '◐', file: 'status/index.html', ds: 'sleep, weight, mood, food and money',        shares: 'the daily measurements' },
+  { id: 'train',  nm: 'TRAIN',  ic: '⛭', file: 'train/index.html',  ds: 'the training log — sets, reps, records',     shares: 'the training log + ticks' },
+  { id: 'style',  nm: 'STYLE',  ic: '◧', file: 'style/index.html',  ds: 'pick, compare, edit and add themes',         shares: 'the themes every app wears' },
+];
+const app = id => APPS.find(a => a.id === id);
+
+/* ══════════════ the order of the dock ══════════════
+   APPS above is the roster — which apps exist. This is the order you put them
+   in, which is a different fact and yours rather than the file's.
+
+   Stored as a list of ids, and always reconciled against the roster on the way
+   out: an id for an app that no longer exists is dropped, and an app added to
+   the roster later appears at the end rather than not at all. That is what
+   stops a saved order from quietly hiding a new app.
+
+   The number on each button is its position, not its identity, so the keyboard
+   shortcut always matches what you can see: 3 opens the third one along. */
+function dockOrder() {
+  const saved = Rec.setting('lifeos', 'dock') || [];
+  const known = {};
+  APPS.forEach(a => known[a.id] = a);
+  const out = [];
+  saved.forEach(id => { if (known[id] && out.indexOf(id) < 0) out.push(id); });
+  APPS.forEach(a => { if (out.indexOf(a.id) < 0) out.push(a.id); });
+  return out;
+}
+const dockApps = () => dockOrder().map(app).filter(Boolean);
+function saveDock(ids) {
+  Rec.setting('lifeos', 'dock', ids);
+  drawNav();
+}
+/** move one app n places along the dock */
+function moveApp(id, d) {
+  const ids = dockOrder();
+  const i = ids.indexOf(id), j = i + d;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(j, 0, ids.splice(i, 1)[0]);
+  saveDock(ids);
+  if (typeof Mobile !== 'undefined') Mobile.feedback('select');
+}
+if (typeof Icons !== 'undefined') addEventListener('DOMContentLoaded', () => {
+  const w = document.getElementById('wIco');
+  if (w) w.innerHTML = Icons.svg('add', { size: 16 });
+});
+/* The dock used to be Unicode characters, which render differently on every
+   device, cannot take a colour and vanish when a font does. These are drawn.
+   The old glyph stays as the fallback so a missing icons.js is a plain dock
+   rather than an empty one. */
+const appIco = (a, size) => (typeof Icons !== 'undefined' &&
+  Icons.svg('app.' + a.id, { size: size || 18 })) || a.ic;
+const frames = {};      /* id -> iframe. Built on first visit, then kept alive. */
+const missing = {};     /* id -> true once a HEAD check says the file is not there */
+let view = 'home';
+
+const $ = s => document.querySelector(s);
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/* One snackbar for the whole suite. Kept under the old name so every call
+   site in this file still reads the same. */
+const toast = (h, o) => UI.toast(h, o);
+
+/* ══════════════ navigation ══════════════ */
+function go(id) {
+  const a = app(id); if (!a) return;
+  view = id;
+  location.hash = id === 'home' ? '' : id;
+  $('#home').style.display = id === 'home' ? '' : 'none';
+  $('#btnWidget').style.display = id === 'home' ? '' : 'none';
+  if (a.file) frameFor(id);
+  Object.keys(frames).forEach(k => frames[k].classList.toggle('hide', k !== id));
+  drawNav();
+  if (id === 'home') drawHome();
+}
+/* An app's frame, made if it is not there yet. Opening an app is not the only
+   reason to need one: the sheet mirror has to ask every app to sync itself,
+   and an app he has not opened today has no frame to ask. Made hidden, and
+   go() decides what is on screen straight after. */
+function frameFor(id) {
+  const a = app(id);
+  if (!a || !a.file) return null;
+  if (!frames[id]) {
+    const f = el('iframe', 'frame hide');
+    f.setAttribute('allow', 'camera; microphone; fullscreen; clipboard-read; clipboard-write');
+    f.addEventListener('load', () => { f.dataset.loaded = '1'; }, { once: true });
+    f.src = a.file;
+    frames[id] = f; $('#stage').appendChild(f);
+  }
+  return frames[id];
+}
+
+/* apps can ask the shell to move: postMessage({lifeos:1, nav:'home'}) */
+window.addEventListener('message', e => { const m = e.data; if (m && m.lifeos === 1 && m.nav && app(m.nav)) go(m.nav); });
+
+function drawNav() {
+  const n = $('#nav'); n.innerHTML = '';
+  const tabs = $('#tabs'); tabs.innerHTML = '';
+  const order = dockApps();
+  order.forEach((a, i) => {
+    const state = (view === a.id ? 'on ' : '') + (missing[a.id] ? 'dead' : '');
+    const open = () => missing[a.id]
+      ? toast('<b>' + esc(a.file) + '</b> is missing from this folder', { bad: true })
+      : (Mobile.feedback('select'), go(a.id));
+
+    const b = el('button', state, '<span>' + appIco(a, 16) + '</span>' + a.nm + '<span class="k">' + (i + 1) + '</span>');
+    b.title = missing[a.id] ? a.file + ' is not in this folder' : a.ds;
+    b.onclick = open;
+
+    /* ── drag to reorder ──
+       The dock is a row of things you look at every day, so the order should be
+       the one that suits you rather than the one the roster happens to be
+       written in. Native HTML drag and drop, because this is the desktop
+       screen and it is what a mouse already expects.
+
+       Right-click does the same job without a drag, which is the route that
+       works for a keyboard, for a trackpad someone finds fiddly, and on a
+       phone where the dock is the tab bar at the bottom. */
+    b.draggable = true;
+    b.dataset.appId = a.id;
+    b.addEventListener('dragstart', ev => {
+      ev.dataTransfer.setData('text/plain', a.id);
+      ev.dataTransfer.effectAllowed = 'move';
+      b.classList.add('dragging');
+    });
+    b.addEventListener('dragend', () => b.classList.remove('dragging'));
+    b.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; b.classList.add('dropinto'); });
+    b.addEventListener('dragleave', () => b.classList.remove('dropinto'));
+    b.addEventListener('drop', ev => {
+      ev.preventDefault();
+      b.classList.remove('dropinto');
+      const from = ev.dataTransfer.getData('text/plain');
+      if (!from || from === a.id) return;
+      const ids = dockOrder();
+      const fi = ids.indexOf(from);
+      if (fi < 0) return;
+      ids.splice(fi, 1);
+      ids.splice(ids.indexOf(a.id) + (fi < ids.indexOf(a.id) ? 1 : 0), 0, from);
+      saveDock(ids);
+    });
+    b.oncontextmenu = ev => { ev.preventDefault(); dockMenu(a, i, order.length, ev.clientX, ev.clientY); };
+    n.appendChild(b);
+
+    /* the same button again, for the thumb. Icon over label, because at this
+       size the icon is what is actually read. */
+    const t = el('button', state + ' mb-press mb-tap', '<span class="g">' + appIco(a, 22) + '</span>' + a.nm);
+    t.setAttribute('aria-label', a.nm + ' — ' + a.ds);
+    if (view === a.id) t.setAttribute('aria-current', 'page');
+    t.onclick = open;
+    /* the thumb route to the same menu */
+    if (typeof Mobile !== 'undefined' && Mobile.hold) Mobile.hold(t, () => dockMenu(a, i, order.length, 0, 0));
+    tabs.appendChild(t);
+  });
+}
+
+/* Move it, or put the whole dock back the way it shipped. */
+function dockMenu(a, i, total, x, y) {
+  UI.menu(x, y, [
+    i > 0 ? { label: 'Move left', icon: '\u2190', fn: () => moveApp(a.id, -1) } : null,
+    i < total - 1 ? { label: 'Move right', icon: '\u2192', fn: () => moveApp(a.id, 1) } : null,
+    i > 0 ? { label: 'Move to the front', fn: () => {
+        const ids = dockOrder();
+        ids.splice(0, 0, ids.splice(ids.indexOf(a.id), 1)[0]);
+        saveDock(ids);
+      } } : null,
+    '-',
+    { label: 'Reset the order', fn: () => { Rec.setting('lifeos', 'dock', []); drawNav(); } },
+  ].filter(Boolean), { title: a.nm });
+}
+/* a tile for a file that is not there should say so, not open a blank frame */
+function probe() {
+  if (location.protocol === 'file:') return;   /* HEAD on file:// tells us nothing */
+  APPS.filter(a => a.file).forEach(a => {
+    fetch(a.file, { method: 'HEAD' }).then(r => { if (!r.ok) { missing[a.id] = 1; drawNav(); if (view === 'home') drawHome(); } }).catch(() => {});
+  });
+}
+
+/* ══════════════ helpers ══════════════ */
+const MIN2 = m => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), x = m % 60; const ap = h < 12 ? 'am' : 'pm', hh = h % 12 === 0 ? 12 : h % 12; return hh + ':' + String(x).padStart(2, '0') + ap; };
+const DUR = d => d >= 60 ? (d % 60 ? Math.floor(d / 60) + 'h' + String(d % 60).padStart(2, '0') : Math.floor(d / 60) + 'h') : d + 'm';
+const DLET = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const clock12 = ts => new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+function ring(pct, big, small) {
+  const R = 30, C = 2 * Math.PI * R;
+  const w = el('div', 'ring');
+  w.innerHTML =
+    '<svg width="70" height="70" viewBox="0 0 70 70">' +
+      '<circle cx="35" cy="35" r="' + R + '" fill="none" stroke="var(--surface-3)" stroke-width="6"></circle>' +
+      '<circle cx="35" cy="35" r="' + R + '" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"' +
+      ' stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - pct)).toFixed(1) + '"></circle>' +
+    '</svg><div class="num">' + esc(big) + '<i>' + esc(small) + '</i></div>';
+  return w;
+}
+function cadenceText(c) {
+  if (!c) return 'daily';
+  if (c.type === 'week') return (c.target || 1) + '× a week';
+  if (c.type === 'days') {
+    const on = c.days.map((d, i) => d ? i : -1).filter(i => i >= 0);
+    if (on.length === 7) return 'daily';
+    if (on.join() === '1,2,3,4,5') return 'weekdays';
+    if (on.join() === '0,6') return 'weekends';
+    return on.map(i => DLET[i]).join('');
+  }
+  return 'daily';
+}
+function dueHabits(date) {
+  const d = new Date((date || LifeOS.day()) + 'T12:00:00').getDay();
+  return Object.values(LifeOS.doc().habits)
+    .filter(h => !h.archived)
+    .filter(h => h.cadence.type !== 'days' || h.cadence.days[d])
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}
+
+/* The most recent day TRAIN has any sets on. Read-only: the home screen is a
+   window onto TRAIN's rows, never a second writer of them. */
+function trainLastDay() {
+  const rows = Rec.all('set');
+  let best = null;
+  for (let i = 0; i < rows.length; i++) {
+    const d = rows[i].date;
+    if (d && (!best || d > best)) best = d;
+  }
+  return best;
+}
+
+/* ══════════════ widgets ══════════════
+   Each widget is a pure function of the shared doc: given a body element, fill
+   it. The grid owns size and position; the widget owns nothing but its content,
+   which is what lets you drag and resize them without touching this table. */
+const WIDGETS = {
+  today: {
+    nm: 'TODAY', w: 5, h: 5,
+    sub: () => {
+      const t = LifeOS.doc().today, today = LifeOS.day();
+      if (!t || t.date !== today || !t.blocks.length) return 'nothing scheduled';
+      const done = t.blocks.filter(b => LifeOS.isDone(b.actId, today)).length;
+      return done + ' / ' + t.blocks.length + ' checked';
+    },
+    title: () => { const t = LifeOS.doc().today; return t && t.date === LifeOS.day() ? (t.name || '') : ''; },
+    draw(body) {
+      const t = LifeOS.doc().today, today = LifeOS.day();
+      const blocks = (t && t.date === today) ? (t.blocks || []) : [];
+      const done = blocks.filter(b => LifeOS.isDone(b.actId, today)).length;
+
+      const rw = el('div', 'ringwrap');
+      rw.appendChild(ring(blocks.length ? done / blocks.length : 0, blocks.length ? Math.round(done / blocks.length * 100) + '%' : '—', 'ROUTINE'));
+      const st = el('div', 'stats');
+      const mins = blocks.reduce((a, b) => a + (b.dur || 0), 0);
+      const left = blocks.filter(b => !LifeOS.isDone(b.actId, today)).reduce((a, b) => a + (b.dur || 0), 0);
+      st.appendChild(el('div', 'stat', '<b>' + DUR(mins || 0) + '</b><span>PLANNED</span>'));
+      st.appendChild(el('div', 'stat acc', '<b>' + DUR(left || 0) + '</b><span>LEFT</span>'));
+      rw.appendChild(st); body.appendChild(rw);
+
+      if (!blocks.length) {
+        body.appendChild(el('div', 'empty',
+          (t && t.date !== today ? 'The last plan BLOCK published was for <b>' + esc(t.date) + '</b>. ' : '') +
+          'Open <span class="link" onclick="go(\'block\')">BLOCK</span> and today&rsquo;s routine shows up here.'));
+        return;
+      }
+      /* Checked work sinks. The plan is written in time order, but a row that
+         is already done is history, and leaving it where it was buries the
+         next thing halfway down a list you have to read past. Done rows go to
+         the bottom, each half keeping its own time order, so the top row is
+         always the next action. */
+      const list = el('div', 'rowlist');
+      const order = blocks
+        .map(b => ({ b: b, on: LifeOS.isDone(b.actId, today) }))
+        .sort((x, y) => x.on - y.on);      /* stable, so ties keep plan order */
+      order.forEach(o => {
+        const b = o.b, on = o.on;
+        const r = el('div', 'row' + (on ? ' done' : ''));
+        const bar = el('div', 'bar'); if (b.color) bar.style.background = b.color; r.appendChild(bar);
+        r.appendChild(el('div', 't', b.s == null ? '' : MIN2(b.s)));
+        r.appendChild(el('div', 'n', esc(b.name)));
+        if (b.lane) r.appendChild(el('div', 'tag', esc(b.lane)));
+        r.appendChild(el('div', 'd', DUR(b.dur || 0)));
+        const ck = el('button', 'chk' + (on ? ' on' : ''), '✓');
+        ck.title = on ? 'logged today — click to undo' : 'check it off (BLOCK and HABITS both see this)';
+        ck.onclick = () => LifeOS.done(b.actId, today, !on, { src: 'home' });
+        r.appendChild(ck); list.appendChild(r);
+      });
+      body.appendChild(list);
+    },
+  },
+
+
+  momentum: {
+    nm: 'MOMENTUM', w: 7, h: 3,
+    sub: () => 'everything logged',
+    draw(body, cfg) {
+      const weeks = Math.max(6, Math.min(30, (cfg.w || 7) * 2 + 2));
+      body.appendChild(heatmap(weeks));
+      const lg = el('div', 'legend', 'LESS');
+      ['', 'l1', 'l2', 'l3', 'l4'].forEach(c => lg.appendChild(el('b', c)));
+      lg.appendChild(el('span', null, 'MORE'));
+      body.appendChild(lg);
+    },
+  },
+
+
+  log: {
+    nm: 'DAY LOG', w: 4, h: 3,
+    sub: () => Object.keys(LifeOS.dayLog()).length + ' logged',
+    draw(body) {
+      /* ── the time it happened, not the time it was typed ──
+         A tick's own timestamp is when you pressed the button, which for
+         anything ticked after the fact is the wrong number. Where the writer
+         stated a time — "Train 2:45" in STATUS — that is the one shown, and
+         the day sorts by it. Everything else falls back to when it was
+         ticked, which is all it knows. */
+      const at = k => {
+        const r = log[k];
+        if (!r.at) return null;
+        const [h, m] = String(r.at).split(':').map(Number);
+        return isFinite(h) && isFinite(m) ? h * 60 + m : null;
+      };
+      const mins = k => { const a = at(k); return a != null ? a : new Date(log[k].ts).getHours() * 60 + new Date(log[k].ts).getMinutes(); };
+      /* STATUS publishes a per-kind counter as well — note-todo, note-event —
+         so a journal widget can say "3 todos" without knowing what they are.
+         Those are counts, not events, and listing them beside the individual
+         lines they are counting says the same thing twice. The counters stay
+         in the store for whoever wants them; this list is for things that
+         happened. */
+      const log = LifeOS.dayLog();
+      const keys = Object.keys(log)
+        .filter(k => k.indexOf('note-') !== 0 || k.indexOf('note-at-') === 0)
+        .sort((a, b) => mins(a) - mins(b));
+      if (!keys.length) { body.appendChild(el('div', 'empty', 'Nothing ticked yet today.')); return; }
+      keys.forEach(k => {
+        const rec = log[k], a = LifeOS.act(k);
+        const line = el('div', 'logline');
+        const stated = at(k) != null;
+        const tm = el('span', 'tm' + (stated ? ' said' : ''), stated ? MIN2(at(k)) : clock12(rec.ts));
+        if (stated) tm.title = 'The time you wrote, not the time it was logged';
+        line.appendChild(tm);
+        line.appendChild(el('span', null, esc(a ? a.name : k) + (rec.dur ? ' <i class="dur">' + DUR(rec.dur) + '</i>' : '')));
+        line.appendChild(el('span', 'src', esc((rec.src || '').toUpperCase())));
+        body.appendChild(line);
+      });
+    },
+  },
+
+  stats: {
+    nm: 'NUMBERS', w: 3, h: 2,
+    sub: () => '',
+    draw(body) {
+      const doc = LifeOS.doc();
+      let week = 0; for (let i = 0; i < 7; i++) week += Object.keys(doc.log[LifeOS.shift(LifeOS.day(), -i)] || {}).length;
+      const st = el('div', 'stats');
+      st.appendChild(el('div', 'stat acc', '<b>' + Object.keys(LifeOS.dayLog()).length + '</b><span>TODAY</span>'));
+      st.appendChild(el('div', 'stat', '<b>' + week + '</b><span>THIS WEEK</span>'));
+      st.appendChild(el('div', 'stat', '<b>' + Object.keys(doc.activities).length + '</b><span>ACTIVITIES</span>'));
+      body.appendChild(st);
+    },
+  },
+
+  /* ── TRAIN ──
+     Both widgets read the shared rows directly. TRAIN owns `set`, `exercise`
+     and `session`; nothing here writes any of them, which is what lets the
+     home screen show the training log without becoming a second author of it. */
+  training: {
+    nm: 'TRAINING', w: 5, h: 3,
+    sub: () => {
+      const d = trainLastDay();
+      if (!d) return 'nothing logged yet';
+      return d === LifeOS.day() ? 'today' : LifeOS.shift(LifeOS.day(), -1) === d ? 'yesterday' : esc(d);
+    },
+    draw(body) {
+      const day = trainLastDay();
+      if (!day) {
+        body.appendChild(el('div', 'empty',
+          'No training logged. Open <span class="link" onclick="go(\'train\')">TRAIN</span> — ' +
+          'if you have been using FitNotes, it imports your whole history.'));
+        return;
+      }
+      const sets = Rec.all('set', { date: day }), exs = Rec.map('exercise');
+      const order = [], byEx = {};
+      sets.forEach(r => {
+        const p = r.payload;
+        if (!byEx[p.ex]) { byEx[p.ex] = []; order.push(p.ex); }
+        byEx[p.ex].push(p);
+      });
+      let reps = 0, vol = 0;
+      sets.forEach(r => { reps += r.payload.r || 0; vol += (r.payload.kg || 0) * (r.payload.r || 0); });
+
+      const st = el('div', 'stats');
+      st.appendChild(el('div', 'stat acc', '<b>' + order.length + '</b><span>EXERCISES</span>'));
+      st.appendChild(el('div', 'stat', '<b>' + sets.length + '</b><span>SETS</span>'));
+      st.appendChild(el('div', 'stat', '<b>' + reps + '</b><span>REPS</span>'));
+      st.appendChild(el('div', 'stat', '<b>' + Math.round(vol) + '</b><span>VOLUME KG</span>'));
+      body.appendChild(st);
+
+      const list = el('div', 'rowlist');
+      order.slice(0, 6).forEach(id => {
+        const nm = exs[id] ? exs[id].name : id;
+        const n = byEx[id].length;
+        const row = el('div', 'row');
+        row.innerHTML = '<span class="nm">' + esc(nm) + '</span><span class="rt">' + n +
+          ' set' + (n === 1 ? '' : 's') + '</span>';
+        list.appendChild(row);
+      });
+      body.appendChild(list);
+    },
+  },
+
+  trainvol: {
+    nm: 'TRAINING VOLUME', w: 4, h: 2,
+    sub: () => 'last 8 weeks',
+    draw(body) {
+      const weeks = 8, bars = [];
+      for (let w = weeks - 1; w >= 0; w--) {
+        const end = LifeOS.shift(LifeOS.day(), -w * 7);
+        let vol = 0, days = 0;
+        for (let i = 0; i < 7; i++) {
+          const d = LifeOS.shift(end, -i);
+          const rows = Rec.all('set', { date: d });
+          if (rows.length) days++;
+          rows.forEach(r => { vol += (r.payload.kg || 0) * (r.payload.r || 0); });
+        }
+        bars.push({ vol, days });
+      }
+      const max = Math.max(1, ...bars.map(b => b.vol));
+      if (!max || max === 1) {
+        body.appendChild(el('div', 'empty', 'No training in the last eight weeks.'));
+        return;
+      }
+      const wrap = el('div');
+      wrap.style.cssText = 'display:flex;align-items:flex-end;gap:6px;height:100%;min-height:60px;padding:6px 0';
+      bars.forEach((b, i) => {
+        const col = el('div');
+        col.style.cssText = 'flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%';
+        const bar = el('div');
+        bar.style.cssText = 'width:100%;border-radius:3px;background:var(--acc);opacity:' +
+          (i === bars.length - 1 ? 1 : .55) + ';height:' + Math.max(3, Math.round((b.vol / max) * 100)) + '%';
+        bar.title = Math.round(b.vol) + ' kg over ' + b.days + ' days';
+        col.appendChild(bar);
+        wrap.appendChild(col);
+      });
+      body.appendChild(wrap);
+    },
+  },
+
+  apps: {
+    nm: 'APPS', w: 5, h: 3,
+    sub: () => 'press 1–' + APPS.length,
+    draw(body) {
+      const tiles = el('div', 'tiles');
+      APPS.filter(a => a.file).forEach(a => {
+        const b = el('button', 'tile' + (missing[a.id] ? ' missing' : ''));
+        b.innerHTML = '<span class="ic">' + appIco(a, 18) + '</span><span class="nm">' + a.nm + '</span><span class="ds">' +
+          (missing[a.id] ? '<span style="color:var(--bad)">' + esc(a.file) + ' not found</span>' : esc(a.ds)) + '</span>';
+        b.onclick = () => missing[a.id] ? toast('<b>' + esc(a.file) + '</b> is missing') : go(a.id);
+        tiles.appendChild(b);
+      });
+      body.appendChild(tiles);
+    },
+  },
+};
+
+/** columns = weeks, rows = weekday. Intensity = how many things were logged. */
+function heatmap(weeks) {
+  const wrap = el('div', 'heat');
+  const today = LifeOS.day(), dow = new Date(today + 'T12:00:00').getDay();
+  const cursor = LifeOS.shift(today, -(dow + 7 * (weeks - 1)));
+  for (let w = 0; w < weeks; w++) {
+    const col = el('div', 'wk');
+    for (let d = 0; d < 7; d++) {
+      const date = LifeOS.shift(cursor, w * 7 + d);
+      const n = Object.keys(LifeOS.doc().log[date] || {}).length;
+      const cls = date > today ? 'fut' : n >= 8 ? 'l4' : n >= 5 ? 'l3' : n >= 3 ? 'l2' : n >= 1 ? 'l1' : '';
+      const b = el('b', cls); b.title = date + ' — ' + n + ' logged';
+      col.appendChild(b);
+    }
+    wrap.appendChild(col);
+  }
+  return wrap;
+}
+
+/* ══════════════ the grid ══════════════
+   Layout is device preference, not shared data — it lives in localStorage and
+   never touches the LifeOS doc, so rearranging widgets here changes nothing
+   about what any other app sees. */
+const LKEY = 'lifeos_layout_v1';
+const DEFAULT_LAYOUT = [
+  { t: 'today', w: 5, h: 5 }, { t: 'stats', w: 3, h: 2 },
+  { t: 'momentum', w: 7, h: 3 }, { t: 'apps', w: 5, h: 3 },
+  { t: 'log', w: 4, h: 3 },
+];
+let layout;
+try { layout = JSON.parse(localStorage.getItem(LKEY)); } catch (e) {}
+if (!Array.isArray(layout) || !layout.length) layout = DEFAULT_LAYOUT.slice();
+layout = layout.filter(c => WIDGETS[c.t]);
+const saveLayout = () => { try { localStorage.setItem(LKEY, JSON.stringify(layout)); } catch (e) {} };
+
+/* Is there a real pointer? Everything that can only be done by dragging with
+   a mouse is gated on this. */
+const FINE = matchMedia('(hover:hover) and (pointer:fine)').matches;
+let editing = false;
+function move(i, d) {
+  const to = i + d;
+  if (to < 0 || to >= layout.length) return;
+  layout.splice(to, 0, layout.splice(i, 1)[0]);
+  saveLayout(); drawHome();
+  Mobile.feedback('select');
+}
+
+function drawHome() {
+  const g = $('#grid'); g.innerHTML = '';
+  document.body.classList.toggle('editing', editing);
+  layout.forEach((cfg, i) => {
+    const W = WIDGETS[cfg.t]; if (!W) return;
+    const n = el('div', 'w');
+    n.style.setProperty('--cw', cfg.w); n.style.setProperty('--ch', cfg.h);
+    n.dataset.i = i;
+
+    const head = el('div', 'w-head');
+    const title = W.title ? W.title() : '';
+    head.innerHTML = W.nm + (title ? ' <span class="c">' + esc(title) + '</span>' : '') +
+      '<span class="sub">' + esc(W.sub ? W.sub() : '') + '</span>';
+    /* In REARRANGE mode every card carries its own up, down and remove. That
+       is three unmistakable targets instead of one long-press gesture that
+       competes with the page scroll for the same finger. */
+    if (editing) {
+      const up = el('button', 'mv mb-press mb-tap', '↑');
+      up.setAttribute('aria-label', 'Move ' + W.nm + ' up');
+      up.disabled = i === 0;
+      up.style.opacity = i === 0 ? '.3' : '';
+      up.onclick = ev => { ev.stopPropagation(); move(i, -1); };
+      head.appendChild(up);
+      const dn = el('button', 'mv mb-press mb-tap', '↓');
+      dn.setAttribute('aria-label', 'Move ' + W.nm + ' down');
+      dn.disabled = i === layout.length - 1;
+      dn.style.opacity = i === layout.length - 1 ? '.3' : '';
+      dn.onclick = ev => { ev.stopPropagation(); move(i, 1); };
+      head.appendChild(dn);
+    }
+    const x = el('button', 'x mb-press mb-tap',
+      (typeof Icons !== 'undefined' && Icons.svg('close', { size: 15 })) || '✕');
+    x.title = 'remove this widget';
+    x.setAttribute('aria-label', 'Remove ' + W.nm);
+    x.onclick = ev => {
+      ev.stopPropagation();
+      const gone = layout.splice(i, 1)[0];
+      saveLayout(); drawHome();
+      Mobile.haptic('warn');
+      UI.undo('<b>' + esc(W.nm) + '</b> removed', () => { layout.splice(i, 0, gone); saveLayout(); drawHome(); });
+    };
+    head.appendChild(x);
+    /* Dragging by the title only exists where there is a pointer that can
+       hover. On a touch screen this gesture IS the scroll gesture. */
+    if (FINE) head.addEventListener('pointerdown', ev => startMove(ev, i));
+    n.appendChild(head);
+
+    const body = el('div', 'w-body');
+    try { W.draw(body, cfg); } catch (e) { body.appendChild(el('div', 'empty', 'widget error: ' + esc(e.message))); }
+    n.appendChild(body);
+
+    if (FINE) {
+      const size = el('div', 'w-size');
+      size.title = 'drag to resize';
+      size.addEventListener('pointerdown', ev => startResize(ev, i, n));
+      n.appendChild(size);
+    }
+
+    g.appendChild(n);
+  });
+  if (!layout.length) {
+    g.appendChild(el('div', 'empty', 'No widgets. Hit <b>+ WIDGET</b> to put something back.')).style.gridColumn = 'span 12';
+  }
+}
+
+/* --- drag to reorder: swap with whatever card the pointer is over --- */
+let moving = null;
+function startMove(ev, i) {
+  if (ev.target.closest('.x')) return;
+  ev.preventDefault();
+  const node = ev.currentTarget.parentElement, r = node.getBoundingClientRect();
+  moving = { i: i, node: node, dx: ev.clientX - r.left, dy: ev.clientY - r.top };
+  node.classList.add('drag');
+  const gh = $('#ghost');
+  gh.style.cssText = 'display:block;width:' + r.width + 'px;height:' + Math.min(r.height, 160) + 'px;left:' + r.left + 'px;top:' + r.top + 'px';
+  gh.innerHTML = '<div style="padding:11px 13px;font-family:var(--f1);font-size:11px;letter-spacing:.2em;color:var(--acc)">' + esc(WIDGETS[layout[i].t].nm) + '</div>';
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', endMove, { once: true });
+}
+function onMove(ev) {
+  if (!moving) return;
+  const gh = $('#ghost');
+  gh.style.left = (ev.clientX - moving.dx) + 'px';
+  gh.style.top = (ev.clientY - moving.dy) + 'px';
+  const over = document.elementFromPoint(ev.clientX, ev.clientY);
+  const card = over && over.closest ? over.closest('.w') : null;
+  document.querySelectorAll('.w.over').forEach(n => n.classList.remove('over'));
+  if (card && card !== moving.node) card.classList.add('over');
+}
+function endMove(ev) {
+  if (!moving) return;
+  window.removeEventListener('pointermove', onMove);
+  $('#ghost').style.display = 'none';
+  moving.node.classList.remove('drag');
+  const over = document.elementFromPoint(ev.clientX, ev.clientY);
+  const card = over && over.closest ? over.closest('.w') : null;
+  if (card && card !== moving.node) {
+    const to = +card.dataset.i, from = moving.i;
+    layout.splice(to, 0, layout.splice(from, 1)[0]);
+    saveLayout();
+  }
+  moving = null;
+  drawHome();
+}
+
+/* --- drag the corner to resize, snapped to grid columns and 84px rows --- */
+let sizing = null;
+function startResize(ev, i, node) {
+  ev.preventDefault(); ev.stopPropagation();
+  const cols = getComputedStyle($('#grid')).gridTemplateColumns.split(' ').length;
+  const gw = $('#grid').getBoundingClientRect().width;
+  const colw = (gw - (cols - 1) * 12) / cols;
+  sizing = { i: i, node: node, cols: cols, colw: colw, x: ev.clientX, y: ev.clientY, w: layout[i].w, h: layout[i].h };
+  window.addEventListener('pointermove', onResize);
+  window.addEventListener('pointerup', endResize, { once: true });
+}
+function onResize(ev) {
+  if (!sizing) return;
+  const dw = Math.round((ev.clientX - sizing.x) / (sizing.colw + 12));
+  const dh = Math.round((ev.clientY - sizing.y) / 84);
+  const w = Math.max(2, Math.min(sizing.cols, sizing.w + dw));
+  const h = Math.max(2, Math.min(12, sizing.h + dh));
+  layout[sizing.i].w = w; layout[sizing.i].h = h;
+  sizing.node.style.setProperty('--cw', w); sizing.node.style.setProperty('--ch', h);
+}
+function endResize() {
+  if (!sizing) return;
+  window.removeEventListener('pointermove', onResize);
+  saveLayout(); sizing = null; drawHome();
+}
+
+/* --- add a widget --- */
+function widgetPicker() {
+  const mo = $('#modal'); mo.innerHTML = '';
+  mo.appendChild(el('h3', null, 'ADD A WIDGET'));
+  mo.appendChild(el('div', 'lede', FINE
+    ? 'Drag a widget by its title to move it. Drag the bottom-right corner to resize. The layout is saved on this device only — it is not part of your data.'
+    : 'The layout is saved on this device only — it is not part of your data.'));
+  Object.keys(WIDGETS).forEach(k => {
+    const W = WIDGETS[k], n = layout.filter(c => c.t === k).length;
+    const b = el('button', 'opt');
+    b.innerHTML = '<span class="ic">▤</span><span class="t"><b>' + esc(W.nm) + '</b><span>' +
+      (n ? 'already on the home screen — add another' : 'not on the home screen') + '</span></span>';
+    b.onclick = () => { layout.push({ t: k, w: W.w, h: W.h }); saveLayout(); closeModal(); drawHome(); toast('<b>' + esc(W.nm) + '</b> added'); };
+    mo.appendChild(b);
+  });
+  mo.appendChild(el('div', 'mgroup', 'LAYOUT'));
+  if (!FINE) {
+    const eb = el('button', 'opt');
+    eb.innerHTML = '<span class="ic">' + (editing ? '✓' : '⇅') + '</span><span class="t"><b>' +
+      (editing ? 'Done rearranging' : 'Rearrange the widgets') +
+      '</b><span>' + (editing ? 'Puts the arrows away' : 'Puts an up, a down and a remove on every card') + '</span></span>';
+    eb.onclick = () => { editing = !editing; closeModal(); drawHome(); };
+    mo.appendChild(eb);
+  }
+  const rb = el('button', 'opt');
+  rb.innerHTML = '<span class="ic">↺</span><span class="t"><b>Reset to the default layout</b><span>Puts every widget back where it started</span></span>';
+  rb.onclick = () => {
+    const was = layout.slice();
+    layout = DEFAULT_LAYOUT.slice(); saveLayout(); closeModal(); drawHome();
+    UI.undo('layout reset', () => { layout = was; saveLayout(); drawHome(); });
+  };
+  mo.appendChild(rb);
+  openModal();
+}
+
+/* ══════════════ backup and export ══════════════
+   Everything is local, so a backup is the only safety net there is. Two kinds:
+   a restorable snapshot (JSON, everything) and readable exports (CSV/text, for
+   spreadsheets and clients).                                                  */
+const BKEY = 'lifeos_lastbackup';
+function download(name, text, mime) {
+  const a = el('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain;charset=utf-8' }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const csvCell = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+const csv = rows => rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+
+function backupAll() {
+  const bag = { kind: 'lifeos-backup', v: 1, at: new Date().toISOString(), shared: LifeOS.doc(), local: {} };
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); bag.local[k] = localStorage.getItem(k); }
+  download('lifeos-backup-' + LifeOS.day() + '.json', JSON.stringify(bag), 'application/json');
+  try { localStorage.setItem(BKEY, LifeOS.day()); } catch (e) {}
+  toast('backup saved — <b>shared data + every app</b>');
+  refreshDataBtn();
+}
+function restore(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    let bag; try { bag = JSON.parse(fr.result); } catch (e) { return toast('that file is not JSON'); }
+    if (bag.kind !== 'lifeos-backup') return toast('not a backup from this suite');
+    if (!confirm('Replace ALL data on this device with the backup from ' + (bag.at || '?') + '?\n\nThis cannot be undone.')) return;
+    Object.keys(bag.local || {}).forEach(k => { try { localStorage.setItem(k, bag.local[k]); } catch (e) {} });
+    LifeOS._adopt(bag.shared || {});
+    toast('restored — reloading…');
+    setTimeout(() => location.reload(), 900);
+  };
+  fr.readAsText(file);
+}
+function exportLogCSV() {
+  const doc = LifeOS.doc(), rows = [['date', 'activity', 'activity_id', 'category', 'logged_at', 'source']];
+  Object.keys(doc.log).sort().forEach(date => {
+    const day = doc.log[date];
+    Object.keys(day).forEach(id => {
+      const a = doc.activities[id] || {};
+      rows.push([date, a.name || id, id, a.cat || '', new Date(day[id].ts).toISOString(), day[id].src || '']);
+    });
+  });
+  if (rows.length === 1) return toast('nothing logged yet');
+  download('lifeos-log-' + LifeOS.day() + '.csv', csv(rows), 'text/csv;charset=utf-8');
+  toast('<b>' + (rows.length - 1) + '</b> ticks exported');
+}
+function exportHabitsCSV() {
+  const hs = Object.values(LifeOS.doc().habits);
+  if (!hs.length) return toast('no habits yet');
+  const rows = [['habit', 'cadence', 'current_streak', 'last_30_days', 'created', 'archived']];
+  hs.forEach(h => rows.push([h.name, cadenceText(h.cadence), LifeOS.streak(h.actId, h.cadence), LifeOS.count(h.actId, 30), h.created || '', h.archived ? 'yes' : 'no']));
+  download('lifeos-habits-' + LifeOS.day() + '.csv', csv(rows), 'text/csv;charset=utf-8');
+  toast('habits exported');
+}
+function exportActivitiesCSV() {
+  const as = Object.values(LifeOS.doc().activities);
+  if (!as.length) return toast('no activities yet');
+  const rows = [['name', 'id', 'category', 'minutes', 'energy']];
+  as.forEach(a => rows.push([a.name, a.id, a.cat || '', a.dur || '', a.energy || '']));
+  download('lifeos-activities-' + LifeOS.day() + '.csv', csv(rows), 'text/csv;charset=utf-8');
+  toast('activities exported');
+}
+function todayText() {
+  const doc = LifeOS.doc(), t = doc.today, today = LifeOS.day();
+  const lines = [today + (t && t.date === today && t.name ? '  ·  ' + t.name : ''), ''];
+  if (t && t.date === today && t.blocks.length) {
+    t.blocks.forEach(b => lines.push((LifeOS.isDone(b.actId, today) ? '[x] ' : '[ ] ') + (b.s == null ? '' : MIN2(b.s) + '  ') + b.name + '  (' + DUR(b.dur || 0) + ')'));
+  } else lines.push('(no routine published for today)');
+  const extra = Object.keys(LifeOS.dayLog()).filter(id => !(t && t.date === today && t.blocks.some(b => b.actId === id)));
+  if (extra.length) {
+    lines.push('', 'Also logged:');
+    extra.forEach(id => lines.push('[x] ' + ((doc.activities[id] || {}).name || id)));
+  }
+  return lines.join('\n');
+}
+function copyToday() {
+  const text = todayText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast('today copied to the clipboard'), () => download('today-' + LifeOS.day() + '.txt', text));
+  } else download('today-' + LifeOS.day() + '.txt', text);
+}
+function wipeAll() {
+  if (!confirm('Delete ALL data on this device — ticks, every app’s own storage?\n\nBack up first. This cannot be undone.')) return;
+  if (!confirm('Really delete everything? Last chance.')) return;
+  try { localStorage.clear(); } catch (e) {}
+  try { indexedDB.deleteDatabase('lifeos'); } catch (e) {}
+  setTimeout(() => location.reload(), 400);
+}
+
+const daysSinceBackup = () => {
+  const d = localStorage.getItem(BKEY); if (!d) return null;
+  return Math.round((new Date(LifeOS.day() + 'T12:00:00') - new Date(d + 'T12:00:00')) / 86400000);
+};
+function refreshDataBtn() {
+  const n = daysSinceBackup(), b = $('#btnData');
+  const stale = n === null || n >= 14;
+  b.classList.toggle('warn', stale);
+  /* Write into the two labels rather than over them: the long one is for a
+     laptop, the short one is what fits in a phone's header. */
+  b.querySelector('.lg').textContent = stale ? 'DATA ⚠' : 'DATA';
+  b.querySelector('.sm').textContent = stale ? '⚠' : '⛁';
+  b.title = n === null ? 'You have never backed up. Everything lives in this browser only.'
+    : 'Last backup ' + (n === 0 ? 'today' : n + ' day' + (n === 1 ? '' : 's') + ' ago');
+}
+
+/* ══════════════ the sheet mirror ══════════════
+   One Google Sheet for the whole suite, one link, pasted once. shared/io.js
+   carries the protocol and STATUS already has a panel for it. The home screen
+   is here because it is the only place that can reasonably offer "all of them".
+
+   It does not do the syncing itself. Which tabs an app has, and how one of its
+   rows flattens into a line somebody can type into, live in that app's own
+   registration — the shell has never run it and cannot guess. So the shell
+   loads the app, asks it to sync itself, and counts the answers.
+
+   Editing in the sheet is the point of the thing. Forty foods on a laptop
+   keyboard beats forty on a phone, and the pull runs before the push, so what
+   was typed there is read before anything is written back over it. */
+function syncEveryApp() {
+  const M = IO.mirror;
+  if (!M.ready()) return toast(esc(M.why()), { bad: true, ms: 8000 });
+
+  /* ARC and FORM keep their own storage by design and are not asked at all.
+     Of the rest, only the ones actually on the shared drawer can answer, so
+     ask first and sync whoever puts a hand up. Nothing here needs editing on
+     the day BLOCK moves over — it will simply start answering. */
+  const candidates = APPS.filter(a => a.file && !a.solo && !missing[a.id]);
+  if (!candidates.length) return toast('Nothing to sync', { bad: true });
+  toast('Syncing…');
+  /* How long to wait for hands to go up. An app already open answers in
+     milliseconds; one being loaded to be asked has to fetch and run its whole
+     file first, and on his phone that is not instant. Being too quick here
+     does not fail loudly — it quietly leaves an app out of the sheet — so the
+     window is generous whenever anything had to be loaded. */
+  const cold = candidates.some(a => !frames[a.id] || !frames[a.id].dataset.loaded);
+  reach(candidates, { mb: 2, ping: 1 }, m => m.pong, cold ? 9000 : 3000, on => {
+    if (!on.length) {
+      return toast('None of the apps are on the shared drawer yet, so there is nothing to put in the sheet.',
+        { bad: true, ms: 9000 });
+    }
+    pushToSheet(on, candidates.length);
+  });
+}
+
+/* Ask a set of apps something, and call back with the ones that answered.
+   Making the frame is part of asking: an app he has not opened today is not
+   loaded, and an app that is not loaded cannot say anything. */
+function reach(list, msg, keep, ms, then) {
+  const said = {};
+  let done = false;
+  const heard = e => {
+    const m = e.data;
+    if (!m || m.mb !== 2 || !keep(m)) return;
+    const a = list.find(x => frames[x.id] && frames[x.id].contentWindow === e.source);
+    if (a) said[a.id] = m;
+    if (Object.keys(said).length === list.length) finish();
+  };
+  const finish = () => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    window.removeEventListener('message', heard);
+    then(list.filter(a => said[a.id]).map(a => Object.assign({}, a, { said: said[a.id] })));
+  };
+  const timer = setTimeout(finish, ms);
+  window.addEventListener('message', heard);
+  list.forEach(a => {
+    const f = frameFor(a.id);
+    const ask = () => { try { f.contentWindow.postMessage(msg, '*'); } catch (e) {} };
+    /* a frame made a moment ago has not run its scripts yet, and an app that
+       has not registered cannot answer for itself */
+    if (f.dataset.loaded) ask();
+    else f.addEventListener('load', () => setTimeout(ask, 400), { once: true });
+  });
+}
+
+/* the round trip itself, once we know who can do it */
+function pushToSheet(on, asked) {
+  toast('Syncing <b>' + on.length + '</b> apps…');
+  reach(on, { mb: 2, sync: 1, full: 1 }, m => m.synced, 40000, res => {
+    const ok = res.filter(a => a.said.ok);
+    if (ok.length === on.length) {
+      const extra = asked - on.length;
+      toast('Synced <b>' + ok.length + '</b> apps into the sheet.' +
+        (extra ? ' <b>' + extra + '</b> are not on the shared drawer yet and have nothing to send.' : ''));
+      if (typeof Sfx !== 'undefined' && Sfx.play) Sfx.play('complete', { level: 2 });
+      return;
+    }
+    /* Say the likely fix rather than the symptom. io.js works out which one
+       the link itself points at, and they all share the one link, so the
+       first app with an opinion is enough. */
+    const why = (res.map(a => a.said).find(m => m && m.why) || {}).why;
+    toast('Synced <b>' + ok.length + ' of ' + on.length + '</b>. ' +
+      esc(why || 'The rest did not answer.'), { bad: true, ms: 9000 });
+  });
+}
+
+
+/* The script that has to go in the sheet once. Generated by io.js so it cannot
+   drift from the protocol it talks to, and copied in one tap: selecting twelve
+   lines by hand on a phone is how two characters go missing and the error
+   names a line rather than the cause. */
+function copyMirrorScript() {
+  const code = IO.mirror.script();
+  const show = copied => UI.dialog({
+    title: 'APPS SCRIPT', width: 560,
+    body: b => {
+      b.appendChild(el('div', 'lede', copied
+        ? 'Copied. In the sheet: Extensions, Apps Script, paste it over everything, then Deploy, New deployment, Web app, execute as <b>me</b>, access <b>anyone</b>. Paste the link it gives you into the box on the DATA panel.'
+        : 'Select all of this and copy it, then paste it over everything in the Apps Script editor.'));
+      const t = el('textarea', 'mb-input');
+      t.rows = 12; t.value = code; t.setAttribute('readonly', '');
+      t.style.fontFamily = 'var(--font-mono, monospace)';
+      b.appendChild(t);
+      if (!copied) setTimeout(() => t.select(), 50);
+    },
+    actions: [{ label: 'DONE', kind: 'go' }],
+  });
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(code).then(() => show(true)).catch(() => show(false));
+  else show(false);
+}
+
+/* the sheet's half of the DATA panel */
+function mirrorSection(mo) {
+  const cfg = IO.mirror.adopt('lifeos');
+  mo.appendChild(el('div', 'mgroup', 'GOOGLE SHEET — THE OTHER PLACE YOU CAN EDIT'));
+  mo.appendChild(el('div', 'lede',
+    'One sheet you own, holding a copy of every app, and what you type in it comes back. ' +
+    'This is where mass edits belong: a real keyboard and forty rows at a time. ' +
+    (cfg.at ? 'Last synced <b>' + esc(cfg.at) + '</b>.'
+            : '<b style="color:var(--warn)">Never synced.</b> Paste the link below, then press sync.')));
+
+  const u = el('input', 'mb-input');
+  u.type = 'text';
+  u.placeholder = 'https://script.google.com/macros/s/…/exec';
+  u.value = cfg.url || '';
+  /* on input, not change. change only fires when the box loses focus, and
+     pasting a link then tapping sync closes the panel before that happens —
+     so the link was silently never saved. */
+  u.oninput = () => IO.mirror.set({ url: u.value.trim() });
+  mo.appendChild(u);
+
+  /* The switch that makes it stop being a button. With this on, every app on
+     the shared drawer syncs itself: when it opens, half a minute after the
+     last thing you log, and the moment you put the phone down. */
+  mo.appendChild(UI.row('Keep the sheet up to date by itself',
+    cfg.on ? 'On. Syncs on open, after you log something, and when you leave.'
+           : 'Off. The sheet only changes when you press the button below.',
+    UI.toggle(!!cfg.on, on => { IO.mirror.set({ on: on ? 1 : 0 }); toast(on ? 'The sheet will keep itself up to date.' : 'Automatic syncing off.'); })));
+
+  [['⟳', 'Sync every app now', 'Reads the sheet first, then writes back everything, including the calendar views. The automatic ones only send what changed.', () => { IO.mirror.set({ url: u.value.trim() }); syncEveryApp(); }],
+   ['⧉', 'Copy the Apps Script', 'The bit that goes in the sheet once, before any of this works.', copyMirrorScript],
+  ].forEach(([ic, t, d, fn]) => {
+    const b = el('button', 'opt');
+    b.innerHTML = '<span class="ic">' + ic + '</span><span class="t"><b>' + t + '</b><span>' + d + '</span></span>';
+    b.onclick = fn; mo.appendChild(b);
+  });
+}
+
+function dataPanel() {
+  const mo = $('#modal'); mo.innerHTML = '';
+  const n = daysSinceBackup();
+  mo.appendChild(el('h3', null, 'DATA'));
+  mo.appendChild(el('div', 'lede',
+    'Everything lives in this browser, on this machine. No account, no server, nothing uploaded. ' +
+    (n === null ? '<b style="color:var(--warn)">You have never made a backup.</b>' :
+     n === 0 ? 'Last backup: <b>today</b>.' : 'Last backup: <b>' + n + ' day' + (n === 1 ? '' : 's') + ' ago</b>.')));
+
+  mo.appendChild(el('div', 'mgroup', 'SAFETY NET'));
+  const opts = [
+    ['⭳', 'Back up everything', 'One JSON file: your ticks, routines and every app’s own storage. This is the one that can be restored.', backupAll],
+    ['⭱', 'Restore from a backup', 'Replaces everything on this device with the contents of a backup file.', () => $('#fileIn').click()],
+  ];
+  opts.forEach(([ic, t, d, fn]) => {
+    const b = el('button', 'opt');
+    b.innerHTML = '<span class="ic">' + ic + '</span><span class="t"><b>' + t + '</b><span>' + d + '</span></span>';
+    b.onclick = fn; mo.appendChild(b);
+  });
+
+  mirrorSection(mo);
+
+  mo.appendChild(el('div', 'mgroup', 'EXPORTS — READABLE, NOT RESTORABLE'));
+  [
+    ['▤', 'Tick log as CSV', 'Every tick ever: date, activity, when and which app. Opens in a spreadsheet.', exportLogCSV],
+    ['◇', 'Activities as CSV', 'The shared vocabulary — everything the apps know how to do.', exportActivitiesCSV],
+    ['⧉', 'Copy today as text', 'Today’s routine with its ticks, for pasting into a message or a note.', copyToday],
+  ].forEach(([ic, t, d, fn]) => {
+    const b = el('button', 'opt');
+    b.innerHTML = '<span class="ic">' + ic + '</span><span class="t"><b>' + t + '</b><span>' + d + '</span></span>';
+    b.onclick = fn; mo.appendChild(b);
+  });
+
+  mo.appendChild(el('div', 'mgroup', 'DANGER'));
+  const w = el('button', 'opt danger');
+  w.innerHTML = '<span class="ic">⌫</span><span class="t"><b>Delete everything on this device</b><span>Every app’s data, gone. Back up first.</span></span>';
+  w.onclick = wipeAll; mo.appendChild(w);
+  openModal();
+}
+
+/* The two panels in this file build their contents into #modal and then call
+   openModal(). That still works — openModal hands the contents to UI.dialog,
+   which is a bottom sheet on a phone and a centred card on a laptop. The
+   panels themselves did not have to change. */
+let modalH = null;
+function openModal() {
+  const src = $('#modal');
+  const h3 = src.querySelector('h3');
+  const title = h3 ? h3.textContent : '';
+  if (h3) h3.remove();
+  /* the panels' own class names, mapped onto the shared ones */
+  src.querySelectorAll('.opt').forEach(o => o.classList.add('mb-opt', 'mb-press', 'flat'));
+  src.querySelectorAll('.opt.danger').forEach(o => o.classList.add('bad'));
+  src.querySelectorAll('.mgroup').forEach(o => o.classList.add('mb-group'));
+  src.querySelectorAll('.lede').forEach(o => { o.className = 'lede'; o.style.cssText = 'color:var(--dim2);line-height:1.6;margin-bottom:var(--s-4,16px)'; });
+  modalH = UI.dialog({
+    title: title, width: 520,
+    body: b => { while (src.firstChild) b.appendChild(src.firstChild); },
+    onClose: () => { modalH = null; },
+  });
+}
+function closeModal() { if (modalH) modalH.close(); }
+
+/* ══════════════ boot ══════════════ */
+function clock() {
+  const d = new Date();
+  $('#cDate').textContent = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+  $('#cSub').textContent = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+$('#btnData').onclick = dataPanel;
+$('#btnWidget').onclick = widgetPicker;
+$('#fileIn').onchange = e => { if (e.target.files[0]) restore(e.target.files[0]); e.target.value = ''; };
+window.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,[contenteditable]')) return;
+  /* ui.js closes its own sheet on Escape, so by the time this runs there is
+     nothing open and Escape means "back to home". */
+  if (e.key === 'Escape') { if (modalH) return; return go('home'); }
+  const n = parseInt(e.key, 10);
+  /* the number on the button, which is its position — so the key and the badge
+     never disagree after the dock has been rearranged */
+  const dock = dockApps();
+  if (n >= 1 && n <= dock.length && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); go(dock[n - 1].id); }
+});
+window.addEventListener('hashchange', () => { const id = location.hash.slice(1) || 'home'; if (id !== view && app(id)) go(id); });
+
+/* The home screen is an app like any other as far as the foundation is
+   concerned: its own theme, its own sound, the shared day. */
+/* Anything in the markup carrying data-icon gets its drawing here, and again
+   after a theme lands, because the stroke recipe belongs to the theme: a pixel
+   theme wants a squared cap and a hand-drawn one wants a wobble, and those are
+   different paths rather than a different colour. */
+Skins.load('shared/skins.json').then(() => { Skins.restore('home');
+  if (window.Icons) Icons.paint(null, { force: true }); });
+if (window.Icons) Icons.paint();
+Sfx.init('home');
+
+/* any change from any app repaints home — the frames repaint themselves */
+LifeOS.on(() => { if (view === 'home' && !moving && !sizing) drawHome(); });
+LifeOS.ready(() => {
+  LifeOS.prune(800);
+  go(location.hash.slice(1) || 'home');
+  probe(); refreshDataBtn();
+});
+clock(); setInterval(clock, 20000);
+/* midnight: today rolls over, so the home screen must too */
+setInterval(() => {
+  if (view === 'home' && $('#home').dataset.d !== LifeOS.day()) { $('#home').dataset.d = LifeOS.day(); drawHome(); refreshDataBtn(); }
+}, 60000);
+</script>
+</body>
+</html>

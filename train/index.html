@@ -1,0 +1,3991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TRAIN</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛭</text></svg>">
+<meta name="theme-color" content="#0B0E14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="../shared/skins.js?v=ef908823"></script>
+<script src="../shared/day.js?v=ef908823"></script>
+<script src="../shared/records.js?v=ef908823"></script>
+<script src="../shared/mobile.js?v=ef908823"></script>
+<script src="../shared/sound.js?v=ef908823"></script>
+<script src="../shared/ui.js?v=ef908823"></script>
+<script src="../shared/io.js?v=ef908823"></script>
+<script src="../shared/icons.js?v=ef908823"></script>
+<script src="../shared/health.js?v=ef908823"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);color:var(--text-1);
+  font-family:var(--font-body);font-size:var(--f-3);font-weight:var(--w-body);
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;
+}
+
+/* ── the top bar ──
+   FitNotes: drawer, title, then calendar, add and overflow. Icons are drawn
+   here as SVG; nothing is lifted from the app. */
+header{
+  flex:0 0 auto;display:flex;align-items:center;
+  padding:calc(var(--s-2) + var(--safe-t)) var(--s-2) var(--s-2);
+  background:var(--surface-1);box-shadow:var(--e-1),var(--rim);
+}
+.logo{font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--f-4);
+  letter-spacing:.14em;padding-left:var(--s-2)}
+.logo b{color:var(--accent)}
+.spacer{flex:1}
+/* One icon button shape for the whole app: a 44px target with a 22px glyph. */
+.ico{width:var(--tap);height:var(--tap);flex:0 0 auto;border:0;background:none;
+  cursor:pointer;color:var(--text-2);border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center;padding:0}
+.ico svg{width:22px;height:22px;display:block}
+.ico.on{color:var(--accent)}
+
+/* ── the date strip ──
+   FitNotes puts the day, and the two arrows that move it, directly under the
+   title. The whole strip is also the swipe target: left and right move a day,
+   which is how he already navigates without looking. */
+.datebar{
+  flex:0 0 auto;display:flex;align-items:center;gap:var(--s-2);
+  padding:var(--s-2) var(--s-3);background:var(--surface-2);
+  box-shadow:var(--rim);touch-action:pan-y;user-select:none;
+}
+.datebar .arrow{
+  width:var(--tap);height:var(--tap);flex:0 0 auto;border:0;background:none;cursor:pointer;
+  color:var(--text-2);font-size:var(--f-5);line-height:1;border-radius:var(--radius-md);
+  display:flex;align-items:center;justify-content:center}
+.datebar .when{
+  flex:1;min-width:0;text-align:center;border:0;background:none;cursor:pointer;
+  color:inherit;font:inherit;padding:var(--s-2);border-radius:var(--radius-md);
+  min-height:var(--tap);display:flex;align-items:center;justify-content:center}
+/* One line, uppercase: "TODAY", or "WEDNESDAY, AUGUST 5". FitNotes shows the
+   day itself, not how long ago it was — the calendar is where you go for
+   that, and a second line here would push the workout down the screen. */
+.datebar .when .d{font-family:var(--font-display);font-weight:var(--w-bold);
+  font-size:var(--f-2);letter-spacing:.08em;display:block;line-height:1.2;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.datebar .when.future .d{color:var(--text-muted)}
+/* The accent hairline under the date is FitNotes' one piece of chrome, and
+   it is what tells you the bar above is a control and not a heading. */
+.datebar{border-bottom:2px solid var(--accent)}
+
+main{flex:1;min-height:0;display:flex;flex-direction:column;
+  padding:var(--s-3) var(--s-3) calc(var(--s-5) + var(--safe-b))}
+.wrap{max-width:640px;margin:0 auto;width:100%;flex:1;
+  display:flex;flex-direction:column;gap:var(--s-3)}
+
+.card{border-radius:var(--radius-lg);background:var(--surface-1);
+  padding:var(--s-4);box-shadow:var(--e-1),var(--rim)}
+h2{font-family:var(--font-display);font-size:var(--f-1);font-weight:var(--w-bold);
+  letter-spacing:var(--track-cap);color:var(--text-muted);margin-bottom:var(--s-3)}
+.empty{color:var(--text-muted);line-height:var(--lh-body)}
+
+/* ── one exercise inside a day ──
+   FitNotes gives each exercise its own card: the name across the top, a
+   hairline in the accent colour under it, then the sets. The sets are set
+   right, because the numbers are the thing you scan and a ragged left edge
+   on a column of weights is unreadable. There are no set numbers here —
+   those live on the training screen, where you are editing one of them. */
+.exblock{border-radius:var(--radius-md);background:var(--surface-1);
+  box-shadow:var(--e-1),var(--rim);overflow:hidden;display:flex;flex-direction:column}
+.exblock .head{display:flex;align-items:center;gap:var(--s-3);
+  padding:var(--s-3) var(--s-4);min-height:var(--tap);cursor:pointer;
+  border-bottom:1px solid var(--cat,var(--accent))}
+.exblock .head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font-size:var(--f-4);color:var(--text-2)}
+.sets{display:flex;flex-direction:column;padding:var(--s-2) var(--s-4) var(--s-3)}
+
+/* Weight and reps are two right-aligned columns so they stack into a grid
+   down the card. Tabular numerals keep 4.0 and 12.5 the same width. */
+.setrow{display:flex;align-items:baseline;padding:var(--s-2) 0;
+  font-variant-numeric:tabular-nums}
+.setrow .cmt{width:20px;flex:0 0 auto;color:var(--accent);opacity:0;font-size:15px}
+.setrow.has-note .cmt{opacity:1}
+.setrow .grow{flex:1}
+.setrow .col{text-align:right;white-space:nowrap}
+.setrow .col.w{min-width:7.5em}
+.setrow .col.r{min-width:5.5em}
+.setrow b{font-size:var(--f-4);font-weight:var(--w-bold);color:var(--text-2)}
+.setrow .u{color:var(--text-muted);font-size:var(--f-2)}
+.setrow.pr b{color:var(--accent)}
+
+/* The complete tick, filled when every set in the exercise is done. */
+.tickdot{width:22px;height:22px;flex:0 0 auto;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--accent);color:var(--accent-fg);font-size:13px;line-height:1}
+.tickdot.off{background:none;box-shadow:inset 0 0 0 2px var(--border-strong)}
+
+/* The workout's start and end, the card FitNotes puts above the first
+   exercise. Shown only when there is a time recorded. */
+.timecard{display:flex;align-items:center;gap:var(--s-3);
+  padding:var(--s-3) var(--s-4);border-radius:var(--radius-md);
+  background:var(--surface-1);box-shadow:var(--e-1),var(--rim);
+  font-variant-numeric:tabular-nums;color:var(--text-2)}
+.timecard .rng{flex:1;font-size:var(--f-4)}
+.timecard .len{color:var(--text-muted)}
+
+.daynote{color:var(--text-2);line-height:var(--lh-body);font-size:var(--f-2)}
+
+/* ── the empty day ──
+   "Workout Log Empty" sits in the middle, and the two things you actually do
+   next sit near the bottom where the thumb is. */
+.emptyday{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:var(--s-4);min-height:52vh}
+.emptyday .say{color:var(--text-muted);font-size:var(--f-5)}
+.startbox{display:flex;flex-direction:column;align-items:center;gap:var(--s-5);
+  padding-bottom:var(--s-5)}
+.bigact{display:flex;flex-direction:column;align-items:center;gap:var(--s-2);
+  border:0;background:none;cursor:pointer;color:var(--text-2);font:inherit;
+  padding:var(--s-3) var(--s-4);border-radius:var(--radius-md);min-height:var(--tap)}
+.bigact svg{width:28px;height:28px;color:var(--accent)}
+
+/* No floating button: FitNotes puts add in the top bar, and a FAB here would
+   sit on top of the last set of the day. */
+
+/* ══════════ THE EXERCISE PICKER ══════════
+   A search field pinned above a plain list. FitNotes shows categories first
+   and drills into one; the search box cuts straight to exercises, because
+   typing three letters beats two taps once you know what you want. */
+.search{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-3);
+  background:var(--surface-2);border-radius:var(--radius-md)}
+.search svg{width:18px;height:18px;flex:0 0 auto;color:var(--text-muted)}
+.search input{flex:1;min-width:0;border:0;background:none;color:var(--text-1);
+  font:inherit;font-size:var(--f-3);padding:var(--s-2) 0;outline:none;
+  min-height:var(--tap)}
+
+.plist{display:flex;flex-direction:column;background:var(--surface-1);
+  border-radius:var(--radius-md);box-shadow:var(--e-1),var(--rim);overflow:hidden}
+.prow{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-3) var(--s-4);
+  min-height:var(--tap);cursor:pointer;border:0;background:none;color:inherit;
+  font:inherit;text-align:left;border-bottom:1px solid var(--border)}
+.prow:last-child{border-bottom:0}
+.prow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:var(--f-4);color:var(--text-2)}
+.prow .sub{font-size:var(--f-1);color:var(--text-muted);white-space:nowrap}
+.prow .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;
+  background:var(--cat,var(--border-strong))}
+.prow.added .nm{color:var(--text-muted)}
+
+/* ══════════ THE TRAINING SCREEN ══════════ */
+.tabs{flex:0 0 auto;display:flex;background:var(--surface-1);box-shadow:var(--rim)}
+.tabs button{flex:1;border:0;background:none;cursor:pointer;color:var(--text-muted);
+  font-family:var(--font-display);font-size:var(--f-2);font-weight:var(--w-bold);
+  letter-spacing:var(--track-cap);min-height:var(--tap);padding:var(--s-3) var(--s-2);
+  border-bottom:2px solid transparent}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* The field label with its hairline, exactly as FitNotes draws it. */
+.fieldlabel{font-family:var(--font-display);font-size:var(--f-1);font-weight:var(--w-bold);
+  letter-spacing:var(--track-cap);color:var(--text-muted);
+  padding-bottom:var(--s-2);border-bottom:2px solid var(--accent);margin-bottom:var(--s-3)}
+
+/* − [big number] +  — the control he uses more than any other in the app, so
+   the buttons are oversized and the number is the biggest thing on screen. */
+.stepper{display:flex;align-items:center;justify-content:center;gap:var(--s-3)}
+.stepper button{width:64px;height:52px;flex:0 0 auto;border:0;cursor:pointer;
+  border-radius:var(--radius-md);background:var(--surface-3);color:var(--text-2);
+  font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center}
+.stepper input{width:8ch;min-width:0;text-align:center;border:0;border-bottom:1px solid var(--border-strong);
+  background:none;color:var(--text-1);font:inherit;font-size:34px;font-weight:var(--w-bold);
+  font-variant-numeric:tabular-nums;padding:var(--s-2) 0;outline:none}
+.stepper input:focus{border-bottom-color:var(--accent)}
+
+.gobar{display:flex;gap:var(--s-3);margin-top:var(--s-4)}
+.gobar button{flex:1;min-height:var(--tap);border:0;border-radius:var(--radius-md);
+  cursor:pointer;font-family:var(--font-display);font-weight:var(--w-bold);
+  font-size:var(--f-3);letter-spacing:var(--track-cap);color:var(--text-inverse)}
+.gobar .save{background:var(--success)}
+.gobar .clear{background:var(--info)}
+
+/* The day's sets for this exercise. Tapping one loads it into the steppers
+   above, which is how an existing set gets corrected. */
+.tset{display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) 0;
+  border-bottom:1px solid var(--border);cursor:pointer;
+  font-variant-numeric:tabular-nums;min-height:var(--tap)}
+.tset.sel{background:color-mix(in srgb, var(--accent) 14%, transparent)}
+.tset .bub{width:30px;height:30px;flex:0 0 auto;border:0;background:none;cursor:pointer;
+  color:var(--border-strong);display:flex;align-items:center;justify-content:center;padding:0}
+.tset .bub.on{color:var(--accent)}
+.tset .idx{width:2em;flex:0 0 auto;color:var(--text-muted);font-size:var(--f-2)}
+.tset .grow{flex:1}
+.tset .col{text-align:right;white-space:nowrap}
+.tset .col.w{min-width:7em}
+.tset .col.r{min-width:5em}
+.tset b{font-size:var(--f-4);font-weight:var(--w-bold);color:var(--text-2)}
+.tset .u{color:var(--text-muted);font-size:var(--f-2)}
+.tset .chk{width:var(--tap);height:var(--tap);flex:0 0 auto;border:0;background:none;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.tset .chk i{width:22px;height:22px;border-radius:var(--radius-sm);
+  box-shadow:inset 0 0 0 2px var(--border-strong);display:flex;
+  align-items:center;justify-content:center;font-size:14px;font-style:normal;line-height:1}
+.tset .chk.on i{background:var(--accent);color:var(--accent-fg);box-shadow:none}
+
+/* The previous time he did this movement, above the steppers. It is the one
+   number that decides what he loads, so it is not buried in HISTORY. */
+.lasttime{font-size:var(--f-2);color:var(--text-muted);line-height:var(--lh-body)}
+.lasttime b{color:var(--text-2);font-variant-numeric:tabular-nums}
+
+/* ══════════ THE DAY'S EXERCISES DRAWER ══════════ */
+.dwrap{position:fixed;inset:0;z-index:60;display:none}
+.dwrap.open{display:block}
+.dwrap .scrim{position:absolute;inset:0;background:var(--overlay);
+  opacity:0;transition:opacity var(--dur-med) var(--ease-out)}
+.dwrap.in .scrim{opacity:1}
+.dpanel{position:absolute;top:0;bottom:0;left:0;width:min(84vw,340px);
+  background:var(--surface-1);box-shadow:var(--e-4);display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform var(--dur-sheet) var(--ease-sheet);
+  padding-top:var(--safe-t);padding-left:var(--safe-l)}
+.dwrap.in .dpanel{transform:translateX(0)}
+.dhead{padding:var(--s-4) var(--s-4) var(--s-3)}
+.dhead b{font-family:var(--font-display);font-size:var(--f-2);letter-spacing:var(--track-cap)}
+.dhead span{display:block;font-size:var(--f-1);color:var(--text-muted);margin-top:var(--s-2)}
+.dlist{flex:1;min-height:0;overflow:auto}
+.dfoot{border-top:1px solid var(--border);padding-bottom:var(--safe-b)}
+.dfoot button{display:flex;align-items:center;gap:var(--s-3);width:100%;border:0;
+  background:none;cursor:pointer;color:var(--text-2);font:inherit;text-align:left;
+  padding:var(--s-3) var(--s-4);min-height:var(--tap)}
+.dfoot svg{width:20px;height:20px;flex:0 0 auto;color:var(--text-muted)}
+
+/* ── the repeat comparison ──
+   Its own card rather than a line inside the first exercise, because it is
+   about the whole session. Coloured by the theme's own good/bad tokens, so it
+   still reads in every skin and never carries a hex of its own. */
+.cmpcard{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-2);
+  padding:var(--s-3) var(--s-4);margin-bottom:var(--s-3);border-left:3px solid var(--text-muted)}
+.cmpcard.up{border-left-color:var(--success)}
+.cmpcard.down{border-left-color:var(--warn)}
+.cmphead{font-size:var(--f-1);color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase}
+.cmpbig{font-size:var(--f-4);font-weight:600;color:var(--text-1);margin:2px 0 3px}
+.cmpcard.up .cmpbig{color:var(--success)}
+.cmpcard.down .cmpbig{color:var(--warn)}
+.cmpsub{font-size:var(--f-1);color:var(--text-2);line-height:1.5}
+
+.cmprow{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:baseline;
+  padding:0 var(--s-4) var(--s-2);font-size:var(--f-1)}
+.cmprow .d{font-weight:600;color:var(--text-muted)}
+.cmprow.up .d{color:var(--success)}
+.cmprow.down .d{color:var(--warn)}
+.cmprow .was,.cmprow .vol{color:var(--text-muted);font-family:var(--font-mono)}
+
+/* ══════════ CALENDAR ══════════ */
+.calhead{display:flex;align-items:center;gap:var(--s-2)}
+.caltitle{flex:1;text-align:center;font-family:var(--font-display);font-weight:var(--w-bold);
+  font-size:var(--f-3);letter-spacing:var(--track-cap)}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.caldow{text-align:center;font-size:var(--f-1);color:var(--text-muted);
+  letter-spacing:var(--track-cap);padding:var(--s-2) 0}
+.calcell{min-height:46px;border:0;background:none;cursor:pointer;color:var(--text-2);
+  font:inherit;border-radius:var(--radius-sm);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;padding:var(--s-2) 0}
+.calcell.empty{visibility:hidden;pointer-events:none}
+.calcell .n{font-variant-numeric:tabular-nums;font-size:var(--f-3)}
+.calcell .dots{display:flex;gap:3px;height:6px}
+.calcell .dots i{width:6px;height:6px;border-radius:50%;display:block}
+.calcell.today .n{background:var(--accent);color:var(--accent-fg);
+  width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.calcell.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.calcell.future{color:var(--text-muted);opacity:.45}
+.calfoot{text-align:center;padding:var(--s-3);color:var(--text-muted);
+  font-size:var(--f-1);letter-spacing:var(--track-cap)}
+.calfoot b{color:var(--text-2)}
+
+/* ══════════ ANALYSIS ══════════ */
+.statrow{display:flex;justify-content:space-between;gap:var(--s-3);flex-wrap:wrap}
+.statrow span{display:flex;flex-direction:column;font-size:var(--f-1);
+  color:var(--text-muted);letter-spacing:var(--track-cap);text-transform:uppercase}
+.statrow b{font-size:var(--f-4);color:var(--text-2);font-variant-numeric:tabular-nums;
+  letter-spacing:0;text-transform:none}
+.barrow{padding:var(--s-3) 0;border-bottom:1px solid var(--border)}
+.barrow:last-child{border-bottom:0}
+.barrow .lbl{display:flex;justify-content:space-between;gap:var(--s-3);align-items:baseline}
+.barrow .lbl .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barrow .lbl .v{color:var(--text-muted);font-size:var(--f-2);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.track{height:6px;border-radius:var(--radius-full);background:var(--surface-3);
+  overflow:hidden;margin:var(--s-2) 0}
+.track>i{display:block;height:100%;background:var(--accent);border-radius:var(--radius-full)}
+.barrow .sub,.sub{font-size:var(--f-1);color:var(--text-muted)}
+
+/* ══════════ RECORDS ══════════ */
+.recline{display:flex;align-items:baseline;gap:var(--s-3);padding:var(--s-2) 0}
+.recline .k{flex:1;min-width:0;color:var(--text-muted);font-size:var(--f-2)}
+.recline .v{font-variant-numeric:tabular-nums;color:var(--text-2)}
+.recline .d{width:5.5em;text-align:right;color:var(--text-muted);font-size:var(--f-1)}
+
+/* ══════════ THE REST TIMER BAR ══════════
+   Pinned above the content, never over the SAVE button. It counts past zero
+   on purpose: a browser tab that was suspended cannot claim it was counting,
+   so it reports the truth from the clock instead. */
+.restbar{flex:0 0 auto;position:relative;display:flex;align-items:center;gap:var(--s-3);
+  padding:var(--s-2) var(--s-4);background:var(--surface-2);cursor:pointer;
+  box-shadow:var(--rim);min-height:var(--tap);overflow:hidden}
+.restbar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);
+  opacity:.16;transition:width var(--dur-fast) linear}
+.restbar .lbl{position:relative;font-family:var(--font-display);font-size:var(--f-1);
+  font-weight:var(--w-bold);letter-spacing:var(--track-cap);color:var(--text-muted)}
+.restbar .t{position:relative;flex:1;text-align:right;font-variant-numeric:tabular-nums;
+  font-size:var(--f-4);font-weight:var(--w-bold)}
+.restbar.over .fill{background:var(--warn);opacity:.28}
+.restbar.over .t{color:var(--warn)}
+
+/* ══════════ THE APP MENU ══════════ */
+.navrow{display:flex;align-items:center;gap:var(--s-3);width:100%;border:0;
+  background:none;cursor:pointer;color:var(--text-2);font:inherit;text-align:left;
+  padding:var(--s-3) var(--s-4);min-height:var(--tap)}
+.navrow.on{color:var(--accent);background:color-mix(in srgb, var(--accent) 12%, transparent)}
+.navrow svg{width:20px;height:20px;flex:0 0 auto}
+
+/* ── the import panel ── */
+.imp-stat{display:flex;justify-content:space-between;gap:var(--s-3);
+  padding:var(--s-2) 0;font-size:var(--f-2);border-bottom:1px solid var(--border)}
+.imp-stat:last-child{border-bottom:0}
+.imp-stat b{font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:var(--radius-full);background:var(--surface-3);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);width:0;
+  transition:width var(--dur-fast) linear}
+</style>
+</head>
+<body>
+<header>
+  <button class="ico mb-press mb-tap" id="drawer" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div class="logo">TRA<b>IN</b></div>
+  <div class="spacer"></div>
+  <button class="ico mb-press mb-tap" id="calBtn" aria-label="Calendar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
+  <button class="ico mb-press mb-tap" id="addBtn" aria-label="Add an exercise">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="ico mb-press mb-tap" id="moreBtn" aria-label="More">
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg></button>
+</header>
+
+<div class="datebar" id="datebar">
+  <button class="arrow mb-press mb-tap" id="prev" aria-label="Previous day">‹</button>
+  <button class="when mb-press mb-tap" id="when" aria-label="Jump to today"></button>
+  <button class="arrow mb-press mb-tap" id="next" aria-label="Next day">›</button>
+</div>
+
+<div class="tabs" id="tabs" style="display:none">
+  <button class="mb-press" data-tab="track">TRACK</button>
+  <button class="mb-press" data-tab="history">HISTORY</button>
+  <button class="mb-press" data-tab="graph">GRAPH</button>
+</div>
+
+<div class="restbar" id="restbar" style="display:none">
+  <span class="fill"></span><span class="lbl">REST</span><span class="t"></span>
+</div>
+
+<main class="mb-scroll"><div class="wrap" id="main"></div></main>
+
+<div class="dwrap" id="dwrap">
+  <div class="scrim" id="dscrim"></div>
+  <div class="dpanel">
+    <div class="dhead" id="dhead"></div>
+    <div class="dlist mb-scroll" id="dlist"></div>
+    <div class="dfoot" id="dfoot"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRAIN — the training log.
+
+   A reproduction of FitNotes v25.1 on the Motherbase foundation. The brief
+   that governs this file is train/CLAUDE.md, next to it. Read that first:
+   it says what is deliberate and what would be a bug.
+
+   Nothing in here is copied from FitNotes. What was taken from the app is its
+   schema, its labels and its behaviour — facts about how it works — and every
+   line below was written against those.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+var APP = {
+  id: 'train',
+  name: 'Train',
+  icon: '⛭',
+  blurb: 'the training log',
+  /* every type TRAIN owns. `tick` is not here: it is shared, and declaring it
+     would claim a type the master brief says belongs to everyone. */
+  types: ['excat', 'exercise', 'set', 'session', 'sgroup',
+          'program', 'progday', 'progex', 'goal'],
+};
+
+Skins.load('../shared/skins.json').then(function () { Skins.restore(APP.id); });
+Sfx.init(APP.id);
+Rec.declare(APP.id, APP.types);
+IO.register({ app: APP.id, name: APP.name, types: APP.types,
+  sheets: function () { return exportSheets(); } });
+
+/* Everything hangs off one global on purpose. `var` at the top level of a
+   classic script is a property of window; `let` and `const` are not, and the
+   test harness has to be able to reach in. */
+var TRAIN = window.TRAIN = {};
+
+/* ═══════════════════ UNITS ═══════════════════
+   Every set stores kg, the true weight, and u, the unit it was typed in.
+   Display converts. This is what let four years of mixed kg and lb entries
+   survive in one log, and it is why nothing here ever writes a converted
+   number back over a stored one. */
+var LB_PER_KG = 2.20462262185;
+var UNIT = { 0: 'kg', 1: 'lb', 2: 'lb' };   /* FitNotes: 0 metric, 1 and 2 imperial */
+
+TRAIN.toUnit = function (kg, unit) {
+  return unit === 'lb' ? kg * LB_PER_KG : kg;
+};
+TRAIN.toKg = function (v, unit) {
+  return unit === 'lb' ? v / LB_PER_KG : v;
+};
+/* Everything on screen is shown in the unit currently chosen, not the unit
+   each set was typed in. That is what FitNotes does: the stored kilograms are
+   the truth, the display setting decides how they read, and its "Change
+   Weight Unit → Convert Existing Values / Just Change Unit" dialog only makes
+   sense on those terms. It also means two units never appear on one screen,
+   which they did in the first version of this file.
+
+   `u` on a set is still recorded. It is what he typed, and it is how a set
+   entered as 500 lb can be shown as exactly 500 again rather than 226.8. */
+TRAIN.unit = function () { return Rec.setting(APP.id, 'unit') || 'lb'; };
+
+/* One decimal always, the way FitNotes prints it: 4.0 kgs, 12.5 kgs. A set
+   typed in this unit is shown back exactly, without a float's fingerprints. */
+TRAIN.showWeight = function (kg, typedIn) {
+  var unit = TRAIN.unit();
+  var v = TRAIN.toUnit(kg, unit);
+  if (typedIn === unit) v = Math.round(v * 1000) / 1000;   /* it was typed here; trust it */
+  return (Math.round(v * 10) / 10).toFixed(1);
+};
+/* FitNotes writes the unit plural in the log: "kgs", "lbs". */
+TRAIN.unitLabel = function () { return TRAIN.unit() + 's'; };
+
+/* ═══════════════════ CATEGORY COLOUR SLOTS ═══════════════════
+   A category stores a slot, never a hex. Six theme colours, each in a light
+   and a dark tint, so nine muscle groups all get something readable and every
+   one of them changes when the skin changes. */
+TRAIN.SLOTS = 12;
+TRAIN.slotColor = function (slot) {
+  var s = ((slot | 0) % TRAIN.SLOTS + TRAIN.SLOTS) % TRAIN.SLOTS;
+  var base = getComputedStyle(document.documentElement)
+    .getPropertyValue('--data-' + (s % 6 + 1)).trim();
+  if (!base) return 'var(--border-strong)';
+  /* The second tint is the same hue held further from the page background, so
+     it stays distinct in a light skin and in a dark one. */
+  return s < 6 ? base : 'color-mix(in srgb, ' + base + ' 62%, var(--text-1))';
+};
+
+/* ═══════════════════ IDS ═══════════════════
+   The clock alone is not unique: two rows made in the same millisecond derive
+   the same row id and the second silently replaces the first. Counter for
+   this session, random tail for two devices in the same millisecond. */
+var seq = 0;
+TRAIN.newId = function () {
+  return Rec.USER + '-' + Date.now().toString(36) + '-' +
+    (seq++).toString(36) + Math.random().toString(36).slice(2, 5);
+};
+
+/* ═══════════════════ THE INDEX ═══════════════════
+   Rec.all walks every row in the store for each call. With twelve thousand
+   sets that is fine once and wasteful thirty times, so TRAIN keeps its own
+   two maps and rebuilds them when the store changes. Everything on screen
+   reads these, never Rec.all. */
+TRAIN.idx = { byDate: {}, byEx: {}, built: 0 };
+
+TRAIN.reindex = function () {
+  var byDate = {}, byEx = {};
+  var all = Rec.all('set');
+  for (var i = 0; i < all.length; i++) {
+    var r = all[i], p = r.payload;
+    var rec = { key: r.key, date: r.date, ex: p.ex, kg: p.kg, r: p.r, u: p.u,
+                done: p.done, pr: p.pr, prf: p.prf, dist: p.dist, dur: p.dur,
+                note: p.note, ord: p.ord };
+    (byDate[r.date] || (byDate[r.date] = [])).push(rec);
+    (byEx[p.ex] || (byEx[p.ex] = [])).push(rec);
+  }
+  var k;
+  for (k in byDate) byDate[k].sort(function (a, b) { return (a.ord || 0) - (b.ord || 0); });
+  for (k in byEx) byEx[k].sort(function (a, b) {
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.ord || 0) - (b.ord || 0);
+  });
+  TRAIN.idx = { byDate: byDate, byEx: byEx, built: Date.now() };
+  return TRAIN.idx;
+};
+
+TRAIN.setsOn = function (date) { return TRAIN.idx.byDate[date] || []; };
+TRAIN.historyOf = function (exId) { return TRAIN.idx.byEx[exId] || []; };
+TRAIN.cats = function () { return Rec.map('excat'); };
+
+/* ── the muscle groups you start with ──
+   Categories only ever arrived with a FitNotes import. Without one there were
+   none, CREATE NEW EXERCISE refused with "add a category first", and there was
+   nowhere in the app to add one — so a fresh TRAIN could not log anything at
+   all unless you happened to own a FitNotes backup.
+
+   These are the groups FitNotes itself ships with. Each takes a theme colour
+   slot rather than a colour, so they change with the skin like everything
+   else. Made once, and only when there are none: an import brings its own and
+   must not find these sitting in the way. */
+TRAIN.DEFAULT_CATS = ['Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Core', 'Cardio'];
+
+/* ── the movements it opens with ──
+   DOCTRINE law 1: ship it full. An empty log is not a clean slate, it is a
+   chore standing between you and the first set, done standing at a rack.
+
+   A standard set of gym movements written here — not a copy of anyone's data
+   file. These are the common names of exercises, organised the way a gym is,
+   and they are deliberately generic: DOCTRINE law 2 says a default is what a
+   stranger would also want. Tom's own 270 come across from his FitNotes
+   backup and simply merge alongside these.
+
+   Every one is editable and deletable from the moment it appears. Nothing here
+   is protected, because a list you cannot prune is worse than a short one.
+
+   No EQUIPMENT BRANDS. An air bike is not an Assault Bike, and nothing here is
+   named after Life Fitness, Hammer Strength, Cybex or anyone else who makes
+   the frame — a gym that does not own that brand still has the movement, and
+   a list full of one manufacturer's names is a list that fits one gym.
+
+   Names that came from a person or a place stay. Pendlay Row, Arnold Press,
+   Pallof Press, Bulgarian Split Squat, Russian Twist: these are the actual
+   names of the movements, everyone in a gym uses them, and renaming them to
+   something more literal would only make them harder to find.
+
+   `kind` 0 is weight-and-reps, 1 is cardio (distance and time), 2 is
+   bodyweight-and-reps. `inc` is the weight step the plus button uses. */
+TRAIN.DEFAULT_EX = {
+  Chest: [
+    ['Barbell Bench Press', 0], ['Incline Barbell Bench Press', 0],
+    ['Decline Barbell Bench Press', 0], ['Dumbbell Bench Press', 0],
+    ['Incline Dumbbell Bench Press', 0], ['Dumbbell Fly', 0],
+    ['Incline Dumbbell Fly', 0], ['Cable Fly', 0], ['Cable Crossover', 0],
+    ['Chest Press Machine', 0], ['Pec Deck', 0], ['Push Up', 2],
+    ['Incline Push Up', 2], ['Decline Push Up', 2], ['Dip (Chest)', 2],
+  ],
+  Back: [
+    ['Deadlift', 0], ['Rack Pull', 0], ['Barbell Row', 0], ['Pendlay Row', 0],
+    ['T-Bar Row', 0], ['Dumbbell Row', 0], ['Chest Supported Row', 0],
+    ['Seated Cable Row', 0], ['Lat Pulldown', 0], ['Close Grip Lat Pulldown', 0],
+    ['Straight Arm Pulldown', 0], ['Pull Up', 2], ['Chin Up', 2],
+    ['Inverted Row', 2], ['Shrug', 0], ['Dumbbell Shrug', 0],
+    ['Back Extension', 2], ['Good Morning', 0],
+  ],
+  Shoulders: [
+    ['Overhead Press', 0], ['Seated Barbell Press', 0], ['Dumbbell Shoulder Press', 0],
+    ['Arnold Press', 0], ['Push Press', 0], ['Lateral Raise', 0],
+    ['Cable Lateral Raise', 0], ['Front Raise', 0], ['Rear Delt Fly', 0],
+    ['Face Pull', 0], ['Upright Row', 0], ['Shoulder Press Machine', 0],
+  ],
+  Legs: [
+    ['Back Squat', 0], ['Front Squat', 0], ['Box Squat', 0], ['Goblet Squat', 0],
+    ['Hack Squat', 0], ['Leg Press', 0], ['Bulgarian Split Squat', 0],
+    ['Walking Lunge', 0], ['Reverse Lunge', 0], ['Step Up', 0],
+    ['Romanian Deadlift', 0], ['Stiff Leg Deadlift', 0], ['Sumo Deadlift', 0],
+    ['Leg Extension', 0], ['Leg Curl', 0], ['Seated Leg Curl', 0],
+    ['Hip Thrust', 0], ['Glute Bridge', 0], ['Calf Raise', 0],
+    ['Seated Calf Raise', 0], ['Hip Abduction', 0], ['Hip Adduction', 0],
+  ],
+  Arms: [
+    ['Barbell Curl', 0], ['EZ Bar Curl', 0], ['Dumbbell Curl', 0],
+    ['Hammer Curl', 0], ['Incline Dumbbell Curl', 0], ['Preacher Curl', 0],
+    ['Concentration Curl', 0], ['Cable Curl', 0], ['Close Grip Bench Press', 0],
+    ['Skullcrusher', 0], ['Overhead Tricep Extension', 0], ['Tricep Pushdown', 0],
+    ['Rope Pushdown', 0], ['Dumbbell Kickback', 0], ['Dip (Triceps)', 2],
+    ['Wrist Curl', 0], ['Reverse Wrist Curl', 0], ['Farmer\u2019s Walk', 0],
+  ],
+  Core: [
+    ['Plank', 2], ['Side Plank', 2], ['Crunch', 2], ['Sit Up', 2],
+    ['Hanging Leg Raise', 2], ['Lying Leg Raise', 2], ['Cable Crunch', 0],
+    ['Russian Twist', 0], ['Ab Wheel Rollout', 2], ['Mountain Climber', 2],
+    ['Dead Bug', 2], ['Bird Dog', 2], ['Pallof Press', 0], ['Hollow Hold', 2],
+  ],
+  Cardio: [
+    ['Running', 1], ['Treadmill', 1], ['Walking', 1], ['Incline Walk', 1],
+    ['Cycling', 1], ['Stationary Bike', 1], ['Rowing Machine', 1],
+    ['Elliptical', 1], ['Stair Climber', 1], ['Swimming', 1],
+    ['Jump Rope', 1], ['Air Bike', 1],
+  ],
+};
+
+/* Made once, and only when there are none: an import brings its own and must
+   not find these sitting in the way. */
+TRAIN.seedCats = function () {
+  if (Object.keys(TRAIN.cats()).length) return 0;
+  var made = 0;
+  TRAIN.DEFAULT_CATS.forEach(function (nm, i) {
+    var catId = nm.toLowerCase();
+    Rec.set('excat', null, catId, { name: nm, slot: i, ord: i });
+    (TRAIN.DEFAULT_EX[nm] || []).forEach(function (row, j) {
+      var name = row[0], kind = row[1];
+      Rec.set('exercise', null, TRAIN.newId(), {
+        name: name, cat: catId, kind: kind,
+        /* 2.5 on a bar, 1 on anything you hold or hang from */
+        inc: kind === 0 ? 2.5 : 1,
+        rest: 0, unit: 0, fav: 0, note: '', graph: 0, ord: j,
+      });
+      made++;
+    });
+  });
+  TRAIN.reindex();
+  return made;
+};
+
+/* Add one by name, for the "+ New category" route out of the exercise form. */
+TRAIN.addCat = function (name) {
+  var nm = String(name || '').trim();
+  if (!nm) return null;
+  var id = nm.toLowerCase().replace(/[^a-z0-9]+/g, '-') || TRAIN.newId();
+  var all = TRAIN.cats(), ord = Object.keys(all).length;
+  Rec.set('excat', null, id, { name: nm, slot: ord % TRAIN.SLOTS, ord: ord });
+  TRAIN.reindex();
+  return id;
+};
+TRAIN.exercises = function () { return Rec.map('exercise'); };
+
+/* A day's sets, grouped into the exercises they belong to, in the order the
+   exercises were first touched that day. That order is the workout. */
+TRAIN.dayGroups = function (date) {
+  var sets = TRAIN.setsOn(date), ex = TRAIN.exercises();
+  var order = [], byEx = {};
+  for (var i = 0; i < sets.length; i++) {
+    var s = sets[i];
+    if (!byEx[s.ex]) { byEx[s.ex] = []; order.push(s.ex); }
+    byEx[s.ex].push(s);
+  }
+  return order.map(function (id) {
+    return { ex: id, def: ex[id] || { name: 'Exercise ' + id, cat: null }, sets: byEx[id] };
+  });
+};
+
+/* ═══════════════════ VOLUME ═══════════════════
+   Volume is weight times reps, summed, and it is always computed in kg then
+   displayed, so switching units never changes the number underneath. */
+TRAIN.volume = function (sets) {
+  var v = 0;
+  for (var i = 0; i < sets.length; i++) v += (sets[i].kg || 0) * (sets[i].r || 0);
+  return v;
+};
+
+/* ═══════════════════ THE TICK ═══════════════════
+   TRAIN re-asserts rather than argues. Any app may tick a training day; only
+   TRAIN gets to say whether it is true, and it says so again every time the
+   day's sets change and every time it looks at the day. Because the store
+   merges on updated_at, TRAIN's write is always the newer one.
+   See train/CLAUDE.md, "The tick". */
+TRAIN.ACTIVITY = 'training';
+TRAIN.assertTick = function (date) {
+  if (!date) return;
+  var n = TRAIN.setsOn(date).length;
+  var had = Rec.has('tick', date, TRAIN.ACTIVITY);
+  if (n > 0) {
+    var cur = Rec.get('tick', date, TRAIN.ACTIVITY);
+    if (!cur || cur.src !== APP.id || cur.qty !== n) {
+      Rec.set('activity', null, TRAIN.ACTIVITY, { name: 'Training', cat: 'body' });
+      Rec.set('tick', date, TRAIN.ACTIVITY, { src: APP.id, qty: n });
+    }
+  } else if (had) {
+    Rec.del('tick', date, TRAIN.ACTIVITY);
+  }
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   THE SQLITE READER
+
+   A FitNotes backup is its database with the extension changed: the file
+   begins "SQLite format 3". So the importer is a reader for that format,
+   written here in plain JavaScript with no library, because an importer that
+   needs the network breaks offline-first on the one job that matters most.
+
+   It reads tables. It does not run SQL, it does not use indexes, and it does
+   not write anything. Walk the b-tree from a table's root page, decode each
+   leaf cell, hand back rows.
+   ═════════════════════════════════════════════════════════════════════════ */
+var SQLiteFile = TRAIN.SQLiteFile = function (buf) {
+  this.b = new Uint8Array(buf);
+  this.dv = new DataView(buf);
+  if (this.text(0, 15) !== 'SQLite format 3')
+    throw new Error('This is not a FitNotes backup. The file does not start with "SQLite format 3".');
+  this.pageSize = this.dv.getUint16(16);
+  if (this.pageSize === 1) this.pageSize = 65536;
+  this.reserved = this.b[20];
+  this.usable = this.pageSize - this.reserved;
+  this.dec = new TextDecoder('utf-8');
+  this.master = null;
+};
+
+SQLiteFile.prototype.text = function (off, len) {
+  var s = '';
+  for (var i = 0; i < len; i++) s += String.fromCharCode(this.b[off + i]);
+  return s;
+};
+
+/* SQLite's variable length integer: seven bits a byte, high bit continues,
+   and a ninth byte contributes all eight. */
+SQLiteFile.prototype.varint = function (off) {
+  var v = 0, i, b;
+  for (i = 0; i < 8; i++) {
+    b = this.b[off + i];
+    v = v * 128 + (b & 0x7f);
+    if (!(b & 0x80)) return [v, i + 1];
+  }
+  return [v * 256 + this.b[off + 8], 9];
+};
+
+/* Page 1 carries the 100 byte file header before its b-tree header. */
+SQLiteFile.prototype.pageStart = function (n) { return (n - 1) * this.pageSize; };
+SQLiteFile.prototype.btreeStart = function (n) { return n === 1 ? 100 : this.pageStart(n); };
+
+/* A payload longer than the page keeps its first part in the cell and the
+   rest in a chain of overflow pages. The split point is fixed by the format,
+   not by taste, and getting it wrong silently truncates long text — which
+   here would mean losing the end of a set comment. */
+SQLiteFile.prototype.payload = function (off, size) {
+  var maxLocal = this.usable - 35;
+  var out, local;
+  if (size <= maxLocal) {
+    out = new Uint8Array(size);
+    out.set(this.b.subarray(off, off + size));
+    return out;
+  }
+  var minLocal = Math.floor((this.usable - 12) * 32 / 255) - 23;
+  local = minLocal + ((size - minLocal) % (this.usable - 4));
+  if (local > maxLocal) local = minLocal;
+
+  out = new Uint8Array(size);
+  out.set(this.b.subarray(off, off + local), 0);
+  var got = local;
+  var next = this.dv.getUint32(off + local);
+  while (next && got < size) {
+    var p = this.pageStart(next);
+    var take = Math.min(this.usable - 4, size - got);
+    out.set(this.b.subarray(p + 4, p + 4 + take), got);
+    got += take;
+    next = this.dv.getUint32(p);
+  }
+  return out;
+};
+
+/* A record is a header of serial types followed by the values themselves. */
+SQLiteFile.prototype.record = function (bytes) {
+  var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  var self = this;
+  function vint(off) {
+    var v = 0, i, b;
+    for (i = 0; i < 8; i++) {
+      b = bytes[off + i];
+      v = v * 128 + (b & 0x7f);
+      if (!(b & 0x80)) return [v, i + 1];
+    }
+    return [v * 256 + bytes[off + 8], 9];
+  }
+  var h = vint(0), headerEnd = h[0], p = h[1], types = [];
+  while (p < headerEnd) { var t = vint(p); types.push(t[0]); p += t[1]; }
+
+  var vals = [], off = headerEnd;
+  for (var i = 0; i < types.length; i++) {
+    var t2 = types[i], v;
+    if (t2 === 0) { v = null; }
+    else if (t2 === 1) { v = dv.getInt8(off); off += 1; }
+    else if (t2 === 2) { v = dv.getInt16(off); off += 2; }
+    else if (t2 === 3) { v = (dv.getInt8(off) << 16) | dv.getUint16(off + 1); off += 3; }
+    else if (t2 === 4) { v = dv.getInt32(off); off += 4; }
+    else if (t2 === 5) { v = dv.getInt16(off) * 4294967296 + dv.getUint32(off + 2); off += 6; }
+    else if (t2 === 6) { v = dv.getInt32(off) * 4294967296 + dv.getUint32(off + 4); off += 8; }
+    else if (t2 === 7) { v = dv.getFloat64(off); off += 8; }
+    else if (t2 === 8) { v = 0; }
+    else if (t2 === 9) { v = 1; }
+    else if (t2 >= 12 && t2 % 2 === 0) { var n = (t2 - 12) / 2; v = bytes.subarray(off, off + n); off += n; }
+    else { var n2 = (t2 - 13) / 2; v = self.dec.decode(bytes.subarray(off, off + n2)); off += n2; }
+    vals.push(v);
+  }
+  return vals;
+};
+
+/* Walk a table b-tree and call back with [rowid, values] for every leaf cell. */
+SQLiteFile.prototype.walk = function (page, fn, seen) {
+  seen = seen || {};
+  if (!page || seen[page]) return;          /* a corrupt file must not loop forever */
+  seen[page] = 1;
+  var s = this.btreeStart(page), type = this.b[s];
+  var count = this.dv.getUint16(s + 3);
+  /* A cell pointer is an offset from the start of its own page, not from the
+     start of the file. Page 1 hides that bug, because its page starts at byte
+     zero — every other page reads garbage without this. */
+  var base = this.pageStart(page);
+  var i, ptr, cell;
+
+  if (type === 0x0d) {                       /* leaf table */
+    for (i = 0; i < count; i++) {
+      ptr = base + this.dv.getUint16(s + 8 + i * 2);
+      var a = this.varint(ptr), size = a[0];
+      var b = this.varint(ptr + a[1]), rowid = b[0];
+      fn(rowid, this.record(this.payload(ptr + a[1] + b[1], size)));
+    }
+  } else if (type === 0x05) {                /* interior table */
+    for (i = 0; i < count; i++) {
+      cell = base + this.dv.getUint16(s + 12 + i * 2);
+      this.walk(this.dv.getUint32(cell), fn, seen);
+    }
+    this.walk(this.dv.getUint32(s + 8), fn, seen);   /* the rightmost child */
+  }
+  /* index pages are never walked: TRAIN reads tables only */
+};
+
+/* sqlite_master is a table like any other, rooted at page 1. */
+SQLiteFile.prototype.schema = function () {
+  if (this.master) return this.master;
+  var out = {}, self = this;
+  this.walk(1, function (rowid, v) {
+    if (v[0] === 'table' && v[1]) out[v[1]] = { root: v[3], sql: v[4] || '' };
+  });
+  this.master = out;
+  return out;
+};
+
+/* Column names, and which column is the rowid in disguise.
+   `_id INTEGER PRIMARY KEY` is stored as NULL in the record; its real value
+   is the cell's rowid. Miss that and every id in the file comes back empty. */
+SQLiteFile.prototype.columns = function (sql) {
+  var open = sql.indexOf('(');
+  if (open < 0) return { names: [], pk: -1 };
+  var depth = 0, body = '', i;
+  for (i = open; i < sql.length; i++) {
+    var ch = sql[i];
+    if (ch === '(') { depth++; if (depth === 1) continue; }
+    if (ch === ')') { depth--; if (depth === 0) break; }
+    body += ch;
+  }
+  var parts = [], buf = '', d = 0;
+  for (i = 0; i < body.length; i++) {
+    var c = body[i];
+    if (c === '(') d++;
+    if (c === ')') d--;
+    if (c === ',' && d === 0) { parts.push(buf); buf = ''; continue; }
+    buf += c;
+  }
+  if (buf.trim()) parts.push(buf);
+
+  var names = [], pk = -1;
+  parts.forEach(function (p) {
+    var t = p.trim();
+    if (!t) return;
+    if (/^(PRIMARY|FOREIGN|UNIQUE|CHECK|CONSTRAINT)\b/i.test(t)) return;
+    var m = t.match(/^[`"\[]?([A-Za-z_][A-Za-z0-9_]*)[`"\]]?/);
+    if (!m) return;
+    if (/\bINTEGER\s+PRIMARY\s+KEY\b/i.test(t)) pk = names.length;
+    names.push(m[1]);
+  });
+  return { names: names, pk: pk };
+};
+
+/** Every row of one table, as plain objects. */
+SQLiteFile.prototype.table = function (name) {
+  var s = this.schema()[name];
+  if (!s) return null;                       /* older backups genuinely lack tables */
+  var cols = this.columns(s.sql), out = [];
+  this.walk(s.root, function (rowid, vals) {
+    var o = {};
+    for (var i = 0; i < cols.names.length; i++) {
+      o[cols.names[i]] = (i === cols.pk && vals[i] == null) ? rowid : vals[i];
+    }
+    out.push(o);
+  });
+  return out;
+};
+
+/* ═════════════════════════════════════════════════════════════════════════
+   THE FITNOTES IMPORTER
+
+   Merges, never replaces. Every row it builds carries a stable id derived
+   from the FitNotes row id, and an updated_at taken from the training date
+   rather than from the clock. Two consequences, both wanted:
+
+     • importing the same backup twice changes nothing
+     • anything edited in TRAIN afterwards is newer, so a re-import cannot
+       walk over work done since
+
+   One way only. There is no export back into FitNotes.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* FitNotes stores a colour as a signed 32-bit ARGB integer. */
+function argbToRgb(n) {
+  var v = (n >>> 0) & 0xffffff;
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+/* Map an imported colour onto the nearest of the twelve theme slots, so his
+   existing category colours survive as an assignment he can then change. The
+   comparison is against the default skin, once, so it does not shift with
+   whatever theme happens to be active during the import. */
+function slotRgb(s) {
+  var c = hexToRgb(getComputedStyle(document.documentElement)
+    .getPropertyValue('--data-' + (s % 6 + 1)).trim());
+  if (!c) return null;
+  return s < 6 ? c : [c[0] * 0.62 + 40, c[1] * 0.62 + 40, c[2] * 0.62 + 40];
+}
+function slotDistance(s, rgb) {
+  var c = slotRgb(s);
+  if (!c) return Infinity;
+  return Math.pow(c[0] - rgb[0], 2) + Math.pow(c[1] - rgb[1], 2) + Math.pow(c[2] - rgb[2], 2);
+}
+/* Nearest wins, but only once. Nine of his categories were picked by eye in
+   FitNotes and three of them are near-identical greens: matching each one to
+   its nearest slot independently put Triceps, Back and Abs on the same colour,
+   which is worse than useless on a rail you are meant to follow down a day.
+   So a slot is claimed, and the next category takes its nearest free one. */
+function assignSlots(list) {
+  var taken = {}, out = {};
+  list.forEach(function (item) {
+    var best = -1, bestD = Infinity;
+    for (var s = 0; s < TRAIN.SLOTS; s++) {
+      if (taken[s]) continue;
+      var d = slotDistance(s, item.rgb);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    if (best < 0) best = Object.keys(out).length % TRAIN.SLOTS;  /* more than twelve: repeats resume */
+    taken[best] = 1;
+    out[item.id] = best;
+  });
+  return out;
+}
+function hexToRgb(h) {
+  if (!h) return null;
+  h = h.trim();
+  var m = h.match(/^#?([0-9a-f]{6})$/i);
+  if (m) { var n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  m = h.match(/rgba?\(([^)]+)\)/);
+  if (m) { var p = m[1].split(','); return [parseFloat(p[0]), parseFloat(p[1]), parseFloat(p[2])]; }
+  return null;
+}
+
+/* FitNotes' exercise_type_id. Two of these are certain from his own data:
+   0 is everything with a weight and reps, 1 is the cardio exercises. The
+   others appear a handful of times and their exact ordinals could not be
+   pinned down from the file alone, so the raw id is kept and the editor falls
+   back to showing whichever of weight, reps, distance and time has a value.
+   Nothing is lost; see train/CLAUDE.md. */
+var KIND = { 0: 'weight_reps', 1: 'distance_time' };
+
+TRAIN.importFitNotes = function (buf, onProgress, opts) {
+  var db = new SQLiteFile(buf);
+  var log = onProgress || function () {};
+  var rows = [], stats = {};
+  var USER = Rec.USER;
+
+  function rowId(type, date, key) {
+    var clean = function (s) { return String(s == null ? '' : s).replace(/\|/g, '-'); };
+    return USER + '|' + clean(type) + '|' + clean(date || '') + '|' + clean(key);
+  }
+  /* Stable, and older than anything he does in TRAIN from here on. */
+  function stampFor(date) {
+    return (date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '2000-01-01') + 'T12:00:00.000Z';
+  }
+  function push(type, date, key, payload, stamp) {
+    rows.push({ id: rowId(type, date, key), user_id: USER, type: type,
+      date: date || null, key: String(key), payload: payload,
+      updated_at: stamp || stampFor(date), deleted: false, by: APP.id });
+  }
+
+  /* ── categories ── */
+  log('categories');
+  var cats = db.table('Category') || [];
+  cats.sort(function (a, b) { return (a.sort_order || 0) - (b.sort_order || 0) || a._id - b._id; });
+  var catSlots = assignSlots(cats.map(function (c) {
+    return { id: c._id, rgb: argbToRgb(c.colour || 0) };
+  }));
+  cats.forEach(function (c) {
+    push('excat', null, 'fn' + c._id, {
+      name: c.name, slot: catSlots[c._id],
+      ord: c.sort_order || 0, fnColour: c.colour,
+    });
+  });
+  stats.categories = cats.length;
+  stats.distinctColours = Object.keys(cats.reduce(function (o, c) {
+    o[catSlots[c._id]] = 1; return o;
+  }, {})).length;
+
+  /* ── exercises ── */
+  log('exercises');
+  var exs = db.table('exercise') || [];
+  exs.forEach(function (e) {
+    push('exercise', null, 'fn' + e._id, {
+      name: e.name,
+      cat: e.category_id != null ? 'fn' + e.category_id : null,
+      kind: KIND[e.exercise_type_id] || null,
+      fnKind: e.exercise_type_id,
+      note: e.notes || '',
+      inc: e.weight_increment != null ? e.weight_increment : null,
+      rest: e.default_rest_time != null ? e.default_rest_time : null,
+      unit: UNIT[e.weight_unit_id] || null,
+      graph: e.default_graph_id != null ? e.default_graph_id : null,
+      fav: e.is_favourite ? 1 : 0,
+    });
+  });
+  stats.exercises = exs.length;
+
+  /* ── set comments ──
+     owner_type_id 1 is a comment on a set. There are thousands of them and
+     they are a third of the record, so they are attached to their set rather
+     than kept as rows of their own. */
+  log('comments');
+  var comments = db.table('Comment') || [];
+  var setNote = {}, dayNote = {}, nSetNotes = 0;
+  comments.forEach(function (c) {
+    if (c.owner_type_id === 1) { setNote[c.owner_id] = c.comment; nSetNotes++; }
+    else { dayNote[c.date] = c.comment; }
+  });
+  stats.setComments = nSetNotes;
+
+  /* ── supersets ── */
+  log('supersets');
+  var groups = db.table('WorkoutGroup') || [];
+  var groupEx = db.table('WorkoutGroupExercise') || [];
+  var members = {};
+  groupEx.forEach(function (g) {
+    (members[g.workout_group_id] || (members[g.workout_group_id] = [])).push('fn' + g.exercise_id);
+  });
+  /* A superset's colour may repeat a category's: they never share a rail, so
+     a collision here costs nothing and nearest is the honest answer. */
+  var nearest = function (rgb) {
+    var best = 0, bestD = Infinity;
+    for (var s = 0; s < TRAIN.SLOTS; s++) {
+      var d = slotDistance(s, rgb);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return best;
+  };
+  groups.forEach(function (g) {
+    push('sgroup', g.date, 'fn' + g._id, {
+      name: g.name,
+      slot: nearest(argbToRgb(g.colour || 0)),
+      ex: members[g._id] || [],
+      jump: g.auto_jump_enabled ? 1 : 0,
+      resthold: g.rest_timer_auto_start_enabled ? 1 : 0,
+    });
+  });
+  stats.supersets = groups.length;
+
+  /* ── the training log ──
+     One row per set, keyed on the FitNotes row id so a second import is a
+     no-op. `ord` is the position within that exercise on that day, which
+     FitNotes expresses as the order of the ids. */
+  log('sets');
+  var tl = db.table('training_log') || [];
+  tl.sort(function (a, b) {
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : a._id - b._id;
+  });
+  var ordCount = {}, days = {}, prs = 0, kgSets = 0, lbSets = 0;
+  tl.forEach(function (t) {
+    var okey = t.date + '|' + t.exercise_id;
+    ordCount[okey] = (ordCount[okey] || 0) + 1;
+    var unit = UNIT[t.unit] || 'kg';
+    if (unit === 'kg') kgSets++; else lbSets++;
+    if (t.is_personal_record) prs++;
+    days[t.date] = 1;
+    push('set', t.date, 'fn' + t._id, {
+      ex: 'fn' + t.exercise_id,
+      kg: t.metric_weight || 0,
+      r: t.reps || 0,
+      u: unit,
+      done: t.is_complete ? 1 : 0,
+      pr: t.is_personal_record ? 1 : 0,
+      prf: t.is_personal_record_first ? 1 : 0,
+      dist: t.distance || 0,
+      dur: t.duration_seconds || 0,
+      note: setNote[t._id] || '',
+      ord: ordCount[okey],
+    });
+  });
+  stats.sets = tl.length;
+  stats.days = Object.keys(days).length;
+  stats.prSets = prs;
+  stats.kgSets = kgSets;
+  stats.lbSets = lbSets;
+
+  /* ── the day: when the workout started and ended, and its comment ── */
+  log('workout times');
+  var times = db.table('WorkoutTime') || [];
+  var byDate = {};
+  times.forEach(function (w) {
+    byDate[w.workout_date] = { start: w.start_date_time || null, end: w.end_date_time || null };
+  });
+  Object.keys(dayNote).forEach(function (d) {
+    var k = String(d).slice(0, 10);
+    byDate[k] = byDate[k] || {};
+    byDate[k].note = dayNote[d];
+  });
+  Object.keys(byDate).forEach(function (d) {
+    push('session', d, '', byDate[d]);
+  });
+  stats.workoutTimes = times.length;
+
+  /* ── routines ── */
+  log('routines');
+  var routines = db.table('Routine') || [];
+  var sections = db.table('RoutineSection') || [];
+  var secEx = db.table('RoutineSectionExercise') || [];
+  var secSets = db.table('RoutineSectionExerciseSet') || [];
+  var setsFor = {};
+  secSets.forEach(function (s) {
+    (setsFor[s.routine_section_exercise_id] || (setsFor[s.routine_section_exercise_id] = [])).push({
+      kg: s.metric_weight || 0, r: s.reps || 0, u: UNIT[s.unit] || 'kg',
+      dist: s.distance || 0, dur: s.duration_seconds || 0, ord: s.sort_order || 0,
+    });
+  });
+  routines.forEach(function (r) {
+    push('program', null, 'fn' + r._id, { name: r.name, ord: r.sort_order || 0 });
+  });
+  sections.forEach(function (s) {
+    push('progday', null, 'fn' + s.routine_id + '.' + s._id,
+      { program: 'fn' + s.routine_id, name: s.name, ord: s.sort_order || 0 });
+  });
+  secEx.forEach(function (e) {
+    var list = (setsFor[e._id] || []).sort(function (a, b) { return a.ord - b.ord; });
+    push('progex', null, 'fn' + e.routine_section_id + '.' + e._id, {
+      day: 'fn' + e.routine_section_id, ex: 'fn' + e.exercise_id,
+      ord: e.sort_order || 0, fill: e.populate_sets_type || 0, sets: list,
+    });
+  });
+  stats.routines = routines.length;
+
+  /* ── goals ── */
+  log('goals');
+  var goals = db.table('Goal') || [];
+  goals.forEach(function (g) {
+    push('goal', null, 'fn' + g._id, {
+      kind: g.type_id, ex: g.exercise_id ? 'fn' + g.exercise_id : null,
+      kg: g.metric_weight || 0, r: g.reps || 0, u: UNIT[g.unit] || 'kg',
+      title: g.title || '', from: g.start_date || null, to: g.target_date || null,
+      dist: g.distance || 0, dur: g.duration_seconds || 0, ord: g.sort_order || 0,
+    });
+  });
+  stats.goals = goals.length;
+
+  /* ── the gym: plates and bars are configuration, not records ── */
+  log('settings');
+  var plates = (db.table('Plate') || []).map(function (p) {
+    return { kg: p.unit === 0 ? p.weight : p.weight / LB_PER_KG, w: p.weight,
+             u: UNIT[p.unit] || 'kg', n: p.count, on: p.enabled ? 1 : 0,
+             colour: p.colour, wr: p.width_ratio, hr: p.height_ratio };
+  });
+  var bars = (db.table('Barbell') || []).map(function (b) {
+    return { w: b.weight, u: UNIT[b.unit] || 'kg', ex: b.exercise_id || 0 };
+  });
+  stats.plates = plates.length;
+  stats.bars = bars.length;
+
+  /* Body weight and measurements are STATUS's, not TRAIN's. They are counted
+     so the panel can offer them, and deliberately not imported here. */
+  var bodyRows = (db.table('MeasurementRecord') || []).length +
+                 (db.table('BodyWeight') || []).length;
+  stats.bodyRowsSkipped = bodyRows;
+
+  /* ── one write ──
+     Rec.set announces after every row, which for twelve thousand sets would
+     redraw the screen twelve thousand times. merge writes them all and tells
+     the app once.
+
+     `defer` hands the rows back instead, so the async wrapper can write them
+     in chunks and let the phone paint between them. */
+  log('saving');
+  stats.rowsBuilt = rows.length;
+
+  /* Everything that has to happen once the rows are in, whichever path put
+     them there. */
+  function finishImport() {
+    applySettings();
+    TRAIN.reindex();
+    Object.keys(days).forEach(TRAIN.assertTick);
+    return stats;
+  }
+
+  if (opts && opts.defer) {
+    stats.rowsWritten = 0;
+    return { rows: rows, stats: stats, days: days, finish: finishImport };
+  }
+  stats.rowsWritten = Rec.merge(rows);
+  return finishImport();
+
+  function applySettings() {
+  if (plates.length) Rec.setting(APP.id, 'plates', plates);
+  if (bars.length) Rec.setting(APP.id, 'bars', bars);
+
+  /* FitNotes' own settings, for the ones TRAIN has an equivalent for. The
+     display unit is left alone: it is asked for on first run and is his
+     choice, not the file's. */
+  var fs = (db.table('settings') || [])[0];
+  if (fs) {
+    if (fs.rest_timer_seconds != null) Rec.setting(APP.id, 'restSeconds', fs.rest_timer_seconds);
+    if (fs.rest_timer_auto_start != null) Rec.setting(APP.id, 'restAuto', fs.rest_timer_auto_start ? 1 : 0);
+    if (fs.rest_timer_vibrate != null) Rec.setting(APP.id, 'restVibrate', fs.rest_timer_vibrate ? 1 : 0);
+    if (fs.rest_timer_sound != null) Rec.setting(APP.id, 'restSound', fs.rest_timer_sound ? 1 : 0);
+    if (fs.weight_increment != null) Rec.setting(APP.id, 'increment', fs.weight_increment);
+    if (fs.mark_sets_complete != null) Rec.setting(APP.id, 'markComplete', fs.mark_sets_complete ? 1 : 0);
+    if (fs.track_personal_records != null) Rec.setting(APP.id, 'trackPRs', fs.track_personal_records ? 1 : 0);
+    if (fs.auto_select_next_set != null) Rec.setting(APP.id, 'autoNext', fs.auto_select_next_set ? 1 : 0);
+    if (fs.keep_screen_on != null) Rec.setting(APP.id, 'keepAwake', fs.keep_screen_on ? 1 : 0);
+    if (fs.first_day_of_week != null) Rec.setting(APP.id, 'weekStart', fs.first_day_of_week);
+    if (fs.estimated_1rm_max_reps_to_include != null)
+      Rec.setting(APP.id, 'e1rmMaxReps', fs.estimated_1rm_max_reps_to_include);
+    if (fs.workout_timer_auto_start_enabled != null)
+      Rec.setting(APP.id, 'workoutTimerAuto', fs.workout_timer_auto_start_enabled ? 1 : 0);
+    stats.settings = 1;
+  }
+  }
+};
+
+/* The same import, in slices, so the phone can paint between them. The rows
+   are built in one pass and then written a few hundred at a time: writing is
+   where the seconds go, because every row is its own storage entry. */
+TRAIN.importFitNotesAsync = function (buf, onStep) {
+  var CHUNK = 400;
+  var step = onStep || function () { return Promise.resolve(); };
+  /* Each chunk announces, and every announce would otherwise reindex and
+     redraw the whole app. Thirty-three of those during one import is most of
+     the cost of the import. */
+  TRAIN.importing = true;
+  var done = function (v) { TRAIN.importing = false; return v; };
+  var failed = function (e) { TRAIN.importing = false; throw e; };
+  return Promise.resolve()
+    .then(function () { return step('categories'); })
+    .then(function () {
+      var held = TRAIN.importFitNotes(buf, function () {}, { defer: true });
+      var rows = held.rows, i = 0, written = 0;
+      var steps = ['exercises', 'comments', 'supersets', 'sets', 'workout times',
+                   'routines', 'goals', 'settings', 'saving'];
+      function slice() {
+        if (i >= rows.length) {
+          held.stats.rowsWritten = written;
+          return Promise.resolve(held.finish());
+        }
+        written += Rec.merge(rows.slice(i, i + CHUNK));
+        i += CHUNK;
+        var pos = Math.min(steps.length - 1, Math.floor((i / rows.length) * steps.length));
+        return step(steps[pos]).then(slice);
+      }
+      return slice();
+    })
+    .then(done, failed);
+};
+
+/* ═══════════════════ THE IMPORT PANEL ═══════════════════ */
+/* ═════════════════ IMPORTING FROM ANYWHERE ELSE ═════════════════
+   The FitNotes importer reads that app's SQLite file and nothing else. Every
+   other training app exports a spreadsheet, and they all export very nearly
+   the same one: a row per set, with the date, the movement, the weight and the
+   reps. Only the column names differ.
+
+   So rather than a parser per app, one parser and a table of what each app
+   calls things. Strong says "Exercise Name", Hevy says "exercise_title",
+   FitNotes says "Exercise". They all mean the same column.
+
+   Anything it cannot match, it says so and imports what it could rather than
+   refusing the file. A log that is 90% across beats a log that is 0% across
+   with a tidy error message.                                                */
+
+/* A real CSV reader: quoted fields, commas and newlines inside quotes, and ""
+   as an escaped quote. Splitting on commas loses every exercise with a comma
+   in its name, which is most cable variations. */
+TRAIN.parseCsv = function (text) {
+  var rows = [], row = [], cur = '', q = false, i = 0;
+  text = String(text || '').replace(/\r\n?/g, '\n');
+  for (; i < text.length; i++) {
+    var c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(function (r) { return r.some(function (x) { return String(x).trim() !== ''; }); });
+};
+
+/* What each app calls each column. Matched case- and punctuation-insensitively,
+   longest alias first so "weight_kg" wins over "weight". */
+TRAIN.CSV_ALIASES = {
+  date: ['date', 'workoutdate', 'starttime', 'start', 'datetime', 'day'],
+  ex:   ['exercisename', 'exercisetitle', 'exercise', 'movement', 'name'],
+  cat:  ['category', 'musclegroup', 'bodypart', 'muscle'],
+  kg:   ['weightkg', 'weightlbs', 'weightlb', 'weight'],
+  reps: ['reps', 'repetitions', 'rep', 'quantity'],
+  dist: ['distancekm', 'distancemiles', 'distance'],
+  dur:  ['durationseconds', 'seconds', 'duration', 'time'],
+  note: ['exercisenotes', 'setnotes', 'comment', 'notes', 'note'],
+};
+var csvKey = function (h) { return String(h || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+
+/** Work out which column is which, and which unit the weights are in. */
+TRAIN.mapCsv = function (headers) {
+  var keys = headers.map(csvKey), map = {}, used = {};
+  Object.keys(TRAIN.CSV_ALIASES).forEach(function (field) {
+    var best = -1, bestLen = -1;
+    TRAIN.CSV_ALIASES[field].forEach(function (alias) {
+      for (var i = 0; i < keys.length; i++) {
+        if (used[i] || keys[i] !== alias) continue;
+        if (alias.length > bestLen) { best = i; bestLen = alias.length; }
+      }
+    });
+    if (best > -1) { map[field] = best; used[best] = 1; }
+  });
+  /* lbs unless the header says otherwise, which is what a bare "Weight" means
+     in every export that does not say */
+  var wh = map.kg != null ? keys[map.kg] : '';
+  map.unit = /kg/.test(wh) ? 'kg' : 'lb';
+  map.miles = map.dist != null && /mile/.test(keys[map.dist]);
+  return map;
+};
+
+/* Dates arrive as 2024-01-15, 2024-01-15 09:30:00, 15/01/2024 and worse.
+   Anything with a leading ISO date is taken at its word; the rest goes through
+   Date.parse and comes back as the local calendar day. */
+TRAIN.csvDate = function (v) {
+  var t = String(v || '').trim();
+  if (!t) return null;
+  var iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return iso[0];
+  var ms = Date.parse(t);
+  if (!isFinite(ms)) return null;
+  var d = new Date(ms);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+
+/** Bring a parsed spreadsheet in. Returns what it did, in plain counts. */
+TRAIN.importCsv = function (grid) {
+  var out = { sets: 0, exercises: 0, cats: 0, days: 0, skipped: 0, unit: 'lb' };
+  if (!grid || grid.length < 2) { out.error = 'That file has no rows in it.'; return out; }
+  var map = TRAIN.mapCsv(grid[0]);
+  out.unit = map.unit;
+  if (map.date == null || map.ex == null) {
+    out.error = 'Could not find a date column and an exercise column. ' +
+      'Found: ' + grid[0].filter(Boolean).join(', ');
+    return out;
+  }
+
+  /* index what is already here by name, so a second import of the same file
+     lands on the same rows instead of doubling everything */
+  var cats = TRAIN.cats(), exs = TRAIN.exercises();
+  var catByName = {}, exByName = {};
+  Object.keys(cats).forEach(function (k) { catByName[String(cats[k].name).toLowerCase()] = k; });
+  Object.keys(exs).forEach(function (k) { exByName[String(exs[k].name).toLowerCase()] = k; });
+
+  var seen = {}, days = {};
+  grid.slice(1).forEach(function (r) {
+    var date = TRAIN.csvDate(r[map.date]);
+    var name = String(r[map.ex] == null ? '' : r[map.ex]).trim();
+    if (!date || !name) { out.skipped++; return; }
+
+    var catName = map.cat != null ? String(r[map.cat] || '').trim() : '';
+    var catId = null;
+    if (catName) {
+      catId = catByName[catName.toLowerCase()];
+      if (!catId) {
+        catId = catName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || TRAIN.newId();
+        Rec.set('excat', null, catId, { name: catName, slot: Object.keys(catByName).length % TRAIN.SLOTS, ord: Object.keys(catByName).length });
+        catByName[catName.toLowerCase()] = catId; out.cats++;
+      }
+    }
+
+    var exId = exByName[name.toLowerCase()];
+    if (!exId) {
+      exId = TRAIN.newId();
+      Rec.set('exercise', null, exId, {
+        name: name, cat: catId, kind: 0, inc: 2.5, rest: 0, unit: 0,
+        fav: 0, note: '', graph: 0, ord: 0,
+      });
+      exByName[name.toLowerCase()] = exId; out.exercises++;
+    }
+
+    var w = map.kg != null ? parseFloat(r[map.kg]) : 0;
+    var reps = map.reps != null ? parseInt(r[map.reps], 10) : 0;
+    var dist = map.dist != null ? parseFloat(r[map.dist]) : 0;
+    var dur = map.dur != null ? parseFloat(r[map.dur]) : 0;
+    if (!isFinite(w)) w = 0;
+    if (!isFinite(reps)) reps = 0;
+    if (!isFinite(dist)) dist = 0;
+    if (!isFinite(dur)) dur = 0;
+    if (!w && !reps && !dist && !dur) { out.skipped++; return; }
+
+    /* Every set is stored in kilograms, whatever the file was written in. */
+    var kg = map.unit === 'kg' ? w : TRAIN.toKg(w, 'lb');
+
+    /* A stable id from the row's own contents: the same file imported twice
+       writes the same rows, which is what makes this safe to repeat. */
+    seen[date] = (seen[date] || 0) + 1;
+    var key = 'csv-' + date + '-' + exId + '-' + seen[date];
+    Rec.set('set', date, key, {
+      ex: exId, kg: kg, r: reps, u: map.unit, done: 1, pr: 0, prf: 0,
+      dist: map.miles ? dist * 1.609344 : dist, dur: Math.round(dur),
+      note: map.note != null ? String(r[map.note] || '').trim() : '',
+      ord: seen[date],
+    });
+    days[date] = 1; out.sets++;
+  });
+
+  TRAIN.reindex();
+  Object.keys(days).forEach(function (d) { TRAIN.assertTick(d); });
+  TRAIN.recomputePRs();
+  out.days = Object.keys(days).length;
+  return out;
+};
+
+TRAIN.importPanel = function () {
+  UI.dialog({
+    title: 'IMPORT A TRAINING LOG', width: 460,
+    body: function (b) {
+      var p = UI.el('div', 'empty');
+      p.innerHTML =
+        '<b>From FitNotes.</b> Settings \u25b8 Backup \u25b8 Backup Now, then get the ' +
+        '<b>.fitnotes</b> file onto this device. Everything comes across: every set, ' +
+        'every comment, your exercises, categories, workout times, supersets and ' +
+        'routines.<br><br>' +
+        '<b>From anything else.</b> Export a <b>.csv</b> and pick it here. Strong, Hevy, ' +
+        'JEFIT and most other logs export a row per set, and they all name the columns ' +
+        'slightly differently \u2014 this reads whichever names yours used. It needs a ' +
+        'date column and an exercise column; weight, reps, distance, time, category and ' +
+        'notes come across when they are there.<br><br>' +
+        'Importing <b>merges</b>. The same file twice changes nothing, and anything ' +
+        'you have logged in TRAIN since is never overwritten.<br><br>' +
+        '<b>It only goes one way.</b> There is no export back.<br><br>' +
+        'Body weight and measurements are not imported. Those belong to STATUS.';
+      b.appendChild(p);
+
+      var bar = UI.el('div', 'bar'); bar.style.marginTop = 'var(--s-4)';
+      var fill = UI.el('i'); bar.appendChild(fill); bar.style.display = 'none';
+      b.appendChild(bar);
+
+      var out = UI.el('div'); out.style.marginTop = 'var(--s-3)';
+      b.appendChild(out);
+
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.fitnotes,.db,.sqlite,.csv,text/csv,application/octet-stream';
+      input.style.display = 'none';
+      b.appendChild(input);
+
+      var steps = ['categories', 'exercises', 'comments', 'supersets', 'sets',
+                   'workout times', 'routines', 'goals', 'settings', 'saving'];
+      /* The import is thousands of rows and on a Galaxy A10 it is tens of
+         seconds. Run synchronously it freezes the screen with the progress
+         bar stuck at zero, which reads as a crash. So each phase yields to
+         the browser before the next one starts: the work is the same, but
+         the bar moves and the phone still looks alive. */
+      input.onchange = function () {
+        var f = input.files && input.files[0];
+        if (!f) return;
+        bar.style.display = '';
+        pick.disabled = true;
+        out.innerHTML = '<div class="empty">reading ' + UI.esc(f.name) + '…</div>';
+        var fr = new FileReader();
+        fr.onerror = function () {
+          pick.disabled = false;
+          out.innerHTML = '<div class="empty">Could not read that file.</div>';
+        };
+
+        /* A spreadsheet is a different job from a database, so it takes a
+           different reader and a different parser. Decided by the file, not by
+           trying one and catching the explosion. */
+        if (/\.csv$/i.test(f.name) || f.type === 'text/csv') {
+          var tr = new FileReader();
+          tr.onerror = fr.onerror;
+          tr.onload = function () {
+            var res;
+            try { res = TRAIN.importCsv(TRAIN.parseCsv(tr.result)); }
+            catch (e) { res = { error: e.message || 'Could not read that spreadsheet.' }; }
+            fill.style.width = '100%';
+            pick.disabled = false;
+            if (res.error) {
+              out.innerHTML = '<div class="empty">' + UI.esc(res.error) + '</div>';
+              Mobile.feedback('error');
+              return;
+            }
+            out.innerHTML = '<div class="empty"><b>' + res.sets + '</b> sets across <b>' +
+              res.days + '</b> days.<br>' + res.exercises + ' new exercises, ' +
+              res.cats + ' new categories.<br>Weights read as <b>' + res.unit + '</b>.' +
+              (res.skipped ? '<br>' + res.skipped + ' rows had no usable numbers and were left out.' : '') +
+              '</div>';
+            Mobile.feedback('complete');
+            draw();
+          };
+          tr.readAsText(f);
+          return;
+        }
+
+        fr.onload = function () {
+          var yield_ = function (step) {
+            var i = steps.indexOf(step);
+            fill.style.width = Math.round(((i + 1) / steps.length) * 100) + '%';
+            out.innerHTML = '<div class="empty">' + UI.esc(step) + '…</div>';
+            return new Promise(function (res) { setTimeout(res, 0); });
+          };
+          TRAIN.importFitNotesAsync(fr.result, yield_).then(function (stats) {
+            fill.style.width = '100%';
+            out.innerHTML = TRAIN.statsHtml(stats);
+            pick.disabled = false;
+            Mobile.feedback('complete');
+            draw();
+          }, function (e) {
+            bar.style.display = 'none';
+            pick.disabled = false;
+            out.innerHTML = '<div class="empty"><b>Import failed.</b><br>' +
+              UI.esc(e.message || String(e)) + '</div>';
+            console.error(e);
+          });
+        };
+        fr.readAsArrayBuffer(f);
+      };
+
+      var pick = UI.el('button', 'mb-btn mb-press mb-tap');
+      pick.textContent = 'CHOOSE A .FITNOTES FILE';
+      pick.style.marginTop = 'var(--s-4)';
+      pick.style.width = '100%';
+      pick.onclick = function () { input.click(); };
+      b.appendChild(pick);
+    },
+    actions: [{ label: 'CLOSE' }],
+  });
+};
+
+TRAIN.statsHtml = function (s) {
+  var line = function (k, v) {
+    return '<div class="imp-stat"><span>' + k + '</span><b>' +
+      (typeof v === 'number' ? v.toLocaleString() : v) + '</b></div>';
+  };
+  return line('Sets', s.sets) + line('Workout days', s.days) +
+    line('Exercises', s.exercises) + line('Categories', s.categories) +
+    line('Set comments', s.setComments) + line('Workout timings', s.workoutTimes) +
+    line('Supersets', s.supersets) + line('Personal records', s.prSets) +
+    line('Entered in kg / lb', s.kgSets + ' / ' + s.lbSets) +
+    line('Routines', s.routines) +
+    line('Rows written', s.rowsWritten + ' of ' + s.rowsBuilt);
+};
+
+/* ═══════════════════ THE DAY ═══════════════════ */
+TRAIN.date = Day.today();
+
+/* The marker that says this set carries a comment. Four thousand of his sets
+   have one, so it needed to be visible without taking a line each. */
+var BUBBLE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">' +
+  '<path d="M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V5a1 1 0 0 1 1-1z"/></svg>';
+
+TRAIN.go = function (date) {
+  if (date > Day.today()) return;            /* the future is not a record */
+  TRAIN.date = date;
+  draw();
+};
+
+function drawDateBar() {
+  var w = document.getElementById('when');
+  var d = TRAIN.date, label;
+  if (Day.isToday(d)) label = 'TODAY';
+  else if (d === Day.shift(Day.today(), -1)) label = 'YESTERDAY';
+  else {
+    var dt = new Date(d + 'T12:00:00');
+    label = dt.toLocaleDateString(undefined, { weekday: 'long' }) + ', ' +
+      dt.toLocaleDateString(undefined, { month: 'long' }) + ' ' + dt.getDate();
+  }
+  w.innerHTML = '<span class="d">' + UI.esc(label) + '</span>';
+  document.getElementById('next').style.visibility =
+    Day.isToday(TRAIN.date) ? 'hidden' : 'visible';
+}
+
+/* ═══════════════════ THE SCREEN ROUTER ═══════════════════
+   Three screens, the same three FitNotes has: the day's workout, the exercise
+   picker, and the training screen for one exercise. The top bar and the date
+   strip belong to the workout screen and change or disappear on the others. */
+TRAIN.screen = 'workout';
+TRAIN.exId = null;
+TRAIN.tab = 'track';
+TRAIN.picking = null;      /* the category being browsed, or null for all */
+TRAIN.sel = null;          /* the set currently loaded into the steppers */
+
+/* One trap, held for as long as we are off the workout screen, so the system
+   back gesture comes home instead of leaving the app. Mobile.trap hands back
+   a release function and it has to be kept: calling it is what unwinds the
+   history entry it pushed. */
+TRAIN._rel = null;
+
+TRAIN.show = function (screen, opts) {
+  opts = opts || {};
+  TRAIN.screen = screen;
+  if (opts.ex !== undefined) TRAIN.exId = opts.ex;
+  if (opts.cat !== undefined) TRAIN.picking = opts.cat;
+  if (screen !== 'training') TRAIN.sel = null;
+
+  if (screen === 'workout') {
+    if (TRAIN._rel) { var r = TRAIN._rel; TRAIN._rel = null; r(); }
+  } else if (!TRAIN._rel && g_Mobile()) {
+    TRAIN._rel = Mobile.trap(function () { TRAIN._rel = null; TRAIN.show('workout'); });
+  }
+
+  draw();
+  var main = document.querySelector('main');
+  if (main) main.scrollTop = 0;
+};
+function g_Mobile() { return typeof Mobile !== 'undefined' && Mobile.trap; }
+
+/* Press and hold. FitNotes uses it to act on a set, and there is no such
+   thing as a right click on a phone. Cancelled by any movement, so it never
+   fires while the list is being scrolled. */
+function onHold(el, fn) {
+  var timer = null, sx = 0, sy = 0;
+  var cancel = function () { if (timer) { clearTimeout(timer); timer = null; } };
+  el.addEventListener('pointerdown', function (e) {
+    sx = e.clientX; sy = e.clientY;
+    cancel();
+    timer = setTimeout(function () { timer = null; Mobile.haptic('heavy'); fn(); }, 500);
+  });
+  el.addEventListener('pointermove', function (e) {
+    if (timer && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) cancel();
+  });
+  el.addEventListener('pointerup', cancel);
+  el.addEventListener('pointercancel', cancel);
+  el.addEventListener('scroll', cancel, true);
+  return cancel;
+}
+
+/* System back closes what is open rather than leaving the app. */
+TRAIN.back = function () {
+  if (TRAIN.screen === 'training') return TRAIN.show('workout');
+  if (TRAIN.screen === 'picker') {
+    if (TRAIN.picking) return TRAIN.show('picker', { cat: null });
+    TRAIN.pickInto = null;
+    return TRAIN.show('workout');
+  }
+  if (TRAIN.screen === 'routines' && TRAIN.progOpen) { TRAIN.progOpen = null; return draw(); }
+  if (TRAIN.screen !== 'workout') return TRAIN.show('workout');
+  return false;
+};
+
+function draw() {
+  drawChrome();
+  var m = document.getElementById('main');
+  m.innerHTML = '';
+  if (TRAIN.screen === 'picker') return drawPicker(m);
+  if (TRAIN.screen === 'training') return drawTraining(m);
+  if (TRAIN.screen === 'calendar') return drawCalendar(m);
+  if (TRAIN.screen === 'routines') return drawRoutines(m);
+  if (TRAIN.screen === 'analysis') return drawAnalysis(m);
+  if (TRAIN.screen === 'records') return drawRecords(m);
+  if (TRAIN.screen === 'goals') return drawGoals(m);
+  return drawWorkout(m);
+}
+
+var SCREEN_TITLE = {
+  calendar: 'Calendar', routines: 'Workout Routines', analysis: 'Analysis',
+  records: 'Personal Records', goals: 'Goals',
+};
+
+/* The bar, the date strip and the tabs, arranged for whichever screen is up. */
+function drawChrome() {
+  var onWorkout = TRAIN.screen === 'workout';
+  var onTraining = TRAIN.screen === 'training';
+  document.getElementById('datebar').style.display = onWorkout ? '' : 'none';
+  document.getElementById('tabs').style.display = onTraining ? '' : 'none';
+  document.getElementById('calBtn').style.display = onWorkout ? '' : 'none';
+  document.getElementById('addBtn').style.display = onWorkout ? '' : 'none';
+
+  /* Left button: the day's exercises on the training screen, back out of the
+     picker, and the app menu on the workout screen. */
+  var left = document.getElementById('drawer');
+  var isBack = TRAIN.screen === 'picker' ||
+    (TRAIN.screen === 'routines' && TRAIN.progOpen);
+  left.innerHTML = isBack
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
+  left.setAttribute('aria-label', isBack ? 'Back'
+    : onTraining ? "Today's exercises" : 'Menu');
+  left.dataset.back = isBack ? '1' : '';
+
+  var logo = document.querySelector('.logo');
+  if (onTraining) {
+    var ex = TRAIN.exercises()[TRAIN.exId];
+    logo.textContent = ex ? ex.name : 'Exercise';
+    logo.style.flex = '1';
+    logo.style.minWidth = '0';
+    logo.style.overflow = 'hidden';
+    logo.style.textOverflow = 'ellipsis';
+    logo.style.whiteSpace = 'nowrap';
+  } else if (TRAIN.screen === 'picker') {
+    var c = TRAIN.picking ? TRAIN.cats()[TRAIN.picking] : null;
+    logo.textContent = c ? c.name : 'All Exercises';
+    logo.style.flex = '1';
+  } else if (SCREEN_TITLE[TRAIN.screen]) {
+    logo.textContent = TRAIN.progOpen && TRAIN.screen === 'routines'
+      ? (TRAIN.programs()[TRAIN.progOpen] || {}).name || 'Routine'
+      : SCREEN_TITLE[TRAIN.screen];
+    logo.style.flex = '1';
+  } else {
+    logo.innerHTML = 'TRA<b>IN</b>';
+    logo.style.flex = '';
+  }
+  if (onWorkout) drawDateBar();
+  if (onTraining) {
+    var tabs = document.getElementById('tabs');
+    [].forEach.call(tabs.children, function (b) {
+      b.className = 'mb-press' + (b.dataset.tab === TRAIN.tab ? ' on' : '');
+    });
+  }
+}
+
+function drawWorkout(m) {
+  var date = TRAIN.date;
+  var groups = TRAIN.dayGroups(date);
+  var cats = TRAIN.cats();
+  var unit = TRAIN.unit();
+
+  if (!groups.length) { drawEmptyDay(m); return; }
+
+  /* The workout's start and end, above the first exercise, only when there is
+     one recorded. */
+  var sess = Rec.get('session', date, '') || {};
+  if (sess.start) {
+    var t = UI.el('div', 'timecard');
+    t.innerHTML = '<span class="rng">' + UI.esc(clockOf(sess.start)) +
+      (sess.end ? ' – ' + UI.esc(clockOf(sess.end)) : '') + '</span>' +
+      (sess.end ? '<span class="len">' + fmtLen(sess.start, sess.end) + '</span>' : '');
+    m.appendChild(t);
+  }
+  if (sess.note) {
+    var dn = UI.el('div', 'exblock');
+    dn.style.padding = 'var(--s-3) var(--s-4)';
+    dn.innerHTML = '<div class="daynote">' + UI.esc(sess.note) + '</div>';
+    m.appendChild(dn);
+  }
+
+  /* ── a repeat says how it went ──
+     Only on a day copied from another one, and only once something has been
+     ticked. Before that there is nothing to compare and the card would be
+     announcing a result for work not yet done. */
+  var cmp = TRAIN.sessionCompare(date);
+  if (cmp && cmp.rows.length) {
+    var vd = cmp.volNow - cmp.volThen;
+    var card = UI.el('div', 'cmpcard' + (cmp.up > cmp.down ? ' up' : cmp.down > cmp.up ? ' down' : ''));
+    /* One word, so it reads as a verdict rather than a sentence fragment with a
+       capital letter dropped into the middle of it. */
+    var verdict = cmp.up > cmp.down ? 'Stronger' : cmp.down > cmp.up ? 'Weaker' : 'Level';
+    card.innerHTML =
+      '<div class="cmphead">Repeat of ' + UI.esc(Day.label(cmp.from)) + '</div>' +
+      '<div class="cmpbig">' + verdict + '</div>' +
+      '<div class="cmpsub">' +
+        cmp.up + ' up · ' + cmp.same + ' level · ' + cmp.down + ' down' +
+        '<br>' + (Math.abs(vd) < 0.05
+          ? 'the same total volume'
+          : TRAIN.showDelta(vd) + ' ' + TRAIN.unitLabel() + ' of total volume') +
+      '</div>';
+    m.appendChild(card);
+  }
+  var cmpBy = {};
+  if (cmp) cmp.rows.forEach(function (r) { cmpBy[r.ex] = r; });
+
+  groups.forEach(function (g) {
+    var cat = g.def.cat ? cats[g.def.cat] : null;
+    var block = UI.el('div', 'exblock');
+    /* The hairline under the exercise name carries the category colour. In
+       FitNotes it is always the accent; here it is the one place a muscle
+       group can be told apart at a glance without adding furniture. */
+    if (cat) block.style.setProperty('--cat', TRAIN.slotColor(cat.slot));
+
+    var done = g.sets.every(function (s) { return s.done; });
+    var head = UI.el('div', 'head mb-press mb-tap');
+    head.innerHTML = '<span class="nm">' + UI.esc(g.def.name) + '</span>' +
+      '<span class="tickdot' + (done ? '' : ' off') + '">' + (done ? '✓' : '') + '</span>';
+    head.onclick = function () { TRAIN.openExercise(g.ex); };
+    block.appendChild(head);
+
+    /* What this exercise did against the day it was copied from. The top set
+       leads because that is what "stronger" means; the volume line is there
+       because a day can be more work at the same weight and that is real. */
+    var c = cmpBy[g.ex];
+    if (c) {
+      var dir = c.delta > 0.05 ? 'up' : c.delta < -0.05 ? 'down' : 'level';
+      var line = UI.el('div', 'cmprow ' + dir);
+      var head1 = dir === 'level'
+        ? 'same top set as ' + UI.esc(Day.short(cmp.from))
+        : TRAIN.showDelta(c.delta) + ' ' + TRAIN.unitLabel() +
+          (c.basis === 'e1rm' ? ' est. 1RM' : ' top set');
+      line.innerHTML =
+        '<span class="d">' + head1 + '</span>' +
+        '<span class="was">' + TRAIN.showWeight(c.topKg, null) + '×' + c.topReps +
+          ' vs ' + TRAIN.showWeight(c.wasKg, null) + '×' + c.wasReps + '</span>' +
+        (Math.abs(c.volDelta) > 0.05
+          ? '<span class="vol">' + TRAIN.showDelta(c.volDelta) + ' ' + TRAIN.unitLabel() + ' volume</span>'
+          : '');
+      block.appendChild(line);
+    }
+
+    var sets = UI.el('div', 'sets');
+    g.sets.forEach(function (s) {
+      var row = UI.el('div', 'setrow' + (s.pr ? ' pr' : '') + (s.note ? ' has-note' : ''));
+      row.innerHTML = '<span class="cmt" title="' + UI.esc(s.note || '') + '">' + BUBBLE + '</span>' +
+        '<span class="grow"></span>' + setCols(s);
+      sets.appendChild(row);
+    });
+    block.appendChild(sets);
+    m.appendChild(block);
+  });
+}
+
+/* Weight then reps, each right-aligned in its own column, each a bold number
+   with a small unit after it. Cardio and timed holds put whatever they have
+   in the same two columns rather than growing a third. */
+function setCols(s) {
+  var out = '';
+  if (s.dist) {
+    out += '<span class="col w"><b>' + s.dist + '</b> <span class="u">dist</span></span>';
+  } else if (s.kg) {
+    out += '<span class="col w"><b>' + TRAIN.showWeight(s.kg, s.u) +
+      '</b> <span class="u">' + TRAIN.unitLabel() + '</span></span>';
+  } else {
+    out += '<span class="col w"></span>';
+  }
+  if (s.dur) {
+    out += '<span class="col r"><b>' + fmtSecs(s.dur) + '</b></span>';
+  } else {
+    out += '<span class="col r"><b>' + (s.r || 0) + '</b> <span class="u">reps</span></span>';
+  }
+  return out;
+}
+
+/* ── the empty day ──
+   "Workout Log Empty", then the two things FitNotes offers: start one, or
+   copy the last one. Copying the previous workout is how a repeated session
+   gets logged in one tap, so it is not a nicety. */
+function drawEmptyDay(m) {
+  var box = UI.el('div', 'emptyday');
+  box.innerHTML = '<div class="say">Workout Log Empty</div>';
+  m.appendChild(box);
+
+  var acts = UI.el('div', 'startbox');
+  var start = UI.el('button', 'bigact mb-press mb-tap');
+  start.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+    '<span>Start New Workout</span>';
+  start.onclick = function () { Mobile.feedback('open'); TRAIN.addExercise(); };
+  acts.appendChild(start);
+
+  var prev = TRAIN.previousWorkout(TRAIN.date);
+  if (prev) {
+    var copy = UI.el('button', 'bigact mb-press mb-tap');
+    copy.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/>' +
+      '<path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>' +
+      '<span>Copy Previous Workout</span>';
+    copy.onclick = function () { TRAIN.copyWorkout(prev, TRAIN.date); };
+    acts.appendChild(copy);
+  }
+
+  /* The importer used to sit here too, on any empty day. It lives in Settings
+     only now: it is a thing you do once, and an empty Tuesday is not a prompt
+     to go and find a backup file. */
+  m.appendChild(acts);
+}
+
+/* The most recent day before this one that has any sets. */
+TRAIN.previousWorkout = function (before) {
+  var dates = Object.keys(TRAIN.idx.byDate).sort();
+  for (var i = dates.length - 1; i >= 0; i--) if (dates[i] < before) return dates[i];
+  return null;
+};
+
+function clockOf(iso) {
+  var d = new Date(iso);
+  if (isNaN(d)) return String(iso).slice(11, 16);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+/* FitNotes writes a workout's length as "1h 12m", not as a stopwatch, and it
+   drops the leftover seconds rather than rounding them. His 5 August workout
+   ran 72m 56s and the app calls it 1h 12m; rounding would call it 1h 13m. */
+function fmtLen(a, b) {
+  var ms = Date.parse(b) - Date.parse(a);
+  if (!(ms > 0)) return '';
+  var mins = Math.floor(ms / 60000), h = Math.floor(mins / 60);
+  return (h ? h + 'h ' : '') + (mins % 60) + 'm';
+}
+function fmtSecs(n) {
+  n = n | 0;
+  var h = Math.floor(n / 3600), m = Math.floor((n % 3600) / 60), s = n % 60;
+  if (h) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   WRITING SETS
+   Every one of these re-asserts the day's tick, because the tick is derived
+   from whether the day has sets and TRAIN is the one that gets to say so.
+   ═════════════════════════════════════════════════════════════════════════ */
+TRAIN.nextOrd = function (exId, date) {
+  var mine = TRAIN.setsOn(date).filter(function (s) { return s.ex === exId; });
+  var max = 0;
+  mine.forEach(function (s) { if ((s.ord || 0) > max) max = s.ord; });
+  return max + 1;
+};
+
+TRAIN.addSet = function (exId, date, fields) {
+  var p = {
+    ex: exId, kg: fields.kg || 0, r: fields.r || 0, u: TRAIN.unit(),
+    done: Rec.setting(APP.id, 'markComplete') === 0 ? 0 : 1,
+    pr: 0, prf: 0, dist: fields.dist || 0, dur: fields.dur || 0,
+    note: '', ord: TRAIN.nextOrd(exId, date),
+  };
+  var key = TRAIN.newId();
+  Rec.set('set', date, key, p);
+  TRAIN.reindex();
+  TRAIN.assertTick(date);
+  return key;
+};
+
+TRAIN.patchSet = function (key, date, patch) {
+  var cur = Rec.get('set', date, key);
+  if (!cur) return null;
+  var next = {}, k;
+  for (k in cur) next[k] = cur[k];
+  for (k in patch) next[k] = patch[k];
+  Rec.set('set', date, key, next);
+  TRAIN.reindex();
+  return next;
+};
+
+TRAIN.removeSet = function (key, date) {
+  var was = Rec.get('set', date, key);
+  Rec.del('set', date, key);
+  TRAIN.reindex();
+  TRAIN.assertTick(date);
+  Mobile.haptic('warn');
+  UI.undo('set deleted', function () {
+    Rec.set('set', date, key, was);
+    TRAIN.reindex();
+    TRAIN.assertTick(date);
+    draw();
+  });
+};
+
+/* ═════════════════ THE EXERCISE PICKER ═════════════════ */
+var MAGNIFIER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+
+function drawPicker(m) {
+  var q = (TRAIN.query || '').trim().toLowerCase();
+  var cats = TRAIN.cats(), exs = TRAIN.exercises();
+
+  var box = UI.el('div', 'search');
+  box.innerHTML = MAGNIFIER;
+  var input = UI.el('input');
+  Mobile.field(input, 'search', {});
+  input.placeholder = 'Search exercises';
+  input.value = TRAIN.query || '';
+  input.oninput = function () {
+    TRAIN.query = input.value;
+    var again = document.getElementById('main');
+    var pos = input.selectionStart;
+    drawPickerList(again);
+    var live = again.querySelector('.search input');
+    if (live) { live.focus(); live.setSelectionRange(pos, pos); }
+  };
+  box.appendChild(input);
+  m.appendChild(box);
+
+  var host = UI.el('div');
+  host.id = 'pickhost';
+  m.appendChild(host);
+  drawList(host, q, cats, exs);
+}
+
+/* Redrawing on every keystroke would lose the caret, so search redraws only
+   the list under the field. */
+function drawPickerList(m) {
+  var host = m.querySelector('#pickhost');
+  if (!host) return drawPicker(m);
+  drawList(host, (TRAIN.query || '').trim().toLowerCase(), TRAIN.cats(), TRAIN.exercises());
+}
+
+function drawList(host, q, cats, exs) {
+  host.innerHTML = '';
+
+  /* ── first, and unconditionally ──
+     This used to be appended at the very end of the function, after three
+     branches that each return early. The one that fires when you have no
+     exercises yet returned before reaching it, so the button that creates your
+     first exercise was the one button you could never see. It goes at the top
+     now, above the list, which is also where FitNotes keeps it. */
+  var add = UI.el('button', 'mb-btn mb-press mb-tap');
+  add.style.width = '100%';
+  add.style.marginBottom = 'var(--s-3)';
+  add.textContent = '+ CREATE NEW EXERCISE';
+  add.onclick = function () { TRAIN.exerciseDialog(null); };
+  host.appendChild(add);
+
+  var list = UI.el('div', 'plist');
+  var already = {};
+  TRAIN.setsOn(TRAIN.date).forEach(function (s) { already[s.ex] = 1; });
+
+  /* No search and no category chosen: the muscle groups, alphabetically, the
+     way FitNotes opens. */
+  if (!q && !TRAIN.picking) {
+    Object.keys(cats).map(function (k) { return { k: k, c: cats[k] }; })
+      .sort(function (a, b) { return a.c.name.localeCompare(b.c.name); })
+      .forEach(function (row) {
+        var n = Object.keys(exs).filter(function (id) { return exs[id].cat === row.k; }).length;
+        var b = UI.el('button', 'prow mb-press mb-tap');
+        b.style.setProperty('--cat', TRAIN.slotColor(row.c.slot));
+        b.innerHTML = '<span class="dot"></span><span class="nm">' + UI.esc(row.c.name) +
+          '</span><span class="sub">' + n + '</span>';
+        b.onclick = function () { TRAIN.show('picker', { cat: row.k }); };
+        list.appendChild(b);
+      });
+    host.appendChild(list);
+    return;
+  }
+
+  /* Otherwise: exercises, filtered by the search or by the chosen category. */
+  var rows = Object.keys(exs).map(function (id) { return { id: id, e: exs[id] }; })
+    .filter(function (r) {
+      if (q) return r.e.name.toLowerCase().indexOf(q) > -1;
+      return r.e.cat === TRAIN.picking;
+    })
+    .sort(function (a, b) { return a.e.name.localeCompare(b.e.name); });
+
+  if (!rows.length) {
+    var none = UI.el('div', 'empty');
+    none.textContent = q ? 'No exercises match "' + TRAIN.query + '"' : 'No exercises in here yet';
+    host.appendChild(none);
+    return;
+  }
+
+  rows.forEach(function (r) {
+    var cat = cats[r.e.cat];
+    var b = UI.el('button', 'prow mb-press mb-tap' + (already[r.id] ? ' added' : ''));
+    if (cat) b.style.setProperty('--cat', TRAIN.slotColor(cat.slot));
+    b.innerHTML = '<span class="dot"></span><span class="nm">' + UI.esc(r.e.name) + '</span>' +
+      (already[r.id] ? '<span class="sub">added</span>'
+        : (q && cat ? '<span class="sub">' + UI.esc(cat.name) + '</span>' : ''));
+    b.onclick = function () {
+      Mobile.feedback('select');
+      /* The picker is also used to fill a routine day, in which case picking
+         an exercise adds it there instead of opening the training screen. */
+      if (TRAIN.pickInto && TRAIN.pickInto.day) {
+        var dayKey = TRAIN.pickInto.day;
+        Rec.set('progex', null, TRAIN.newId(), {
+          day: dayKey, ex: r.id, ord: TRAIN.exercisesOf(dayKey).length, fill: 0, sets: [],
+        });
+        TRAIN.pickInto = null;
+        TRAIN.show('routines');
+        UI.toast('added <b>' + UI.esc(r.e.name) + '</b>');
+        return;
+      }
+      TRAIN.openExercise(r.id);
+    };
+    list.appendChild(b);
+  });
+  host.appendChild(list);
+}
+
+/* Create or edit one exercise: name, category, and the two things that
+   actually change how it behaves — its weight step and its rest time. */
+TRAIN.exerciseDialog = function (exId) {
+  var exs = TRAIN.exercises(), cats = TRAIN.cats();
+  var cur = exId ? exs[exId] : null;
+  /* No categories is not a reason to refuse — it is a reason to make some. */
+  if (!Object.keys(cats).length) { TRAIN.seedCats(); cats = TRAIN.cats(); }
+  var catIds = Object.keys(cats).sort(function (a, b) { return cats[a].name.localeCompare(cats[b].name); });
+
+  UI.dialog({
+    title: (cur ? 'EDIT' : 'CREATE') + ' EXERCISE', width: 440,
+    body: function (b, h) {
+      var name = UI.field('name', { value: cur ? cur.name : '', placeholder: 'Exercise name' });
+      b.appendChild(UI.row('Name', '', name));
+
+      var sel = document.createElement('select');
+      sel.className = 'mb-input';
+      catIds.forEach(function (id) {
+        var o = document.createElement('option');
+        o.value = id; o.textContent = cats[id].name;
+        sel.appendChild(o);
+      });
+      if (cur && cur.cat) sel.value = cur.cat;
+      else if (TRAIN.picking) sel.value = TRAIN.picking;
+      b.appendChild(UI.row('Category', '', sel));
+
+      var inc = UI.field('decimal', {
+        value: cur && cur.inc ? String(cur.inc) : '',
+        placeholder: String(Rec.setting(APP.id, 'increment') || 2.5),
+      });
+      b.appendChild(UI.row('Weight step', 'What + and − move by. Blank uses the app default.', inc));
+
+      var rest = UI.field('number', {
+        value: cur && cur.rest ? String(cur.rest) : '',
+        placeholder: String(Rec.setting(APP.id, 'restSeconds') || 120),
+      });
+      b.appendChild(UI.row('Rest time', 'Seconds. Blank uses the app default.', rest));
+
+      h.grab = function () {
+        return { name: name.value, cat: sel.value, inc: inc.value, rest: rest.value };
+      };
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'SAVE', kind: 'go', fn: function (h) {
+        var v = h.grab(), nm = (v.name || '').trim();
+        if (!nm) { UI.toast('please enter a name', { bad: true }); return false; }
+        var key = exId || TRAIN.newId();
+        Rec.set('exercise', null, key, {
+          name: nm, cat: v.cat,
+          kind: cur ? cur.kind : 'weight_reps',
+          fnKind: cur ? cur.fnKind : 0,
+          note: cur ? cur.note : '',
+          inc: v.inc ? Number(v.inc) : null,
+          rest: v.rest ? parseInt(v.rest, 10) : null,
+          unit: cur ? cur.unit : null,
+          graph: cur ? cur.graph : null,
+          fav: cur ? cur.fav : 0,
+        });
+        Mobile.feedback('success');
+        draw();
+        UI.toast(exId ? 'exercise updated' : 'exercise created');
+      } },
+    ],
+  });
+};
+
+/* ═════════════════ THE TRAINING SCREEN ═════════════════ */
+function drawTraining(m) {
+  if (TRAIN.tab === 'history') return drawHistory(m);
+  if (TRAIN.tab === 'graph') return drawGraph(m);
+  return drawTrack(m);
+}
+
+function drawTrack(m) {
+  var exId = TRAIN.exId, date = TRAIN.date;
+  var ex = TRAIN.exercises()[exId] || { name: 'Exercise' };
+  var unit = TRAIN.unit();
+  var mine = TRAIN.setsOn(date).filter(function (s) { return s.ex === exId; });
+
+  /* What he did last time, which is the number that decides today's load. */
+  var hist = TRAIN.historyOf(exId).filter(function (s) { return s.date < date; });
+  if (hist.length) {
+    var lastDate = hist[hist.length - 1].date;
+    var lastSets = hist.filter(function (s) { return s.date === lastDate; });
+    var card = UI.el('div', 'exblock');
+    card.style.padding = 'var(--s-3) var(--s-4)';
+    /* Bodyweight movements have no weight to show, and a bare list of numbers
+       reads as nothing at all — Pull Up came out as "2, 3, 4". They get their
+       unit spelled out instead. */
+    var anyWeight = lastSets.some(function (s) { return s.kg > 0; });
+    card.innerHTML = '<div class="lasttime">' + UI.esc(Day.label(lastDate)) + ' · ' +
+      lastSets.map(function (s) {
+        return anyWeight
+          ? '<b>' + TRAIN.showWeight(s.kg, s.u) + '</b>×<b>' + s.r + '</b>'
+          : '<b>' + s.r + '</b>';
+      }).join(', ') + (anyWeight ? ' ' + TRAIN.unitLabel() : ' reps') + '</div>';
+    m.appendChild(card);
+  }
+
+  var pad = UI.el('div', 'exblock');
+  pad.style.padding = 'var(--s-4)';
+
+  var wLabel = UI.el('div', 'fieldlabel');
+  wLabel.textContent = 'WEIGHT (' + TRAIN.unitLabel() + ')';
+  pad.appendChild(wLabel);
+  var wStep = stepper('weight', TRAIN.draftW == null ? '' : TRAIN.draftW,
+    TRAIN.increment(ex), function (v) { TRAIN.draftW = v; });
+  pad.appendChild(wStep);
+
+  var rLabel = UI.el('div', 'fieldlabel');
+  rLabel.style.marginTop = 'var(--s-4)';
+  rLabel.textContent = 'REPS';
+  pad.appendChild(rLabel);
+  var rStep = stepper('reps', TRAIN.draftR == null ? '' : TRAIN.draftR, 1,
+    function (v) { TRAIN.draftR = v; });
+  pad.appendChild(rStep);
+
+  var bar = UI.el('div', 'gobar');
+  var save = UI.el('button', 'save mb-press mb-tap');
+  save.textContent = TRAIN.sel ? 'UPDATE' : 'SAVE';
+  save.onclick = function () { commitSet(wStep.input, rStep.input); };
+  var clear = UI.el('button', 'clear mb-press mb-tap');
+  clear.textContent = 'CLEAR';
+  clear.onclick = function () {
+    TRAIN.draftW = null; TRAIN.draftR = null; TRAIN.sel = null;
+    Mobile.feedback('select'); draw();
+  };
+  bar.appendChild(save); bar.appendChild(clear);
+  pad.appendChild(bar);
+  m.appendChild(pad);
+
+  if (mine.length) {
+    var listCard = UI.el('div', 'exblock');
+    listCard.style.padding = 'var(--s-2) var(--s-4) var(--s-3)';
+    mine.forEach(function (s, i) {
+      listCard.appendChild(trainingSetRow(s, i, date));
+    });
+    m.appendChild(listCard);
+  }
+}
+
+/* Weight is typed as often as it is stepped, so the number is a real field
+   and the buttons nudge it. inputmode decimal keeps the phone keypad. */
+function stepper(kind, value, step, onChange) {
+  var box = UI.el('div', 'stepper');
+  var minus = UI.el('button', 'mb-press mb-tap');
+  minus.textContent = '−';
+  minus.setAttribute('aria-label', 'Decrease ' + kind);
+  var input = UI.el('input');
+  Mobile.field(input, kind === 'reps' ? 'number' : 'decimal', {});
+  input.value = value === '' ? '' : String(value);
+  input.setAttribute('aria-label', kind);
+  var plus = UI.el('button', 'mb-press mb-tap');
+  plus.textContent = '+';
+  plus.setAttribute('aria-label', 'Increase ' + kind);
+
+  var read = function () { var n = parseFloat(input.value); return isNaN(n) ? 0 : n; };
+  var write = function (n) {
+    if (n < 0) n = 0;
+    input.value = kind === 'reps' ? String(Math.round(n))
+      : String(Math.round(n * 1000) / 1000);
+    onChange(input.value);
+  };
+  minus.onclick = function () { write(read() - step); Mobile.feedback('tick'); };
+  plus.onclick = function () { write(read() + step); Mobile.feedback('tick'); };
+  input.oninput = function () { onChange(input.value); };
+
+  box.appendChild(minus); box.appendChild(input); box.appendChild(plus);
+  box.input = input;
+  return box;
+}
+
+/* The step size: the exercise's own increment if it has one, else the app
+   setting, else 2.5. Expressed in whatever unit is on screen. */
+TRAIN.increment = function (ex) {
+  var v = (ex && ex.inc) || Rec.setting(APP.id, 'increment') || 2.5;
+  return Number(v) || 2.5;
+};
+
+function commitSet(wInput, rInput) {
+  var w = parseFloat(wInput.value), r = parseInt(rInput.value, 10);
+  if (isNaN(r) || r <= 0) {
+    if (isNaN(w)) { UI.toast('enter a weight or some reps', { bad: true }); rInput.focus(); return; }
+    r = 0;
+  }
+  if (isNaN(w)) w = 0;
+  var kg = TRAIN.toKg(w, TRAIN.unit());
+
+  if (TRAIN.sel) {
+    TRAIN.patchSet(TRAIN.sel, TRAIN.date, { kg: kg, r: r, u: TRAIN.unit() });
+    TRAIN.sel = null;
+    UI.toast('set updated');
+  } else {
+    /* Is this a record? Ask before the set is written, or it beats itself. */
+    var wasBest = 0;
+    TRAIN.historyOf(TRAIN.exId).forEach(function (s) { if ((s.kg || 0) > wasBest) wasBest = s.kg; });
+    var key = TRAIN.addSet(TRAIN.exId, TRAIN.date, { kg: kg, r: r });
+
+    if (Rec.setting(APP.id, 'trackPRs') !== 0 && kg > wasBest && kg > 0) {
+      TRAIN.patchSet(key, TRAIN.date, { pr: 1, prf: wasBest === 0 ? 1 : 0 });
+      Sfx && Sfx.play && Sfx.play('complete', { level: 2 });
+      UI.toast('<b>personal record</b> — ' + TRAIN.showWeight(kg, TRAIN.unit()) + ' ' + TRAIN.unitLabel());
+    }
+
+    /* The workout timer starts itself on the first set of the day, and the
+       rest timer starts itself after every set, both only if asked to. */
+    if (Rec.setting(APP.id, 'workoutTimerAuto') !== 0 && TRAIN.setsOn(TRAIN.date).length === 1) {
+      TRAIN.workoutStart(TRAIN.date);
+    }
+    if (Rec.setting(APP.id, 'restAuto') !== 0) {
+      var ex = TRAIN.exercises()[TRAIN.exId] || {};
+      TRAIN.restStart(ex.rest || 0);
+    }
+  }
+  TRAIN.draftW = null; TRAIN.draftR = null;
+  Mobile.feedback('success');
+  draw();
+}
+
+function trainingSetRow(s, i, date) {
+  var row = UI.el('div', 'tset' + (TRAIN.sel === s.key ? ' sel' : ''));
+
+  var bub = UI.el('button', 'bub mb-tap' + (s.note ? ' on' : ''));
+  bub.innerHTML = BUBBLE;
+  bub.setAttribute('aria-label', s.note ? 'Edit comment' : 'Add comment');
+  bub.onclick = function (e) { e.stopPropagation(); commentDialog(s, date); };
+  row.appendChild(bub);
+
+  var idx = UI.el('span', 'idx');
+  idx.textContent = String(i + 1);
+  row.appendChild(idx);
+  row.appendChild(UI.el('span', 'grow'));
+
+  var body = UI.el('span');
+  body.innerHTML = (s.kg
+    ? '<span class="col w"><b>' + TRAIN.showWeight(s.kg, s.u) + '</b> <span class="u">' +
+      TRAIN.unitLabel() + '</span></span>'
+    : '<span class="col w"></span>') +
+    '<span class="col r"><b>' + (s.r || 0) + '</b> <span class="u">reps</span></span>';
+  body.className = 'grow';
+  body.style.textAlign = 'right';
+  row.appendChild(body);
+
+  var chk = UI.el('button', 'chk mb-tap' + (s.done ? ' on' : ''));
+  chk.innerHTML = '<i>' + (s.done ? '✓' : '') + '</i>';
+  chk.setAttribute('aria-label', s.done ? 'Mark not done' : 'Mark done');
+  chk.onclick = function (e) {
+    e.stopPropagation();
+    TRAIN.patchSet(s.key, date, { done: s.done ? 0 : 1 });
+    Mobile.feedback(s.done ? 'untick' : 'tick');
+    draw();
+  };
+  row.appendChild(chk);
+
+  /* Tapping a set loads it into the steppers, which is how FitNotes edits
+     one. Holding it offers delete. */
+  row.onclick = function () {
+    TRAIN.sel = s.key;
+    TRAIN.draftW = s.kg ? TRAIN.showWeight(s.kg, s.u) : '';
+    TRAIN.draftR = String(s.r || '');
+    Mobile.feedback('select');
+    draw();
+  };
+  var cancelHold = onHold(row, function () { setMenu(s, date); });
+  row.oncontextmenu = function (e) { e.preventDefault(); cancelHold(); setMenu(s, date); };
+  return row;
+}
+
+function setMenu(s, date) {
+  UI.menu(innerWidth / 2, innerHeight / 2, [
+    { label: s.note ? 'Edit Comment' : 'Add Comment', fn: function () { commentDialog(s, date); } },
+    { label: 'Delete Set', kind: 'bad', fn: function () { TRAIN.removeSet(s.key, date); draw(); } },
+  ], { title: 'SET' });
+}
+
+/* FitNotes shows a comment in a small box with Edit and Done. Same shape. */
+function commentDialog(s, date) {
+  UI.dialog({
+    title: 'COMMENT', width: 420, focus: true,
+    body: function (b, h) {
+      var i = UI.field('note', { value: s.note || '', placeholder: 'Comment Text ...' });
+      b.appendChild(i);
+      Mobile.form(b, function () { saveNote(h, i); });
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'DONE', kind: 'go', fn: function (h) { saveNote(h, h.body.querySelector('textarea')); return false; } },
+    ],
+  });
+  function saveNote(h, i) {
+    TRAIN.patchSet(s.key, date, { note: (i.value || '').trim() });
+    h.close();
+    Mobile.feedback('success');
+    draw();
+  }
+}
+
+/* ═════════════════ HISTORY ═════════════════
+   Every past workout for this exercise, newest first, exactly as logged. */
+function drawHistory(m) {
+  var all = TRAIN.historyOf(TRAIN.exId);
+  if (!all.length) {
+    var e = UI.el('div', 'empty');
+    e.textContent = 'No sets recorded';
+    m.appendChild(e);
+    return;
+  }
+  var byDate = {}, order = [];
+  for (var i = all.length - 1; i >= 0; i--) {
+    var s = all[i];
+    if (!byDate[s.date]) { byDate[s.date] = []; order.push(s.date); }
+    byDate[s.date].unshift(s);
+  }
+  /* Four years of Pull Up is 699 sets. Render the recent hundred workouts and
+     let him ask for more, rather than building three thousand nodes on a
+     two-gigabyte phone. */
+  var shown = order.slice(0, TRAIN.histLimit || 100);
+  shown.forEach(function (d) {
+    var card = UI.el('div', 'exblock');
+    var head = UI.el('div', 'head');
+    head.innerHTML = '<span class="nm">' + UI.esc(Day.label(d)) + '</span>' +
+      '<span class="u" style="color:var(--text-muted);font-size:var(--f-1)">' +
+      byDate[d].length + ' sets</span>';
+    card.appendChild(head);
+    var sets = UI.el('div', 'sets');
+    byDate[d].forEach(function (s) {
+      var row = UI.el('div', 'setrow' + (s.note ? ' has-note' : ''));
+      row.innerHTML = '<span class="cmt" title="' + UI.esc(s.note || '') + '">' + BUBBLE +
+        '</span><span class="grow"></span>' + setCols(s);
+      sets.appendChild(row);
+    });
+    card.appendChild(sets);
+    m.appendChild(card);
+  });
+  if (order.length > shown.length) {
+    var more = UI.el('button', 'mb-btn mb-press mb-tap');
+    more.style.width = '100%';
+    more.textContent = 'SHOW MORE (' + (order.length - shown.length) + ' EARLIER)';
+    more.onclick = function () {
+      TRAIN.histLimit = (TRAIN.histLimit || 100) + 100;
+      draw();
+    };
+    m.appendChild(more);
+  }
+}
+
+/* ═════════════════ GRAPH ═════════════════
+   Heaviest set per workout, drawn as SVG. No chart library: one more CDN
+   dependency for one screen is not worth an app that stops working offline. */
+function drawGraph(m) {
+  var all = TRAIN.historyOf(TRAIN.exId);
+  if (!all.length) {
+    var e = UI.el('div', 'empty');
+    e.textContent = 'No sets recorded';
+    m.appendChild(e);
+    return;
+  }
+  /* FitNotes offers a set of graphs, not one. These are the four that answer
+     different questions: am I lifting heavier, doing more work, getting
+     stronger at a rep count I do not train, or just doing more reps. */
+  var GRAPHS = [
+    { id: 'maxw', name: 'MAX WEIGHT', pick: function (a, s) { return Math.max(a, s.kg || 0); }, conv: 1 },
+    { id: 'vol', name: 'VOLUME', pick: function (a, s) { return a + (s.kg || 0) * (s.r || 0); }, conv: 1 },
+    { id: 'e1rm', name: 'EST 1RM', pick: function (a, s) { return Math.max(a, TRAIN.e1rm(s.kg, s.r)); }, conv: 1 },
+    { id: 'reps', name: 'TOTAL REPS', pick: function (a, s) { return a + (s.r || 0); }, conv: 0 },
+  ];
+  var gid = TRAIN.graphType || 'maxw';
+  var G = GRAPHS.filter(function (x) { return x.id === gid; })[0] || GRAPHS[0];
+
+  var picker = UI.segmented(GRAPHS.map(function (x) { return { id: x.id, name: x.name.split(' ')[0] }; }),
+    gid, function (v) { TRAIN.graphType = v; draw(); });
+  picker.style.marginBottom = 'var(--s-3)';
+  m.appendChild(picker);
+
+  var best = {}, order = [];
+  all.forEach(function (s) {
+    if (best[s.date] == null) { best[s.date] = 0; order.push(s.date); }
+    best[s.date] = G.pick(best[s.date], s);
+  });
+  var pts = order.map(function (d) {
+    return { d: d, v: G.conv ? TRAIN.toUnit(best[d], TRAIN.unit()) : best[d] };
+  }).filter(function (p) { return p.v > 0; });
+  if (pts.length < 2) {
+    var e2 = UI.el('div', 'empty');
+    e2.textContent = 'Not enough data to graph yet';
+    m.appendChild(e2);
+    return;
+  }
+
+  var W = 320, H = 180, pad = 4;
+  var lo = Infinity, hi = -Infinity;
+  pts.forEach(function (p) { if (p.v < lo) lo = p.v; if (p.v > hi) hi = p.v; });
+  if (hi === lo) { hi = lo + 1; }
+  var t0 = Date.parse(pts[0].d), t1 = Date.parse(pts[pts.length - 1].d) || t0 + 1;
+  var x = function (p) { return pad + ((Date.parse(p.d) - t0) / (t1 - t0 || 1)) * (W - pad * 2); };
+  var y = function (p) { return H - pad - ((p.v - lo) / (hi - lo)) * (H - pad * 2); };
+  var path = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(p).toFixed(1) + ' ' + y(p).toFixed(1); }).join(' ');
+
+  var card = UI.el('div', 'exblock');
+  card.style.padding = 'var(--s-4)';
+  card.innerHTML =
+    '<div class="fieldlabel">' + G.name + (G.conv ? ' (' + TRAIN.unitLabel() + ')' : '') + '</div>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" ' +
+    'preserveAspectRatio="none" role="img" aria-label="Max weight over time">' +
+    '<path d="' + path + '" fill="none" stroke="var(--accent)" stroke-width="2" ' +
+    'stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>' +
+    '<div class="lasttime" style="display:flex;justify-content:space-between;margin-top:var(--s-3)">' +
+    '<span><b>' + Math.round(lo) + '</b> low</span>' +
+    '<span>' + pts.length + ' workouts</span>' +
+    '<span><b>' + Math.round(hi) + '</b> high</span></div>';
+  m.appendChild(card);
+}
+
+/* ═════════════════ THE DAY'S EXERCISES DRAWER ═════════════════ */
+TRAIN.openDrawer = function () {
+  var wrap = document.getElementById('dwrap');
+  var head = document.getElementById('dhead');
+  var list = document.getElementById('dlist');
+  var foot = document.getElementById('dfoot');
+  var groups = TRAIN.dayGroups(TRAIN.date);
+
+  head.innerHTML = '<b>' + groups.length + ' EXERCISE' + (groups.length === 1 ? '' : 'S') +
+    '</b><span>' + UI.esc(Day.label(TRAIN.date)) + '</span>';
+
+  list.innerHTML = '';
+  groups.forEach(function (g) {
+    var done = g.sets.every(function (s) { return s.done; });
+    var b = UI.el('button', 'prow mb-press mb-tap');
+    if (g.ex === TRAIN.exId) b.style.background = 'color-mix(in srgb, var(--accent) 14%, transparent)';
+    b.innerHTML = '<span class="nm">' + UI.esc(g.def.name) +
+      '<br><span class="sub">' + g.sets.length + ' set' + (g.sets.length === 1 ? '' : 's') +
+      '</span></span><span class="tickdot' + (done ? '' : ' off') + '">' + (done ? '✓' : '') + '</span>';
+    b.onclick = function () { closeDrawer(); TRAIN.show('training', { ex: g.ex }); };
+    list.appendChild(b);
+  });
+  if (!groups.length) {
+    var none = UI.el('div', 'empty');
+    none.style.padding = 'var(--s-4)';
+    none.textContent = 'Nothing logged on this day yet.';
+    list.appendChild(none);
+  }
+
+  foot.innerHTML = '';
+  foot.appendChild(drawerAction('Add Exercise',
+    '<path d="M12 5v14M5 12h14"/>', function () {
+      closeDrawer(); TRAIN.show('picker', { cat: null });
+    }));
+  foot.appendChild(drawerAction('Home',
+    '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>', function () {
+      closeDrawer(); location.href = '../index.html';
+    }));
+
+  wrap.classList.add('open');
+  wrap.offsetHeight;                 /* force layout before the transition */
+  wrap.classList.add('in');
+  /* An animation started on requestAnimationFrame never starts in a tab that
+     is not compositing, which once left a sheet parked off the bottom of the
+     screen. Forcing layout above and setting the class in the same tick is
+     the fix; see shared/CLAUDE.md. */
+  TRAIN._drawerRel = Mobile.trap(function () {
+    TRAIN._drawerRel = null;
+    closeDrawer(true);
+  });
+};
+
+function drawerAction(label, path, fn) {
+  var b = UI.el('button', 'mb-press mb-tap');
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>' +
+    '<span>' + UI.esc(label) + '</span>';
+  b.onclick = fn;
+  return b;
+}
+
+function closeDrawer(fromBack) {
+  var wrap = document.getElementById('dwrap');
+  wrap.classList.remove('in');
+  setTimeout(function () { wrap.classList.remove('open'); }, 320);
+  if (!fromBack && TRAIN._drawerRel) { var r = TRAIN._drawerRel; TRAIN._drawerRel = null; r(); }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   THE NUMBERS
+   Estimated one-rep max, personal records, and totals over a period. All of
+   it computed from the index, all of it in kilograms, converted only when it
+   is printed.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Brzycki, which is what FitNotes uses. It falls apart at high rep counts,
+   which is why the app lets you cap the reps that count towards it. */
+TRAIN.e1rm = function (kg, reps) {
+  if (!kg || !reps) return 0;
+  var cap = Rec.setting(APP.id, 'e1rmMaxReps') || 0;
+  if (cap && reps > cap) return 0;
+  if (reps >= 37) return 0;
+  return kg * 36 / (37 - reps);
+};
+
+/* A set is a personal record if nothing before it was heavier. Walking the
+   history in order is the only way to get that right, because a record is a
+   statement about a moment, not about the whole log. */
+TRAIN.recomputePRs = function () {
+  var exs = TRAIN.exercises(), changed = 0;
+  Object.keys(exs).forEach(function (id) {
+    var hist = TRAIN.historyOf(id), best = 0, first = true;
+    hist.forEach(function (s) {
+      var isPr = (s.kg || 0) > best && (s.kg || 0) > 0;
+      if (isPr) best = s.kg;
+      var wantPr = isPr ? 1 : 0, wantFirst = (isPr && first) ? 1 : 0;
+      if (isPr) first = false;
+      if ((s.pr || 0) !== wantPr || (s.prf || 0) !== wantFirst) {
+        TRAIN.patchSet(s.key, s.date, { pr: wantPr, prf: wantFirst });
+        changed++;
+      }
+    });
+  });
+  TRAIN.reindex();
+  return changed;
+};
+
+/* Everything the Records screen shows for one exercise. */
+TRAIN.recordsFor = function (exId) {
+  var hist = TRAIN.historyOf(exId);
+  var r = { maxWeight: null, maxReps: null, maxVolume: null, max1rm: null,
+            byReps: {}, sets: hist.length, workouts: 0 };
+  var days = {};
+  hist.forEach(function (s) {
+    days[s.date] = 1;
+    var vol = (s.kg || 0) * (s.r || 0), e = TRAIN.e1rm(s.kg, s.r);
+    if (s.kg > 0 && (!r.maxWeight || s.kg > r.maxWeight.kg)) r.maxWeight = s;
+    if (s.r > 0 && (!r.maxReps || s.r > r.maxReps.r)) r.maxReps = s;
+    if (vol > 0 && (!r.maxVolume || vol > (r.maxVolume.kg * r.maxVolume.r))) r.maxVolume = s;
+    if (e > 0 && (!r.max1rm || e > TRAIN.e1rm(r.max1rm.kg, r.max1rm.r))) r.max1rm = s;
+    if (s.r > 0 && s.kg > 0 && (!r.byReps[s.r] || s.kg > r.byReps[s.r].kg)) r.byReps[s.r] = s;
+  });
+  r.workouts = Object.keys(days).length;
+  return r;
+};
+
+/* Totals over a window, grouped however the Analysis screen asks. */
+TRAIN.breakdown = function (from, to, by) {
+  var exs = TRAIN.exercises(), cats = TRAIN.cats(), out = {}, days = {};
+  Object.keys(TRAIN.idx.byDate).forEach(function (d) {
+    if (d < from || d > to) return;
+    TRAIN.idx.byDate[d].forEach(function (s) {
+      var ex = exs[s.ex];
+      var key = by === 'category' ? (ex && ex.cat ? ex.cat : '?') : s.ex;
+      var o = out[key] || (out[key] = { sets: 0, reps: 0, vol: 0, days: {} });
+      o.sets++; o.reps += s.r || 0; o.vol += (s.kg || 0) * (s.r || 0);
+      o.days[d] = 1; days[d] = 1;
+    });
+  });
+  var rows = Object.keys(out).map(function (k) {
+    var o = out[k];
+    var name = by === 'category'
+      ? (cats[k] ? cats[k].name : 'Uncategorised')
+      : (exs[k] ? exs[k].name : k);
+    return { key: k, name: name, sets: o.sets, reps: o.reps, vol: o.vol,
+             workouts: Object.keys(o.days).length,
+             slot: by === 'category' && cats[k] ? cats[k].slot : null };
+  });
+  rows.sort(function (a, b) { return b.vol - a.vol || b.sets - a.sets; });
+  return { rows: rows, workouts: Object.keys(days).length };
+};
+
+TRAIN.PERIODS = [
+  { id: '1m', name: '1 MONTH', days: 30 },
+  { id: '3m', name: '3 MONTHS', days: 91 },
+  { id: '6m', name: '6 MONTHS', days: 182 },
+  { id: '1y', name: '1 YEAR', days: 365 },
+  { id: 'all', name: 'ALL', days: 0 },
+];
+TRAIN.periodRange = function (id) {
+  var p = TRAIN.PERIODS.filter(function (x) { return x.id === id; })[0] || TRAIN.PERIODS[1];
+  var to = Day.today();
+  if (!p.days) {
+    var all = Object.keys(TRAIN.idx.byDate).sort();
+    return { from: all[0] || to, to: to };
+  }
+  return { from: Day.shift(to, -(p.days - 1)), to: to };
+};
+
+/* ═════════════════ THE CALENDAR ═════════════════
+   A month grid with a dot per muscle group trained that day, and the total
+   workout count underneath — the number FitNotes puts at the foot of the
+   screen and the one that says "631 workouts" on his phone. */
+function drawCalendar(m) {
+  var cats = TRAIN.cats(), exs = TRAIN.exercises();
+  var month = TRAIN.calMonth || TRAIN.date.slice(0, 7);
+  TRAIN.calMonth = month;
+
+  var head = UI.el('div', 'calhead');
+  var back = UI.el('button', 'ico mb-press mb-tap');
+  back.innerHTML = '‹'; back.style.fontSize = 'var(--f-5)';
+  back.setAttribute('aria-label', 'Previous month');
+  back.onclick = function () { TRAIN.calMonth = shiftMonth(month, -1); draw(); };
+  var fwd = UI.el('button', 'ico mb-press mb-tap');
+  fwd.innerHTML = '›'; fwd.style.fontSize = 'var(--f-5)';
+  fwd.setAttribute('aria-label', 'Next month');
+  fwd.onclick = function () { TRAIN.calMonth = shiftMonth(month, 1); draw(); };
+  var title = UI.el('div', 'caltitle');
+  var mid = new Date(month + '-01T12:00:00');
+  title.textContent = mid.toLocaleDateString(undefined, { month: 'long' }).toUpperCase() +
+    ' ' + mid.getFullYear();
+  head.appendChild(back); head.appendChild(title); head.appendChild(fwd);
+  m.appendChild(head);
+
+  var grid = UI.el('div', 'calgrid');
+  var weekStart = Rec.setting(APP.id, 'weekStart') === 1 ? 1 : 0;   /* 1 = Monday */
+  var names = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  for (var i = 0; i < 7; i++) {
+    var h = UI.el('div', 'caldow');
+    h.textContent = names[(i + weekStart) % 7];
+    grid.appendChild(h);
+  }
+
+  var first = new Date(month + '-01T12:00:00');
+  var lead = (first.getDay() - weekStart + 7) % 7;
+  for (var b = 0; b < lead; b++) grid.appendChild(UI.el('div', 'calcell empty'));
+
+  var last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  var today = Day.today();
+  for (var dnum = 1; dnum <= last; dnum++) {
+    var iso = month + '-' + String(dnum).padStart(2, '0');
+    var sets = TRAIN.idx.byDate[iso] || [];
+    var cell = UI.el('button', 'calcell mb-press mb-tap' +
+      (iso === TRAIN.date ? ' sel' : '') + (iso === today ? ' today' : '') +
+      (iso > today ? ' future' : ''));
+    var slots = [];
+    sets.forEach(function (s) {
+      var ex = exs[s.ex], c = ex && ex.cat ? cats[ex.cat] : null;
+      if (c && slots.indexOf(c.slot) < 0) slots.push(c.slot);
+    });
+    var dots = slots.slice(0, 4).map(function (sl) {
+      return '<i style="background:' + TRAIN.slotColor(sl) + '"></i>';
+    }).join('');
+    cell.innerHTML = '<span class="n">' + dnum + '</span><span class="dots">' + dots + '</span>';
+    (function (d) {
+      cell.onclick = function () {
+        if (d > today) return;
+        TRAIN.date = d; Mobile.feedback('select'); TRAIN.show('workout');
+      };
+    })(iso);
+    grid.appendChild(cell);
+  }
+  m.appendChild(grid);
+
+  var foot = UI.el('div', 'calfoot');
+  foot.innerHTML = '<b>' + Object.keys(TRAIN.idx.byDate).length.toLocaleString() +
+    '</b> WORKOUTS';
+  m.appendChild(foot);
+}
+function shiftMonth(ym, n) {
+  var d = new Date(ym + '-01T12:00:00');
+  d.setMonth(d.getMonth() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+/* ═════════════════ ANALYSIS ═════════════════ */
+function drawAnalysis(m) {
+  var by = TRAIN.anaBy || 'category';
+  var period = TRAIN.anaPeriod || '3m';
+  var range = TRAIN.periodRange(period);
+  var data = TRAIN.breakdown(range.from, range.to, by);
+  var unit = TRAIN.unit();
+
+  var controls = UI.el('div', 'exblock');
+  controls.style.padding = 'var(--s-3) var(--s-4)';
+  controls.appendChild(UI.segmented(
+    [{ id: 'category', name: 'CATEGORY' }, { id: 'exercise', name: 'EXERCISE' }], by,
+    function (v) { TRAIN.anaBy = v; draw(); }));
+  var psel = UI.segmented(TRAIN.PERIODS.map(function (p) { return { id: p.id, name: p.name.split(' ')[0] }; }),
+    period, function (v) { TRAIN.anaPeriod = v; draw(); });
+  psel.style.marginTop = 'var(--s-3)';
+  controls.appendChild(psel);
+  m.appendChild(controls);
+
+  var top = UI.el('div', 'exblock');
+  top.style.padding = 'var(--s-3) var(--s-4)';
+  var totals = data.rows.reduce(function (a, r) {
+    a.sets += r.sets; a.reps += r.reps; a.vol += r.vol; return a;
+  }, { sets: 0, reps: 0, vol: 0 });
+  top.innerHTML = '<div class="statrow">' +
+    '<span><b>' + data.workouts + '</b>workouts</span>' +
+    '<span><b>' + totals.sets.toLocaleString() + '</b>sets</span>' +
+    '<span><b>' + totals.reps.toLocaleString() + '</b>reps</span>' +
+    '<span><b>' + Math.round(TRAIN.toUnit(totals.vol, unit)).toLocaleString() + '</b>' + unit + '</span>' +
+    '</div>';
+  m.appendChild(top);
+
+  if (!data.rows.length) {
+    var e = UI.el('div', 'empty');
+    e.textContent = 'No workouts in this period';
+    m.appendChild(e);
+    return;
+  }
+
+  var max = data.rows[0].vol || 1;
+  var card = UI.el('div', 'exblock');
+  card.style.padding = 'var(--s-3) var(--s-4)';
+  data.rows.slice(0, 40).forEach(function (r) {
+    var row = UI.el('div', 'barrow');
+    var pct = Math.max(2, Math.round((r.vol / max) * 100));
+    row.innerHTML =
+      '<div class="lbl"><span class="nm">' + UI.esc(r.name) + '</span>' +
+      '<span class="v">' + Math.round(TRAIN.toUnit(r.vol, unit)).toLocaleString() + ' ' + unit + '</span></div>' +
+      '<div class="track"><i style="width:' + pct + '%;background:' +
+      (r.slot != null ? TRAIN.slotColor(r.slot) : 'var(--accent)') + '"></i></div>' +
+      '<div class="sub">' + r.sets + ' sets · ' + r.reps + ' reps · ' + r.workouts + ' workouts</div>';
+    card.appendChild(row);
+  });
+  m.appendChild(card);
+}
+
+/* ═════════════════ RECORDS ═════════════════ */
+function drawRecords(m) {
+  var exs = TRAIN.exercises(), cats = TRAIN.cats();
+  var q = (TRAIN.recQuery || '').trim().toLowerCase();
+
+  var box = UI.el('div', 'search');
+  box.innerHTML = MAGNIFIER;
+  var input = UI.el('input');
+  Mobile.field(input, 'search', {});
+  input.placeholder = 'Search exercises';
+  input.value = TRAIN.recQuery || '';
+  input.oninput = function () {
+    TRAIN.recQuery = input.value;
+    var pos = input.selectionStart;
+    draw();
+    var live = document.querySelector('.search input');
+    if (live) { live.focus(); live.setSelectionRange(pos, pos); }
+  };
+  box.appendChild(input);
+  m.appendChild(box);
+
+  var rows = Object.keys(exs)
+    .map(function (id) { return { id: id, e: exs[id], r: TRAIN.recordsFor(id) }; })
+    .filter(function (x) { return x.r.sets > 0 && (!q || x.e.name.toLowerCase().indexOf(q) > -1); })
+    .sort(function (a, b) { return a.e.name.localeCompare(b.e.name); });
+
+  if (!rows.length) {
+    var e = UI.el('div', 'empty');
+    e.textContent = 'No personal records found';
+    m.appendChild(e);
+    return;
+  }
+
+  rows.slice(0, TRAIN.recLimit || 60).forEach(function (x) {
+    var cat = cats[x.e.cat];
+    var card = UI.el('div', 'exblock');
+    if (cat) card.style.setProperty('--cat', TRAIN.slotColor(cat.slot));
+    var head = UI.el('div', 'head mb-press mb-tap');
+    head.innerHTML = '<span class="nm">' + UI.esc(x.e.name) + '</span>' +
+      '<span class="u" style="color:var(--text-muted);font-size:var(--f-1)">' +
+      x.r.workouts + ' workouts</span>';
+    head.onclick = function () { TRAIN.openExercise(x.id); };
+    card.appendChild(head);
+
+    var body = UI.el('div', 'sets');
+    body.appendChild(recLine('Max weight', x.r.maxWeight && x.r.maxWeight.kg
+      ? TRAIN.showWeight(x.r.maxWeight.kg, x.r.maxWeight.u) + ' ' + TRAIN.unitLabel() +
+        ' × ' + x.r.maxWeight.r : '—',
+      x.r.maxWeight && x.r.maxWeight.date));
+    body.appendChild(recLine('Max reps', x.r.maxReps ? x.r.maxReps.r + ' reps' : '—',
+      x.r.maxReps && x.r.maxReps.date));
+    if (x.r.maxVolume && x.r.maxVolume.kg) {
+      body.appendChild(recLine('Max set volume',
+        Math.round(TRAIN.toUnit(x.r.maxVolume.kg * x.r.maxVolume.r, TRAIN.unit())).toLocaleString() +
+        ' ' + TRAIN.unit(), x.r.maxVolume.date));
+    }
+    if (x.r.max1rm) {
+      body.appendChild(recLine('Estimated 1RM',
+        TRAIN.showWeight(TRAIN.e1rm(x.r.max1rm.kg, x.r.max1rm.r), null) + ' ' + TRAIN.unitLabel(),
+        x.r.max1rm.date));
+    }
+    card.appendChild(body);
+    m.appendChild(card);
+  });
+
+  if (rows.length > (TRAIN.recLimit || 60)) {
+    var more = UI.el('button', 'mb-btn mb-press mb-tap');
+    more.style.width = '100%';
+    more.textContent = 'SHOW MORE (' + (rows.length - (TRAIN.recLimit || 60)) + ')';
+    more.onclick = function () { TRAIN.recLimit = (TRAIN.recLimit || 60) + 60; draw(); };
+    m.appendChild(more);
+  }
+}
+function recLine(label, value, date) {
+  var row = UI.el('div', 'recline');
+  row.innerHTML = '<span class="k">' + UI.esc(label) + '</span>' +
+    '<span class="v">' + value + '</span>' +
+    '<span class="d">' + (date ? UI.esc(Day.short(date)) : '') + '</span>';
+  return row;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   THE REST TIMER
+
+   This is the one place TRAIN is worse than FitNotes and it cannot be fixed
+   from a page in a browser: a backgrounded tab is suspended, so the timer
+   will not buzz in his pocket.
+
+   It therefore recovers rather than pretends. The moment it started is
+   written down, and the elapsed time is always recomputed from the clock. If
+   he comes back after two minutes away it says he is forty seconds over,
+   instead of resuming from wherever it froze. A timer that silently stopped
+   counting is worse than no timer.
+   ═════════════════════════════════════════════════════════════════════════ */
+TRAIN.rest = { until: 0, len: 0, tick: null, fired: false };
+
+TRAIN.restStart = function (seconds) {
+  var len = seconds || Rec.setting(APP.id, 'restSeconds') || 120;
+  TRAIN.rest.len = len;
+  TRAIN.rest.until = Date.now() + len * 1000;
+  TRAIN.rest.fired = false;
+  try { localStorage.setItem('train.rest', JSON.stringify({ until: TRAIN.rest.until, len: len })); } catch (e) {}
+  restLoop();
+  drawRestBar();
+};
+TRAIN.restStop = function () {
+  TRAIN.rest.until = 0;
+  if (TRAIN.rest.tick) { clearInterval(TRAIN.rest.tick); TRAIN.rest.tick = null; }
+  try { localStorage.removeItem('train.rest'); } catch (e) {}
+  drawRestBar();
+};
+TRAIN.restRestore = function () {
+  try {
+    var v = JSON.parse(localStorage.getItem('train.rest') || 'null');
+    if (v && v.until) {
+      TRAIN.rest.until = v.until; TRAIN.rest.len = v.len;
+      /* More than ten minutes past the end is a session he walked away from. */
+      if (Date.now() - v.until > 600000) return TRAIN.restStop();
+      TRAIN.rest.fired = Date.now() > v.until;
+      restLoop();
+    }
+  } catch (e) {}
+  drawRestBar();
+};
+function restLoop() {
+  if (TRAIN.rest.tick) clearInterval(TRAIN.rest.tick);
+  TRAIN.rest.tick = setInterval(drawRestBar, 250);
+}
+function drawRestBar() {
+  var bar = document.getElementById('restbar');
+  if (!bar) return;
+  if (!TRAIN.rest.until) { bar.style.display = 'none'; return; }
+  var left = Math.round((TRAIN.rest.until - Date.now()) / 1000);
+  bar.style.display = '';
+  bar.className = 'restbar' + (left <= 0 ? ' over' : '');
+  var pct = TRAIN.rest.len ? Math.max(0, Math.min(1, left / TRAIN.rest.len)) : 0;
+  bar.querySelector('.fill').style.width = Math.round(pct * 100) + '%';
+  bar.querySelector('.t').textContent = left > 0 ? fmtSecs(left) : '+' + fmtSecs(-left);
+  bar.querySelector('.lbl').textContent = left > 0 ? 'REST' : 'OVER';
+  if (left <= 0 && !TRAIN.rest.fired) {
+    TRAIN.rest.fired = true;
+    if (Rec.setting(APP.id, 'restVibrate') !== 0) Mobile.haptic('complete');
+    if (Rec.setting(APP.id, 'restSound') !== 0 && window.Sfx) Sfx.play('complete', { level: 2 });
+  }
+}
+
+/* ═════════════════ THE WORKOUT TIMER ═════════════════
+   The start and end of the session, stored on the day's `session` row. */
+TRAIN.workoutStart = function (date) {
+  var s = Rec.get('session', date, '') || {};
+  if (s.start) return s;
+  s = { start: new Date().toISOString(), end: s.end || null, note: s.note || '' };
+  Rec.set('session', date, '', s);
+  return s;
+};
+TRAIN.workoutStop = function (date) {
+  var s = Rec.get('session', date, '') || {};
+  if (!s.start) return null;
+  var next = { start: s.start, end: new Date().toISOString(), note: s.note || '' };
+  Rec.set('session', date, '', next);
+  return next;
+};
+TRAIN.timeWorkoutPanel = function () {
+  var date = TRAIN.date;
+  var s = Rec.get('session', date, '') || {};
+  UI.dialog({
+    title: 'TIME WORKOUT', width: 420,
+    body: function (b) {
+      var info = UI.el('div', 'empty');
+      info.innerHTML = s.start
+        ? 'Started <b>' + UI.esc(clockOf(s.start)) + '</b>' +
+          (s.end ? ', ended <b>' + UI.esc(clockOf(s.end)) + '</b> · ' + fmtLen(s.start, s.end) : ', still running')
+        : 'No time recorded for this workout yet.';
+      b.appendChild(info);
+
+      var row = UI.el('div');
+      row.style.cssText = 'display:flex;gap:var(--s-3);margin-top:var(--s-4)';
+      var startBtn = UI.el('button', 'mb-btn mb-press mb-tap');
+      startBtn.style.flex = '1';
+      startBtn.textContent = s.start ? 'RESTART' : 'START';
+      startBtn.onclick = function () {
+        Rec.set('session', date, '', { start: new Date().toISOString(), end: null, note: s.note || '' });
+        UI.closeMenus(); draw(); UI.toast('workout timer started');
+      };
+      row.appendChild(startBtn);
+      if (s.start && !s.end) {
+        var stopBtn = UI.el('button', 'mb-btn mb-press mb-tap');
+        stopBtn.style.flex = '1';
+        stopBtn.textContent = 'STOP';
+        stopBtn.onclick = function () { TRAIN.workoutStop(date); draw(); UI.toast('workout timer stopped'); };
+        row.appendChild(stopBtn);
+      }
+      if (s.start) {
+        var clr = UI.el('button', 'mb-btn mb-press mb-tap');
+        clr.style.flex = '1';
+        clr.textContent = 'DELETE';
+        clr.onclick = function () {
+          Rec.set('session', date, '', { start: null, end: null, note: s.note || '' });
+          draw(); UI.toast('workout time deleted');
+        };
+        row.appendChild(clr);
+      }
+      b.appendChild(row);
+    },
+    actions: [{ label: 'DONE', kind: 'go' }],
+  });
+};
+
+/* ═════════════════ COMMENT, COPY, MOVE, SHARE ═════════════════ */
+TRAIN.commentWorkout = function () {
+  var date = TRAIN.date, s = Rec.get('session', date, '') || {};
+  UI.dialog({
+    title: 'COMMENT WORKOUT', width: 420, focus: true,
+    body: function (b, h) {
+      var i = UI.field('note', { value: s.note || '', placeholder: 'Comment Text ...', rows: 4 });
+      b.appendChild(i);
+      Mobile.form(b, function () { save(h, i); });
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'SAVE', kind: 'go', fn: function (h) { save(h, h.body.querySelector('textarea')); return false; } },
+    ],
+  });
+  function save(h, i) {
+    Rec.set('session', date, '', { start: s.start || null, end: s.end || null, note: (i.value || '').trim() });
+    h.close(); Mobile.feedback('success'); draw();
+    UI.toast('comment saved');
+  }
+};
+
+/* Copy every set of one day onto another, weights and reps intact. The sets
+   arrive uncompleted, because copying a workout is a plan, not a claim that
+   it happened. */
+TRAIN.copyWorkout = function (fromDate, toDate) {
+  fromDate = fromDate || TRAIN.previousWorkout(TRAIN.date);
+  toDate = toDate || TRAIN.date;
+  if (!fromDate) return UI.toast('there is no workout to copy', { bad: true });
+  var groups = TRAIN.dayGroups(fromDate), n = 0;
+  groups.forEach(function (g) {
+    g.sets.forEach(function (s) {
+      Rec.set('set', toDate, TRAIN.newId(), {
+        ex: s.ex, kg: s.kg, r: s.r, u: s.u, done: 0, pr: 0, prf: 0,
+        dist: s.dist, dur: s.dur, note: '', ord: ++n,
+      });
+    });
+  });
+  /* Where it came from, kept on the day's own session row. Without this the
+     copy is indistinguishable from a workout typed out by hand, and there is
+     nothing to measure today against. */
+  var sess = Rec.get('session', toDate, '') || {};
+  sess.from = fromDate;
+  Rec.set('session', toDate, '', sess);
+  TRAIN.reindex();
+  TRAIN.assertTick(toDate);
+  Mobile.feedback('success');
+  draw();
+  UI.toast('copied <b>' + n + '</b> sets from ' + UI.esc(Day.label(fromDate)));
+};
+
+/* ═══════════════════ AM I STRONGER ═══════════════════
+   The question a repeated session exists to answer. You copied last Tuesday
+   onto today precisely so you could beat it, and the log used to make you work
+   that out by reading two screens side by side.
+
+   Two numbers, because "stronger" is genuinely two things and picking one
+   would be a lie of omission:
+
+     TOP SET, as an estimated one-rep max. This is the strength answer, and it
+     is the one that leads. Using e1RM rather than raw weight is what lets the
+     same bar for two more reps count as progress, which it is.
+
+     VOLUME, weight times reps summed. This is the work answer. You can move
+     more total load on a day your top set went nowhere, and that is a real
+     thing that happened.
+
+   Only COMPLETED sets count on today's side. A copied set starts life
+   unticked, so before you have done anything the whole session is sitting
+   there at exactly last week's numbers — comparing against that would open
+   every workout with a cheerful "no change" about work you have not done yet.
+   The source day is taken as logged, in full.
+
+   e1RM returns 0 above the rep cap, so the comparison falls back to the
+   heaviest weight whenever either side has no usable estimate. Comparing an
+   estimate against a raw weight would be arithmetic on two different things.  */
+TRAIN.topOf = function (sets) {
+  var best = { kg: 0, r: 0, e: 0 };
+  sets.forEach(function (x) {
+    var e = TRAIN.e1rm(x.kg, x.r);
+    if (e > best.e) best.e = e;
+    if ((x.kg || 0) > best.kg || ((x.kg || 0) === best.kg && (x.r || 0) > best.r)) {
+      best.kg = x.kg || 0; best.r = x.r || 0;
+    }
+  });
+  return best;
+};
+
+TRAIN.sessionCompare = function (date) {
+  var sess = Rec.get('session', date, '') || {};
+  if (!sess.from) return null;
+  var from = sess.from;
+  var thenGroups = TRAIN.dayGroups(from);
+  if (!thenGroups.length) return null;
+
+  var thenBy = {};
+  thenGroups.forEach(function (g) { thenBy[g.ex] = g.sets; });
+
+  var out = { from: from, rows: [], volNow: 0, volThen: 0, up: 0, down: 0, same: 0, doneSets: 0 };
+
+  TRAIN.dayGroups(date).forEach(function (g) {
+    var done = g.sets.filter(function (x) { return x.done; });
+    out.doneSets += done.length;
+    var was = thenBy[g.ex];
+    if (!was || !done.length) return;
+
+    var a = TRAIN.topOf(done), b = TRAIN.topOf(was);
+    var volNow = TRAIN.volume(done), volThen = TRAIN.volume(was);
+    out.volNow += volNow; out.volThen += volThen;
+
+    /* both sides on the same footing, or neither */
+    var useE = a.e > 0 && b.e > 0;
+    var now = useE ? a.e : a.kg, then = useE ? b.e : b.kg;
+    var d = now - then;
+
+    if (d > 0.05) out.up++; else if (d < -0.05) out.down++; else out.same++;
+    out.rows.push({
+      ex: g.ex, name: g.def.name, basis: useE ? 'e1rm' : 'weight',
+      now: now, then: then, delta: d,
+      topKg: a.kg, topReps: a.r, wasKg: b.kg, wasReps: b.r,
+      volNow: volNow, volThen: volThen, volDelta: volNow - volThen,
+    });
+  });
+  return out.rows.length ? out : (out.doneSets ? out : null);
+};
+
+/* A signed weight in the unit on screen. The delta is a difference between two
+   kilogram figures, so it converts as a quantity — never by running each side
+   through showWeight and subtracting the printed strings. */
+TRAIN.showDelta = function (kg) {
+  var v = TRAIN.toUnit(Math.abs(kg), TRAIN.unit());
+  var t = (Math.round(v * 10) / 10).toFixed(1);
+  return (kg >= 0 ? '+' : '−') + t;
+};
+
+TRAIN.shareWorkout = function () {
+  var date = TRAIN.date, groups = TRAIN.dayGroups(date);
+  if (!groups.length) return UI.toast('no workout to share', { bad: true });
+  var unit = TRAIN.unit();
+  var lines = [Day.label(date)];
+  var sess = Rec.get('session', date, '') || {};
+  if (sess.start && sess.end) lines.push(clockOf(sess.start) + ' - ' + clockOf(sess.end) + '  ' + fmtLen(sess.start, sess.end));
+  lines.push('');
+  groups.forEach(function (g) {
+    lines.push(g.def.name);
+    g.sets.forEach(function (s, i) {
+      lines.push('  ' + (i + 1) + '.  ' +
+        (s.kg ? TRAIN.showWeight(s.kg, s.u) + ' ' + TRAIN.unitLabel() + ' x ' : '') +
+        (s.r || 0) + ' reps' + (s.note ? '   (' + s.note + ')' : ''));
+    });
+    lines.push('');
+  });
+  var text = lines.join('\n');
+  var done = function () { UI.toast('workout copied to the clipboard'); };
+  if (navigator.share) {
+    navigator.share({ title: 'Workout - ' + Day.label(date), text: text })
+      .catch(function () { copyText(text, done); });
+  } else copyText(text, done);
+};
+function copyText(text, then) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(then, function () { fallback(); });
+  } else fallback();
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); then(); } catch (e) { UI.toast('could not copy', { bad: true }); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ═════════════════ ROUTINES ═════════════════
+   FitNotes calls them routines; the type is `program` because BLOCK already
+   owns `routine`. A routine holds days, a day holds exercises, and an
+   exercise can carry predefined sets. */
+TRAIN.programs = function () { return Rec.map('program'); };
+TRAIN.daysOf = function (progId) {
+  var all = Rec.map('progday'), out = [];
+  Object.keys(all).forEach(function (k) { if (all[k].program === progId) out.push({ key: k, d: all[k] }); });
+  return out.sort(function (a, b) { return (a.d.ord || 0) - (b.d.ord || 0); });
+};
+TRAIN.exercisesOf = function (dayKey) {
+  var all = Rec.map('progex'), out = [];
+  Object.keys(all).forEach(function (k) { if (all[k].day === dayKey) out.push({ key: k, x: all[k] }); });
+  return out.sort(function (a, b) { return (a.x.ord || 0) - (b.x.ord || 0); });
+};
+
+function drawRoutines(m) {
+  var progs = TRAIN.programs();
+  var keys = Object.keys(progs).sort(function (a, b) { return (progs[a].ord || 0) - (progs[b].ord || 0); });
+
+  if (TRAIN.progOpen) return drawOneProgram(m, TRAIN.progOpen);
+
+  if (!keys.length) {
+    var e = UI.el('div', 'empty');
+    e.innerHTML = 'No routines yet.<br><br>A routine is a template of a workout you do often: ' +
+      'name it, add the days, and put the exercises in each day. Starting one fills the ' +
+      'workout in for you.';
+    m.appendChild(e);
+  } else {
+    var list = UI.el('div', 'plist');
+    keys.forEach(function (k) {
+      var days = TRAIN.daysOf(k);
+      var b = UI.el('button', 'prow mb-press mb-tap');
+      b.innerHTML = '<span class="nm">' + UI.esc(progs[k].name) + '</span>' +
+        '<span class="sub">' + days.length + ' day' + (days.length === 1 ? '' : 's') + '</span>';
+      b.onclick = function () { TRAIN.progOpen = k; draw(); };
+      list.appendChild(b);
+    });
+    m.appendChild(list);
+  }
+
+  var add = UI.el('button', 'mb-btn mb-press mb-tap');
+  add.style.width = '100%';
+  add.textContent = 'CREATE NEW ROUTINE';
+  add.onclick = function () {
+    askName('Create New Routine', '', function (name) {
+      Rec.set('program', null, TRAIN.newId(), { name: name, ord: keys.length });
+      draw(); UI.toast('routine created');
+    });
+  };
+  m.appendChild(add);
+}
+
+function drawOneProgram(m, progId) {
+  var prog = TRAIN.programs()[progId];
+  if (!prog) { TRAIN.progOpen = null; return draw(); }
+  var days = TRAIN.daysOf(progId), exs = TRAIN.exercises();
+
+  var bar = UI.el('div', 'exblock');
+  bar.style.padding = 'var(--s-3) var(--s-4)';
+  bar.innerHTML = '<div class="lasttime"><b>' + UI.esc(prog.name) + '</b></div>';
+  m.appendChild(bar);
+
+  days.forEach(function (d) {
+    var items = TRAIN.exercisesOf(d.key);
+    var card = UI.el('div', 'exblock');
+    var head = UI.el('div', 'head');
+    head.innerHTML = '<span class="nm">' + UI.esc(d.d.name) + '</span>';
+    var logAll = UI.el('button', 'mb-btn mb-press mb-tap');
+    logAll.textContent = 'LOG ALL';
+    logAll.onclick = function () { TRAIN.startProgramDay(d.key); };
+    head.appendChild(logAll);
+    card.appendChild(head);
+
+    var body = UI.el('div', 'sets');
+    items.forEach(function (it) {
+      var ex = exs[it.x.ex];
+      var row = UI.el('div', 'setrow');
+      row.innerHTML = '<span class="grow" style="text-align:left">' +
+        UI.esc(ex ? ex.name : '?') + '</span>' +
+        '<span class="u">' + (it.x.sets && it.x.sets.length ? it.x.sets.length + ' sets' : '') + '</span>';
+      var del = UI.el('button', 'ico mb-press mb-tap');
+      del.innerHTML = '×'; del.style.width = '32px'; del.style.height = '32px';
+      del.setAttribute('aria-label', 'Remove');
+      del.onclick = function () { Rec.del('progex', null, it.key); draw(); };
+      row.appendChild(del);
+      body.appendChild(row);
+    });
+    if (!items.length) {
+      var none = UI.el('div', 'empty');
+      none.textContent = 'No exercises in this day yet.';
+      body.appendChild(none);
+    }
+    var addEx = UI.el('button', 'mb-btn mb-press mb-tap');
+    addEx.style.width = '100%';
+    addEx.style.marginTop = 'var(--s-2)';
+    addEx.textContent = '+ ADD EXERCISE';
+    addEx.onclick = function () {
+      TRAIN.pickInto = { day: d.key };
+      TRAIN.query = '';
+      TRAIN.show('picker', { cat: null });
+    };
+    body.appendChild(addEx);
+    card.appendChild(body);
+    m.appendChild(card);
+  });
+
+  var addDay = UI.el('button', 'mb-btn mb-press mb-tap');
+  addDay.style.width = '100%';
+  addDay.textContent = 'ADD A DAY';
+  addDay.onclick = function () {
+    askName('Day name', '', function (name) {
+      Rec.set('progday', null, TRAIN.newId(), { program: progId, name: name, ord: days.length });
+      draw();
+    });
+  };
+  m.appendChild(addDay);
+
+  var del = UI.el('button', 'mb-btn mb-press mb-tap');
+  del.style.width = '100%';
+  del.textContent = 'DELETE ROUTINE';
+  del.onclick = function () {
+    UI.confirm('Delete <b>' + UI.esc(prog.name) + '</b>?',
+      'Its days and exercises go with it. Nothing you have already logged is touched.',
+      { go: 'DELETE' }).then(function (yes) {
+        if (!yes) return;
+        TRAIN.daysOf(progId).forEach(function (d) {
+          TRAIN.exercisesOf(d.key).forEach(function (it) { Rec.del('progex', null, it.key); });
+          Rec.del('progday', null, d.key);
+        });
+        Rec.del('program', null, progId);
+        TRAIN.progOpen = null;
+        draw();
+        UI.toast('routine deleted');
+      });
+  };
+  m.appendChild(del);
+}
+
+/* Put every exercise of a routine day into today, ready to be filled in. */
+TRAIN.startProgramDay = function (dayKey) {
+  var items = TRAIN.exercisesOf(dayKey), n = 0;
+  items.forEach(function (it) {
+    var sets = it.x.sets && it.x.sets.length ? it.x.sets : [{ kg: 0, r: 0 }];
+    sets.forEach(function (s) {
+      Rec.set('set', TRAIN.date, TRAIN.newId(), {
+        ex: it.x.ex, kg: s.kg || 0, r: s.r || 0, u: s.u || TRAIN.unit(),
+        done: 0, pr: 0, prf: 0, dist: s.dist || 0, dur: s.dur || 0, note: '', ord: ++n,
+      });
+    });
+  });
+  TRAIN.reindex();
+  TRAIN.assertTick(TRAIN.date);
+  Mobile.feedback('success');
+  TRAIN.show('workout');
+  UI.toast('added <b>' + items.length + '</b> exercises');
+};
+
+/* ═════════════════ SUPERSETS ═════════════════ */
+TRAIN.groupsOn = function (date) {
+  var all = Rec.all('sgroup', { date: date });
+  return all.map(function (r) { return { key: r.key, g: r.payload }; });
+};
+TRAIN.supersetPanel = function () {
+  var date = TRAIN.date;
+  var groups = TRAIN.groupsOn(date), day = TRAIN.dayGroups(date), exs = TRAIN.exercises();
+  UI.dialog({
+    title: 'SUPERSETS', width: 460,
+    body: function (b) {
+      if (!day.length) {
+        var e = UI.el('div', 'empty');
+        e.textContent = 'Log some exercises first, then group them.';
+        b.appendChild(e);
+        return;
+      }
+      groups.forEach(function (grp) {
+        var card = UI.el('div', 'exblock');
+        card.style.marginBottom = 'var(--s-3)';
+        card.style.setProperty('--cat', TRAIN.slotColor(grp.g.slot || 0));
+        var head = UI.el('div', 'head');
+        head.innerHTML = '<span class="nm">' + UI.esc(grp.g.name) + '</span>';
+        var x = UI.el('button', 'ico mb-press mb-tap');
+        x.innerHTML = '×';
+        x.setAttribute('aria-label', 'Delete superset');
+        x.onclick = function () { Rec.del('sgroup', date, grp.key); UI.closeMenus(); TRAIN.supersetPanel(); };
+        head.appendChild(x);
+        card.appendChild(head);
+        var body = UI.el('div', 'sets');
+        (grp.g.ex || []).forEach(function (id) {
+          var row = UI.el('div', 'setrow');
+          row.innerHTML = '<span class="grow" style="text-align:left">' +
+            UI.esc(exs[id] ? exs[id].name : '?') + '</span>';
+          body.appendChild(row);
+        });
+        card.appendChild(body);
+        b.appendChild(card);
+      });
+
+      var h = UI.el('div', 'mb-group');
+      h.textContent = 'NEW SUPERSET';
+      b.appendChild(h);
+      var chosen = {};
+      day.forEach(function (g) {
+        var row = UI.el('button', 'prow mb-press mb-tap');
+        row.innerHTML = '<span class="nm">' + UI.esc(g.def.name) + '</span>' +
+          '<span class="tickdot off"></span>';
+        row.onclick = function () {
+          chosen[g.ex] = !chosen[g.ex];
+          var dot = row.querySelector('.tickdot');
+          dot.className = 'tickdot' + (chosen[g.ex] ? '' : ' off');
+          dot.textContent = chosen[g.ex] ? '✓' : '';
+          Mobile.feedback('select');
+        };
+        b.appendChild(row);
+      });
+      var make = UI.el('button', 'mb-btn mb-press mb-tap');
+      make.style.width = '100%';
+      make.style.marginTop = 'var(--s-3)';
+      make.textContent = 'CREATE SUPERSET';
+      make.onclick = function () {
+        var ids = Object.keys(chosen).filter(function (k) { return chosen[k]; });
+        if (ids.length < 2) return UI.toast('pick at least two exercises', { bad: true });
+        Rec.set('sgroup', date, TRAIN.newId(), {
+          name: 'Superset ' + (groups.length + 1), slot: groups.length % TRAIN.SLOTS,
+          ex: ids, jump: 1, resthold: 0,
+        });
+        Mobile.feedback('success');
+        UI.closeMenus();
+        draw();
+        UI.toast('superset created');
+      };
+      b.appendChild(make);
+    },
+    actions: [{ label: 'DONE', kind: 'go' }],
+  });
+};
+
+/* ═════════════════ GOALS ═════════════════ */
+function drawGoals(m) {
+  var goals = Rec.map('goal'), exs = TRAIN.exercises();
+  var keys = Object.keys(goals).sort(function (a, b) { return (goals[a].ord || 0) - (goals[b].ord || 0); });
+
+  if (!keys.length) {
+    var e = UI.el('div', 'empty');
+    e.innerHTML = 'No goals set.<br><br>A goal is a weight and a rep count for one exercise. ' +
+      'Progress is measured against your best set, and it never goes backwards.';
+    m.appendChild(e);
+  }
+
+  keys.forEach(function (k) {
+    var g = goals[k], ex = exs[g.ex];
+    var rec = g.ex ? TRAIN.recordsFor(g.ex) : null;
+    var bestKg = rec && rec.maxWeight ? rec.maxWeight.kg : 0;
+    /* Endowed progress: a bar that starts at zero is the one people abandon.
+       The head start here is real, not invented — it is what he has already
+       lifted, and the bar says so. */
+    var pct = g.kg ? Math.max(0, Math.min(100, Math.round((bestKg / g.kg) * 100))) : 0;
+    var card = UI.el('div', 'exblock');
+    card.style.padding = 'var(--s-3) var(--s-4)';
+    card.innerHTML =
+      '<div class="lbl" style="display:flex;justify-content:space-between;gap:var(--s-3)">' +
+      '<b>' + UI.esc(g.title || (ex ? ex.name : 'Goal')) + '</b>' +
+      '<span class="u">' + TRAIN.showWeight(g.kg, g.u) + ' ' + TRAIN.unitLabel() +
+      ' × ' + (g.r || 1) + '</span></div>' +
+      '<div class="track" style="margin-top:var(--s-2)"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="sub">best so far <b>' + TRAIN.showWeight(bestKg, null) + ' ' +
+      TRAIN.unitLabel() + '</b> · ' + pct + '%</div>';
+    var del = UI.el('button', 'mb-btn mb-press mb-tap');
+    del.textContent = 'DELETE';
+    del.style.marginTop = 'var(--s-3)';
+    del.onclick = function () { Rec.del('goal', null, k); draw(); UI.toast('goal deleted'); };
+    card.appendChild(del);
+    m.appendChild(card);
+  });
+
+  var add = UI.el('button', 'mb-btn mb-press mb-tap');
+  add.style.width = '100%';
+  add.textContent = 'ADD GOAL';
+  add.onclick = function () { TRAIN.goalDialog(); };
+  m.appendChild(add);
+}
+
+TRAIN.goalDialog = function () {
+  var exs = TRAIN.exercises();
+  var ids = Object.keys(exs).sort(function (a, b) { return exs[a].name.localeCompare(exs[b].name); });
+  UI.dialog({
+    title: 'ADD GOAL', width: 420,
+    body: function (b, h) {
+      var sel = document.createElement('select');
+      sel.className = 'mb-input';
+      ids.forEach(function (id) {
+        var o = document.createElement('option');
+        o.value = id; o.textContent = exs[id].name;
+        sel.appendChild(o);
+      });
+      if (TRAIN.exId && exs[TRAIN.exId]) sel.value = TRAIN.exId;
+      b.appendChild(UI.row('Exercise', '', sel));
+      var w = UI.field('decimal', { placeholder: TRAIN.unitLabel() });
+      b.appendChild(UI.row('Target weight', 'in ' + TRAIN.unitLabel(), w));
+      var r = UI.field('number', { placeholder: 'reps', value: '1' });
+      b.appendChild(UI.row('Reps', '', r));
+      h.grab = function () { return { ex: sel.value, w: w.value, r: r.value }; };
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'ADD', kind: 'go', fn: function (h) {
+        var v = h.grab();
+        var kg = TRAIN.toKg(parseFloat(v.w) || 0, TRAIN.unit());
+        if (!kg) { UI.toast('enter a target weight', { bad: true }); return false; }
+        Rec.set('goal', null, TRAIN.newId(), {
+          kind: 0, ex: v.ex, kg: kg, r: parseInt(v.r, 10) || 1, u: TRAIN.unit(),
+          title: exs[v.ex] ? exs[v.ex].name : '', from: Day.today(), to: null,
+          dist: 0, dur: 0, ord: Object.keys(Rec.map('goal')).length,
+        });
+        Mobile.feedback('success');
+        draw();
+        UI.toast('goal created');
+      } },
+    ],
+  });
+};
+
+/* ═════════════════ PLATE CALCULATOR ═════════════════
+   Which plates go on each side to make a number. Greedy from the heaviest
+   down, which is what anyone does at the rack. */
+TRAIN.plateSolve = function (targetKg, barKg) {
+  var plates = (Rec.setting(APP.id, 'plates') || []).filter(function (p) { return p.on !== 0; });
+  if (!plates.length) plates = [{ kg: 25 }, { kg: 20 }, { kg: 15 }, { kg: 10 }, { kg: 5 }, { kg: 2.5 }, { kg: 1.25 }];
+  var perSide = (targetKg - barKg) / 2;
+  if (perSide <= 0) return { ok: targetKg === barKg, used: [], left: perSide };
+  var sorted = plates.slice().sort(function (a, b) { return b.kg - a.kg; });
+  var used = [], rem = perSide;
+  sorted.forEach(function (p) {
+    var n = Math.floor((rem + 1e-6) / p.kg);
+    var cap = p.n ? Math.floor(p.n / 2) : 20;
+    if (n > cap) n = cap;
+    if (n > 0) { used.push({ kg: p.kg, n: n }); rem -= n * p.kg; }
+  });
+  return { ok: Math.abs(rem) < 0.01, used: used, left: rem, perSide: perSide };
+};
+
+TRAIN.platePanel = function (prefillKg) {
+  var bars = Rec.setting(APP.id, 'bars') || [{ w: 20, u: 'kg' }];
+  UI.dialog({
+    title: 'PLATE CALCULATOR', width: 420,
+    body: function (b) {
+      var unit = TRAIN.unit();
+      var barKg = bars[0].u === 'lb' ? bars[0].w / LB_PER_KG : bars[0].w;
+      var wrap = UI.el('div');
+      var w = UI.field('decimal', {
+        placeholder: 'target ' + TRAIN.unitLabel(),
+        value: prefillKg ? TRAIN.showWeight(prefillKg, null) : '',
+      });
+      wrap.appendChild(UI.row('Target weight', 'total on the bar, in ' + TRAIN.unitLabel(), w));
+
+      var barSel = document.createElement('select');
+      barSel.className = 'mb-input';
+      bars.forEach(function (bar, i) {
+        var o = document.createElement('option');
+        o.value = String(i);
+        o.textContent = (Math.round(TRAIN.toUnit(bar.u === 'lb' ? bar.w / LB_PER_KG : bar.w, unit) * 10) / 10) +
+          ' ' + TRAIN.unitLabel();
+        barSel.appendChild(o);
+      });
+      wrap.appendChild(UI.row('Bar', 'the empty bar', barSel));
+
+      var out = UI.el('div');
+      out.style.marginTop = 'var(--s-4)';
+      wrap.appendChild(out);
+      b.appendChild(wrap);
+
+      var run = function () {
+        var bar = bars[parseInt(barSel.value, 10) || 0];
+        barKg = bar.u === 'lb' ? bar.w / LB_PER_KG : bar.w;
+        var target = TRAIN.toKg(parseFloat(w.value) || 0, unit);
+        if (!target) { out.innerHTML = '<div class="empty">Enter a weight.</div>'; return; }
+        var sol = TRAIN.plateSolve(target, barKg);
+        if (sol.perSide <= 0) {
+          out.innerHTML = '<div class="empty">That is at or below the bar on its own.</div>';
+          return;
+        }
+        var rows = sol.used.map(function (u) {
+          return '<div class="recline"><span class="k">' +
+            (Math.round(TRAIN.toUnit(u.kg, unit) * 100) / 100) + ' ' + TRAIN.unitLabel() +
+            '</span><span class="v">× ' + u.n + '</span><span class="d"></span></div>';
+        }).join('');
+        out.innerHTML = '<div class="mb-group">EACH SIDE</div>' + rows +
+          (sol.ok ? '' : '<div class="empty">Closest possible — <b>' +
+            (Math.round(TRAIN.toUnit(sol.left, unit) * 100) / 100) + ' ' + TRAIN.unitLabel() +
+            '</b> per side short with the plates you have.</div>');
+      };
+      w.oninput = run; barSel.onchange = run;
+      run();
+    },
+    actions: [{ label: 'DONE', kind: 'go' }],
+  });
+};
+
+/* ═════════════════ SMALL SHARED DIALOGS ═════════════════ */
+function askName(title, value, fn) {
+  UI.dialog({
+    title: title.toUpperCase(), width: 400, focus: true,
+    body: function (b, h) {
+      var i = UI.field('name', { value: value || '', placeholder: 'Name' });
+      b.appendChild(i);
+      Mobile.form(b, function () { go(h, i); });
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'SAVE', kind: 'go', fn: function (h) { go(h, h.body.querySelector('input')); return false; } },
+    ],
+  });
+  function go(h, i) {
+    var v = (i.value || '').trim();
+    if (!v) { UI.toast('please enter a name', { bad: true }); i.focus(); return; }
+    h.close();
+    Mobile.feedback('success');
+    fn(v);
+  }
+}
+
+/* ═══════════════════ NAVIGATION ═══════════════════ */
+document.getElementById('prev').onclick = function () {
+  TRAIN.go(Day.shift(TRAIN.date, -1)); Mobile.feedback('select');
+};
+document.getElementById('next').onclick = function () {
+  TRAIN.go(Day.shift(TRAIN.date, 1)); Mobile.feedback('select');
+};
+document.getElementById('when').onclick = function () {
+  TRAIN.go(Day.today()); Mobile.feedback('select');
+};
+
+/* Swiping the date strip moves a day, which is how the day gets changed in
+   the gym without looking at the screen. */
+(function () {
+  var bar = document.getElementById('datebar'), x0 = null, y0 = null;
+  bar.addEventListener('touchstart', function (e) {
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  bar.addEventListener('touchend', function (e) {
+    if (x0 == null) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+    TRAIN.go(Day.shift(TRAIN.date, dx < 0 ? 1 : -1));
+    Mobile.feedback('select');
+  }, { passive: true });
+})();
+
+/* ── the overflow menu ──
+   FitNotes' own list, in its own order, minus Body Tracker, which is STATUS's
+   job and is not built here. Import is not in this menu and not in the top
+   bar: it is a once-ever action and it lives in Settings, plus on the empty
+   screen of a store with nothing in it, which is the only moment it matters. */
+document.getElementById('moreBtn').onclick = function (e) {
+  var r = e.currentTarget.getBoundingClientRect();
+  var items;
+  if (TRAIN.screen === 'training') {
+    var ex = TRAIN.exercises()[TRAIN.exId] || {};
+    items = [
+      { label: 'Rest Timer', fn: function () { TRAIN.restStart(ex.rest || 0); } },
+      { label: 'Plate Calculator', fn: function () {
+        var sel = TRAIN.sel && Rec.get('set', TRAIN.date, TRAIN.sel);
+        TRAIN.platePanel(sel ? sel.kg : 0);
+      } },
+      { label: 'Add To Superset', fn: function () { TRAIN.supersetPanel(); } },
+      { label: 'Add Goal', fn: function () { TRAIN.goalDialog(); } },
+      { label: 'Edit Exercise', fn: function () { TRAIN.exerciseDialog(TRAIN.exId); } },
+      { label: 'Settings', fn: function () { TRAIN.settings(); } },
+    ];
+  } else {
+    items = [
+      { label: 'Settings', fn: function () { TRAIN.settings(); } },
+      { label: 'Copy Previous Workout', fn: function () { TRAIN.copyWorkout(); } },
+      { label: 'Comment Workout', fn: function () { TRAIN.commentWorkout(); } },
+      { label: 'Time Workout', fn: function () { TRAIN.timeWorkoutPanel(); } },
+      { label: 'Supersets', fn: function () { TRAIN.supersetPanel(); } },
+      { label: 'Share Workout', fn: function () { TRAIN.shareWorkout(); } },
+      { label: 'Analysis', fn: function () { TRAIN.show('analysis'); } },
+    ];
+  }
+  UI.menu(r.right, r.bottom, items, { title: 'MORE' });
+};
+
+/* ── the app menu ──
+   Everything that is a place rather than an action. FitNotes hangs this off
+   the same hamburger; the training screen's hamburger shows the day's
+   exercises instead, which is also what FitNotes does. */
+var NAV = [
+  { id: 'workout', name: 'Workout', icon: '<path d="M4 7h4v10H4zM16 7h4v10h-4zM8 12h8"/>' },
+  { id: 'calendar', name: 'Calendar', icon: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>' },
+  { id: 'picker', name: 'Exercises', icon: '<path d="M4 6h16M4 12h16M4 18h16"/>' },
+  { id: 'routines', name: 'Routines', icon: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/>' },
+  { id: 'records', name: 'Personal Records', icon: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M12 14v4M9 20h6"/>' },
+  { id: 'analysis', name: 'Analysis', icon: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>' },
+  { id: 'goals', name: 'Goals', icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>' },
+];
+
+TRAIN.openMenu = function () {
+  var wrap = document.getElementById('dwrap');
+  var head = document.getElementById('dhead');
+  var list = document.getElementById('dlist');
+  var foot = document.getElementById('dfoot');
+
+  head.innerHTML = '<b>TRAIN</b><span>' + Rec.count('set').toLocaleString() +
+    ' sets · ' + Object.keys(TRAIN.idx.byDate).length + ' workouts</span>';
+
+  list.innerHTML = '';
+  NAV.forEach(function (n) {
+    var b = UI.el('button', 'navrow mb-press mb-tap' + (TRAIN.screen === n.id ? ' on' : ''));
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + n.icon + '</svg><span>' + n.name + '</span>';
+    b.onclick = function () {
+      closeDrawer();
+      if (n.id === 'picker') { TRAIN.query = ''; TRAIN.pickInto = null; }
+      if (n.id === 'routines') TRAIN.progOpen = null;
+      TRAIN.show(n.id, n.id === 'picker' ? { cat: null } : {});
+    };
+    list.appendChild(b);
+  });
+
+  foot.innerHTML = '';
+  foot.appendChild(drawerAction('Settings',
+    '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
+    function () { closeDrawer(); TRAIN.settings(); }));
+  foot.appendChild(drawerAction('Motherbase Home',
+    '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
+    function () { closeDrawer(); location.href = '../index.html'; }));
+
+  wrap.classList.add('open');
+  wrap.offsetHeight;
+  wrap.classList.add('in');
+  TRAIN._drawerRel = Mobile.trap(function () { TRAIN._drawerRel = null; closeDrawer(true); });
+};
+document.getElementById('addBtn').onclick = function () {
+  Mobile.feedback('open'); TRAIN.addExercise();
+};
+document.getElementById('calBtn').onclick = function () {
+  TRAIN.calMonth = TRAIN.date.slice(0, 7);
+  Mobile.feedback('select');
+  TRAIN.show('calendar');
+};
+/* On the workout screen the drawer is app navigation, which is not built.
+   On the training screen it is the day's exercise list, which is. */
+document.getElementById('drawer').onclick = function (e) {
+  if (e.currentTarget.dataset.back) { Mobile.feedback('close'); return TRAIN.back(); }
+  Mobile.feedback('open');
+  /* On the training screen the hamburger is the day's exercise list; anywhere
+     else it is the app menu. Both are what FitNotes does. */
+  if (TRAIN.screen === 'training') return TRAIN.openDrawer();
+  TRAIN.openMenu();
+};
+document.getElementById('dscrim').onclick = function () { closeDrawer(); };
+
+/* The tabs on the training screen. */
+[].forEach.call(document.getElementById('tabs').children, function (b) {
+  b.onclick = function () {
+    TRAIN.tab = b.dataset.tab;
+    TRAIN.histLimit = 100;
+    Mobile.feedback('select');
+    draw();
+  };
+});
+
+TRAIN.addExercise = function () {
+  TRAIN.query = '';
+  TRAIN.show('picker', { cat: null });
+};
+TRAIN.openExercise = function (exId) {
+  TRAIN.draftW = null; TRAIN.draftR = null; TRAIN.tab = 'track';
+  TRAIN.show('training', { ex: exId });
+};
+/* copyWorkout is implemented above, with the rest of the day's operations. The
+   placeholder that used to sit here was written before it existed and was never
+   removed, so it silently replaced the real one at load and every "Copy
+   Previous Workout" answered "not built yet". See CLAUDE.md, known traps: a
+   duplicate definition resolves in favour of the later one, without a word. */
+
+/* ── settings ──
+   The shared panel, with TRAIN's own tab in front of it. Import sits here,
+   under a heading that says what it is for, because after the first week it
+   is the last thing he ever needs to reach. */
+TRAIN.settings = function () {
+  UI.settings(APP.id, [{
+    id: 'train', name: 'TRAIN',
+    draw: function (pane) {
+      pane.appendChild(UI.row('Weight unit',
+        'What every weight on screen is shown in. Your data is stored in kilograms ' +
+        'either way, so switching is safe and changes nothing underneath.',
+        UI.segmented([{ id: 'lb', name: 'LB' }, { id: 'kg', name: 'KG' }],
+          TRAIN.unit(), function (v) { Rec.setting(APP.id, 'unit', v); draw(); })));
+
+      var sw = function (label, note, key, dflt) {
+        var on = Rec.setting(APP.id, key);
+        on = on == null ? dflt : on;
+        pane.appendChild(UI.row(label, note, UI.toggle(!!on, function (v) {
+          Rec.setting(APP.id, key, v ? 1 : 0);
+        })));
+      };
+      var num = function (label, note, key, dflt) {
+        var f = UI.field('number', { value: String(Rec.setting(APP.id, key) == null ? dflt : Rec.setting(APP.id, key)) });
+        f.style.maxWidth = '6em';
+        f.onchange = function () {
+          var v = parseFloat(f.value);
+          if (!isNaN(v)) Rec.setting(APP.id, key, v);
+        };
+        pane.appendChild(UI.row(label, note, f));
+      };
+
+      var g1 = UI.el('div', 'mb-group'); g1.textContent = 'LOGGING';
+      pane.appendChild(g1);
+      num('Weight step', 'What + and − move the weight by.', 'increment', 2.5);
+      sw('Mark sets complete', 'New sets arrive already ticked.', 'markComplete', 1);
+      sw('Track personal records', 'Flag a set when it beats your best.', 'trackPRs', 1);
+
+      var g2 = UI.el('div', 'mb-group'); g2.textContent = 'REST TIMER';
+      pane.appendChild(g2);
+      num('Rest seconds', 'The default countdown after a set.', 'restSeconds', 120);
+      sw('Start automatically', 'Begin the countdown when a set is saved.', 'restAuto', 1);
+      sw('Vibrate', 'Buzz when the rest is up. Android only.', 'restVibrate', 1);
+      sw('Sound', 'Play a tone when the rest is up.', 'restSound', 1);
+      var warn = UI.el('div', 'empty');
+      warn.innerHTML = '<b>The timer only runs while TRAIN is open.</b> A phone browser ' +
+        'suspends a tab you have switched away from, so it will not buzz in your pocket. ' +
+        'When you come back it shows the real time from the clock, including how far over ' +
+        'you are, rather than pretending it kept counting.';
+      pane.appendChild(warn);
+
+      var g3 = UI.el('div', 'mb-group'); g3.textContent = 'WORKOUT TIMER';
+      pane.appendChild(g3);
+      sw('Start on the first set', 'Records when the session began.', 'workoutTimerAuto', 1);
+
+      var g4 = UI.el('div', 'mb-group'); g4.textContent = 'RECORDS';
+      pane.appendChild(g4);
+      num('1RM rep cap', 'Ignore sets above this many reps when estimating a one-rep max. 0 uses them all.', 'e1rmMaxReps', 0);
+      var rc = UI.el('button', 'mb-btn mb-press mb-tap');
+      rc.style.width = '100%';
+      rc.textContent = 'RE-CALCULATE PERSONAL RECORDS';
+      rc.onclick = function () {
+        var n = TRAIN.recomputePRs();
+        draw();
+        UI.toast(n ? '<b>' + n + '</b> sets re-flagged' : 'records were already correct');
+      };
+      pane.appendChild(rc);
+
+      var h = UI.el('div', 'mb-group');
+      h.textContent = 'COMING FROM ANOTHER APP';
+      pane.appendChild(h);
+
+      var b = UI.el('button', 'mb-btn mb-press mb-tap');
+      b.style.width = '100%';
+      b.textContent = 'IMPORT A TRAINING LOG';
+      b.onclick = function () { TRAIN.importPanel(); };
+      pane.appendChild(b);
+
+      var n = UI.el('div', 'empty');
+      n.style.marginTop = 'var(--s-3)';
+      var have = Object.keys(TRAIN.idx.byDate).length;
+      n.innerHTML = have
+        ? '<b>' + Rec.count('set').toLocaleString() + '</b> sets across <b>' + have +
+          '</b> days are already in. Importing the same file again changes nothing.'
+        : 'Nothing imported yet. This is a one-time move and it only goes one way.';
+      pane.appendChild(n);
+    },
+  }]);
+};
+
+/* ═════════════════ THE SPREADSHEET EXPORT ═════════════════
+   Readable, not restorable, exactly as the master brief requires. One row per
+   set is the shape a pivot table wants. */
+function exportSheets() {
+  var exs = TRAIN.exercises(), cats = TRAIN.cats(), unit = TRAIN.unit();
+  var log = [['Date', 'Day', 'Category', 'Exercise', 'Set', 'Weight (' + unit + ')',
+              'Weight (kg)', 'Reps', 'Volume (' + unit + ')', 'Distance', 'Seconds',
+              'Complete', 'PR', 'Comment']];
+  var dates = Object.keys(TRAIN.idx.byDate).sort();
+  dates.forEach(function (d) {
+    var groups = TRAIN.dayGroups(d);
+    groups.forEach(function (g) {
+      var cat = g.def.cat ? cats[g.def.cat] : null;
+      g.sets.forEach(function (s, i) {
+        log.push([d, new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' }),
+          cat ? cat.name : '', g.def.name, i + 1,
+          Math.round(TRAIN.toUnit(s.kg || 0, unit) * 100) / 100,
+          Math.round((s.kg || 0) * 1000) / 1000,
+          s.r || 0,
+          Math.round(TRAIN.toUnit((s.kg || 0) * (s.r || 0), unit) * 10) / 10,
+          s.dist || '', s.dur || '', s.done ? 'yes' : '', s.pr ? 'PR' : '', s.note || '']);
+      });
+    });
+  });
+
+  var days = [['Date', 'Day', 'Exercises', 'Sets', 'Reps', 'Volume (' + unit + ')',
+               'Start', 'End', 'Minutes', 'Comment']];
+  dates.forEach(function (d) {
+    var sets = TRAIN.setsOn(d), sess = Rec.get('session', d, '') || {};
+    var reps = 0, vol = 0, ex = {};
+    sets.forEach(function (s) { reps += s.r || 0; vol += (s.kg || 0) * (s.r || 0); ex[s.ex] = 1; });
+    var mins = sess.start && sess.end
+      ? Math.floor((Date.parse(sess.end) - Date.parse(sess.start)) / 60000) : '';
+    days.push([d, new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' }),
+      Object.keys(ex).length, sets.length, reps,
+      Math.round(TRAIN.toUnit(vol, unit)), sess.start ? clockOf(sess.start) : '',
+      sess.end ? clockOf(sess.end) : '', mins, sess.note || '']);
+  });
+
+  var records = [['Exercise', 'Category', 'Workouts', 'Sets', 'Max weight (' + unit + ')',
+                  'On', 'Max reps', 'Est 1RM (' + unit + ')']];
+  Object.keys(exs).forEach(function (id) {
+    var r = TRAIN.recordsFor(id);
+    if (!r.sets) return;
+    var cat = exs[id].cat ? cats[exs[id].cat] : null;
+    records.push([exs[id].name, cat ? cat.name : '', r.workouts, r.sets,
+      r.maxWeight ? Math.round(TRAIN.toUnit(r.maxWeight.kg, unit) * 10) / 10 : '',
+      r.maxWeight ? r.maxWeight.date : '',
+      r.maxReps ? r.maxReps.r : '',
+      r.max1rm ? Math.round(TRAIN.toUnit(TRAIN.e1rm(r.max1rm.kg, r.max1rm.r), unit) * 10) / 10 : '']);
+  });
+
+  return [
+    { name: 'Log', rows: log, widths: [11, 5, 12, 26, 5, 11, 11, 6, 11, 8, 8, 9, 5, 30] },
+    { name: 'Workouts', rows: days, widths: [11, 5, 10, 6, 6, 12, 7, 7, 8, 30] },
+    { name: 'Records', rows: records, widths: [26, 12, 9, 6, 14, 11, 9, 14] },
+  ];
+}
+
+/* ═════════════════ FIRST RUN ═════════════════
+   Units, then the importer, then out of the way. Everything else has a
+   working default and can wait. */
+TRAIN.firstRun = function () {
+  UI.dialog({
+    title: 'WELCOME TO TRAIN', width: 440,
+    body: function (b, h) {
+      var p = UI.el('div', 'empty');
+      p.innerHTML = 'One question, then you are logging.';
+      b.appendChild(p);
+
+      var g = UI.el('div', 'mb-group'); g.textContent = 'WEIGHT UNIT';
+      b.appendChild(g);
+      b.appendChild(UI.row('Show weights in',
+        'Your data is stored in kilograms either way. You can change this whenever.',
+        UI.segmented([{ id: 'lb', name: 'POUNDS' }, { id: 'kg', name: 'KILOGRAMS' }],
+          TRAIN.unit(), function (v) { Rec.setting(APP.id, 'unit', v); draw(); })));
+
+      /* The importer is in Settings, under COMING FROM FITNOTES, and that is
+         the only place it appears now. The paragraph that used to sit here
+         described what its button did, so it went with the button. */
+    },
+    actions: [{ label: 'START LOGGING', kind: 'go', fn: function () {
+      Rec.setting(APP.id, 'seen', 1);
+    } }],
+  });
+};
+
+/* ═══════════════════ BOOT ═══════════════════ */
+function boot() {
+  TRAIN.reindex();
+  /* ── DOCTRINE law 1: ship it full ──
+     Seed before the first draw, so the very first thing on screen is a working
+     app rather than an invitation to go and build one.
+
+     Only on a genuinely untouched store: no categories, no exercises, no sets.
+     Anyone who has ever logged anything, or imported a FitNotes backup, has a
+     list already and must not find a hundred strangers mixed into it. */
+  if (!Rec.count('excat') && !Rec.count('exercise') && !Rec.count('set')) TRAIN.seedCats();
+  TRAIN.restRestore();
+  draw();
+  if (!Rec.setting(APP.id, 'seen') && !Rec.count('set')) {
+    Rec.setting(APP.id, 'seen', 1);
+    setTimeout(TRAIN.firstRun, 400);
+  }
+}
+
+Rec.ready(boot);
+Rec.on(function () {
+  if (TRAIN.importing) return;      /* the importer redraws once, at the end */
+  TRAIN.reindex();
+  draw();
+});
+Day.on(draw);
+
+/* The rest timer is wall-clock, so coming back to a suspended tab has to
+   recompute rather than resume. */
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) { TRAIN.restRestore(); drawRestBar(); }
+});
+document.getElementById('restbar').onclick = function () {
+  var left = Math.round((TRAIN.rest.until - Date.now()) / 1000);
+  UI.menu(innerWidth - 12, 96, [
+    { label: left > 0 ? 'Add 30 seconds' : 'Restart', fn: function () {
+      if (left > 0) { TRAIN.rest.until += 30000; TRAIN.rest.fired = false; drawRestBar(); }
+      else TRAIN.restStart(TRAIN.rest.len);
+    } },
+    { label: 'Stop timer', fn: function () { TRAIN.restStop(); } },
+  ], { title: 'REST TIMER' });
+};
+
+TRAIN.reindex();
+draw();
+</script>
+</body>
+</html>
