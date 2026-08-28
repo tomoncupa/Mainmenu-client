@@ -14,15 +14,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=ef908823"></script>
-<script src="../shared/day.js?v=ef908823"></script>
-<script src="../shared/records.js?v=ef908823"></script>
-<script src="../shared/mobile.js?v=ef908823"></script>
-<script src="../shared/sound.js?v=ef908823"></script>
-<script src="../shared/ui.js?v=ef908823"></script>
-<script src="../shared/io.js?v=ef908823"></script>
-<script src="../shared/icons.js?v=ef908823"></script>
-<script src="../shared/health.js?v=ef908823"></script>
+<script src="../shared/skins.js?v=8dfdf8a4"></script>
+<script src="../shared/day.js?v=8dfdf8a4"></script>
+<script src="../shared/records.js?v=8dfdf8a4"></script>
+<script src="../shared/mobile.js?v=8dfdf8a4"></script>
+<script src="../shared/sound.js?v=8dfdf8a4"></script>
+<script src="../shared/ui.js?v=8dfdf8a4"></script>
+<script src="../shared/io.js?v=8dfdf8a4"></script>
+<script src="../shared/icons.js?v=8dfdf8a4"></script>
+<script src="../shared/health.js?v=8dfdf8a4"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -140,6 +140,8 @@ h2 .sub{margin-left:auto;letter-spacing:0;font-family:var(--font-mono);font-size
 .rankside{flex:1;min-width:0}
 .rankside .lb{font-size:var(--f-1);color:var(--text-muted);margin-top:var(--s-1)}
 .hero .u{font-size:var(--f-2);font-weight:400;color:var(--text-muted);letter-spacing:0;margin-left:var(--s-2)}
+/* the divider in "1,680 / 2,400" - present, and quieter than either number */
+.hero .sl{color:var(--text-muted);font-weight:400;margin:0 .12em}
 
 /* ── tiles: value is the point, label recedes ── */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:var(--s-2)}
@@ -549,6 +551,12 @@ const SEED = [
     bump: [1000, 500, 100] },
   { id: 'mood',   label: 'Mood',   unit: '',    measure: 'scale',  once: 0, agg: 'avg',  order: 4, on: 1 },
   { id: 'energy', label: 'Energy', unit: '',    measure: 'scale',  once: 0, agg: 'avg',  order: 5, on: 1 },
+  /* Training is one of the five pillars and the only one that moves a whole
+     letter, and it was read out of TRAIN's rows alone. Anybody not using
+     TRAIN had no way to record it, so their rank sat capped at A for good.
+     trainedOn() already looks for a field whose id starts with "train"; this
+     is that field, and it ships on. */
+  { id: 'trained', label: 'Trained', unit: '', measure: 'check', once: 1, agg: 'last', order: 6, on: 1 },
 ];
 
 /* Things worth tracking that most people want eventually. An empty setup
@@ -622,7 +630,7 @@ function linkNutrients() {
    linkNutrients: a number rather than a flag, so a later change runs again
    instead of being locked out by a tick from the previous version. Only the
    library's own fields are touched, and only where nothing was set by hand. */
-const FIELDFIX = 2;
+const FIELDFIX = 3;
 /* Which kind of thing each library field is, so the form can narrow itself
    without him having to categorise five things by hand first. */
 const SEEDCAT = {
@@ -634,6 +642,11 @@ const SEEDCAT = {
 };
 function fixSeedFields() {
   if (num(S.get('fieldfix', 0), 0) >= FIELDFIX) return;
+  /* A SEED field added after someone was already set up never reaches them,
+     because seedFields() runs once. Anything in SEED that is simply not there
+     gets made here, which is how Trained arrives for an existing install. */
+  const have = fields();
+  SEED.forEach(f => { if (!have[f.id]) Rec.set('field', null, f.id, f); });
   const want = {};
   SEED.concat(LIBRARY).forEach(l => { if (l.bump) want[l.id] = l; });
   Object.values(fields()).forEach(f => {
@@ -2111,7 +2124,7 @@ function oneOffSheet() {
 
     body.appendChild(saveBar('Log it', () => {
       const name = f.name.value.trim();
-      if (!name) return UI.toast('It needs a name', { bad: true });
+      if (!name) return UI.toast('Needs a name', { bad: true });
       const kcal = num(f.kcal.value) == null ? derived() : num(f.kcal.value, 0);
       const row = { fid: null, name: name, serve: 'one-off', unit: '', amt: 1, mult: 1, t: Date.now(),
         kcal: kcal, p: num(f.p.value, 0) || 0, c: num(f.c.value, 0) || 0, f: num(f.f.value, 0) || 0,
@@ -2149,7 +2162,7 @@ function recost(row, before) {
 
   UI.confirm(
     'Update ' + hits.length + ' logged serving' + (hits.length === 1 ? '' : 's') + '?',
-    'Each keeps the amount you ate and is recalculated from the corrected ' + row.name + '. Leave it and only future servings use the new numbers.',
+    'Each keeps the amount you ate, recalculated from the corrected ' + row.name + '.',
     { yes: 'UPDATE', no: 'LEAVE THEM' }
   ).then(ok => {
     if (!ok) return;
@@ -2235,9 +2248,7 @@ function mealSheet(x, d) {
     prot.input.oninput = () => { protTyped = true; };
     body.appendChild(prot);
     body.appendChild(el('div', 'note',
-      'Calories, carbs and fat still follow the amount. Correcting protein does '
-      + 'not touch them, because a corrected protein is usually a better label '
-      + 'reading rather than a different quantity.'));
+      'Fixes the protein only. Calories, carbs and fat still follow the amount'));
 
     let costTyped = false;
     body.appendChild(el('label', 'fl', 'Cost'));
@@ -2245,9 +2256,7 @@ function mealSheet(x, d) {
     cost.input.oninput = () => { costTyped = true; };
     body.appendChild(cost);
     body.appendChild(el('div', 'note',
-      'Blank means it cost nothing today &mdash; food bought on another day is '
-      + 'already paid for. Give it a cost AND an account and it lands on the '
-      + 'money screen as well.'));
+      'Blank costs nothing. Add a cost and an account to put it on the money screen'));
 
     body.appendChild(el('label', 'fl', 'Paid from'));
     body.appendChild(acctChips(acct, v => { acct = v; }));
@@ -2559,7 +2568,7 @@ function foodPicker() {
       if (!all.length) {
         list.appendChild(el('div', 'empty', Object.keys(foods()).length
           ? 'Nothing matches, so try fewer letters or add it as a new food.'
-          : 'Photograph a nutrition panel or type one in, and logging it after that is two taps.'));
+          : 'Photograph a nutrition panel or type one in'));
       }
       all.slice(0, 40).forEach(f => {
         const r = el('div', 'row tap');
@@ -2661,7 +2670,7 @@ function amountSheet(fd) {
         out.appendChild(kw);
         const per = num(fd.base[key], 0) || 0;
         if (per <= 0) {
-          out.appendChild(el('div', 'warnbox', 'This food has no ' + (key === 'p' ? 'protein' : 'calorie') + ' figure on its label, so there is nothing to solve for. Edit the food and add it.'));
+          out.appendChild(el('div', 'warnbox', 'This food has no ' + (key === 'p' ? 'protein' : 'calorie') + ' figure on its label.'));
         } else {
           const t = numberInput(key === 'p' ? 50 : 500, key === 'p' ? 5 : 50, 0);
           t.input.oninput = () => setMult((num(t.input.value, 0) || 0) / per);
@@ -2803,7 +2812,7 @@ function foodEditor(fd) {
 
     body.appendChild(saveBar(isNew ? 'Save' : 'Update', () => {
       const name = inputs.name.value.trim();
-      if (!name) return UI.toast('It needs a name', { bad: true });
+      if (!name) return UI.toast('Needs a name', { bad: true });
       const base = { amt: num(inputs.amt.value, 1) || 1, unit: inputs.unit.value.trim() || 'serving' };
       NUTS.concat(['price']).forEach(n => { const v = num(inputs[n].value); if (v != null) base[n] = v; });
       const row = { id: f.id, name: name, brand: inputs.brand.value.trim(), cat: inputs.cat.value.trim(),
@@ -2837,7 +2846,7 @@ let VIEW = null;
 const vd = () => VIEW || Day.today();
 function shiftView(n) {
   const d = Day.shift(vd(), n);
-  if (!Day.editable(d)) return UI.toast('The future is not a record');
+  if (!Day.editable(d)) return UI.toast("Tomorrow isn't here yet");
   VIEW = d === Day.today() ? null : d;
   Mobile.feedback('nav');
   draw();
@@ -2920,7 +2929,9 @@ function drawNow(m) {
   const c = card();
 
   const left = ct.v - Math.round(t.kcal);
-  const hero = el('div', 'hero', left.toLocaleString() + '<span class="u">calories left of ' + ct.v.toLocaleString() + '</span>');
+  const hero = el('div', 'hero',
+    left.toLocaleString() + ' <span class="sl">/</span> ' + ct.v.toLocaleString() +
+    '<span class="u">left</span>');
   if (left < 0) hero.style.color = 'var(--warn)';
 
   /* The rank sits up here beside the calories, because this is the screen he
@@ -3036,7 +3047,11 @@ function drawJournal(m) {
       /* how long it has been following you — quiet, but it should sting a bit */
       (x.carried ? '<i class="carried">' + x.carried + 'd</i>' : '') + '</span>';
     const box = r.querySelector('.k');
-    box.innerHTML = noteSvg(x.kind, x.carried);
+    /* The mark says WHEN you are looking, not where the row came from. A box
+       is something to do today; an arrow is something that has moved on. Tom,
+       2026-08-28: "To do Bullets should only show as > on past days, and as
+       check boxes on the present day." */
+    box.innerHTML = noteSvg(x.kind, d !== Day.today());
     box.setAttribute('aria-label', x.kind === 'todo' ? (x.done ? 'Untick' : 'Tick') : noteKind(x.kind).label);
     if (x.kind === 'todo') {
       box.onclick = e => {
@@ -3085,6 +3100,18 @@ function noteSheet(x, d) {
     ta.placeholder = '';
     ta.setAttribute('autocapitalize', 'sentences');
     body.appendChild(ta);
+
+    /* When you wrote it. Not the time you typed into the line - that is `at`
+       and it already shows on the row - but the moment the line was made.
+       Tom, 2026-08-28: "when I click on a bullet in status should show the
+       time I wrote it." */
+    if (!isNew && x.t) {
+      const w = new Date(x.t);
+      const same = x.date === Day.today();
+      body.appendChild(el('div', 'note', 'Written ' +
+        clockLabel(String(w.getHours()).padStart(2, '0') + ':' + String(w.getMinutes()).padStart(2, '0')) +
+        (same ? '' : ' on ' + w.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))));
+    }
 
     /* `again` reopens an empty line of the same kind instead of closing, which
        is what makes a list a list. */
@@ -3189,7 +3216,9 @@ function drawFood(m) {
 
   const c = card('Food', Math.round(t.kcal).toLocaleString() + ' kcal');
   const left = ct.v - Math.round(t.kcal);
-  const hero = el('div', 'hero', left.toLocaleString() + '<span class="u">kcal left</span>');
+  const hero = el('div', 'hero',
+    left.toLocaleString() + ' <span class="sl">/</span> ' + (calTarget().v || 0).toLocaleString() +
+    '<span class="u">left</span>');
   hero.style.marginBottom = 'var(--s-4)';
   if (left < 0) hero.style.color = 'var(--warn)';
   c.appendChild(hero);
@@ -3529,8 +3558,11 @@ function rankBadge() {
     '<span class="rk" style="color:' + rankColour(a.rank.k) + ';border-color:'
       + rankColour(a.rank.k) + '">' + a.rank.k + '</span>' +
     '<span class="rkm"><b>' + a.pct + '%</b>' +
-    '<i>' + (t.pct == null ? 'today not started'
-      : 'today ' + t.pct + '%' + (t.partial ? ' so far' : '')) + '</i></span>';
+    /* Today's grade waits until the day has settled. A number built out of
+       two pillars at 9am is not a grade, it is a fraction of one, and a
+       figure that climbs all day is one you stop reading. Tom, 2026-08-28:
+       "The day grade should only show the later." */
+    '<i>' + (t.pct == null || t.partial ? '' : 'today ' + t.pct + '%') + '</i></span>';
   w.onclick = () => { TAB = 'trends'; Mobile.feedback('nav'); draw(); };
   return w;
 }
@@ -3560,19 +3592,15 @@ function rankCard() {
   /* training, said plainly, because it is the only thing that moves a letter */
   c.appendChild(el('div', 'note',
     a.hitTraining
-      ? '<b>' + a.sessions + ' sessions</b> against ' + a.want + '. That is a whole '
-        + 'letter, and it is the only way to reach S.'
-      : '<b>' + a.sessions + ' sessions</b> against ' + a.want + '. Training raises '
-        + 'the grade a letter, and without it S is out of reach. It never takes '
-        + 'anything away.'));
+      ? '<b>' + a.sessions + ' sessions</b> against ' + a.want + '. Raised a letter.'
+      : '<b>' + a.sessions + ' sessions</b> against ' + a.want + '. A letter is waiting.'));
 
   if (a.worst.length) {
     c.appendChild(el('div', 'note', 'Costing the most: ' +
       a.worst.map(w => esc(w[0])).join(', ') + '.'));
   }
   if (!a.loggedDays) {
-    c.appendChild(el('div', 'note', 'Nothing logged in this stretch, so every '
-      + 'target counts as missed. It is an honest F rather than an empty one.'));
+    c.appendChild(el('div', 'note', 'Nothing logged in this stretch.'));
   }
 
   /* today, kept out of the number above */
@@ -3583,9 +3611,9 @@ function rankCard() {
   } else {
     c.appendChild(el('div', 'note',
       '<b>' + t.pct + '%</b>' + (t.rank ? ' &middot; ' + t.rank.k : '') +
-      (t.partial ? ' &mdash; still going, so it cannot beat A yet. Waiting on '
-        + t.pending.map(esc).join(', ') + '.' : '') +
-      (t.rest ? ' Rest day, which tops out at A.' : '')));
+      (t.partial ? ' &middot; still going. Waiting on '
+        + t.pending.map(esc).join(', ') : '') +
+      (t.rest ? ' &middot; rest day, tops out at A' : '')));
   }
 
   const bar = el('div', 'btns');
@@ -3596,166 +3624,91 @@ function rankCard() {
   bar.appendChild(story); bar.appendChild(feed);
   c.appendChild(el('label', 'fl', 'Share it'));
   c.appendChild(bar);
-  c.appendChild(el('div', 'note', 'Story is 1080 by 1920, post is 1080 by 1350 &mdash; '
-    + 'the tallest a feed post may be, so the biggest it lands on a phone. Both '
-    + 'are drawn in the theme you are wearing.'));
+  c.appendChild(el('div', 'note',
+    'A see-through picture of these numbers, to lay over a photo. Story is '
+    + '1080 by 1920, post is 1080 by 1350.'));
   return c;
 }
 
-/* ── the picture ──
-   Drawn rather than screenshotted, so it is the right size and readable at a
-   glance in a feed. Its colours come from the theme, which is the whole
-   reason STYLE exists.
+/* ── the overlay ──
+   A see-through PNG of the rank card, to sit on top of a photo or a clip.
 
-   Two things a screen can get away with and a shared picture cannot:
+   It does not redraw the card. It photographs the real one: rankCard() builds
+   the same element the Trends screen shows, that element goes into an SVG
+   foreignObject, and the browser rasterises it. So the overlay cannot drift
+   from the app - change the card and the picture changes with it, with
+   nothing here to keep in step.
 
-   A panel that is only just lighter than the page is a soft, correct-looking
-   card on a phone and nothing at all in a PNG. Ice sets --surface-1 at 1.09:1
-   against --bg, which is very nearly the same colour, so the export came out
-   as a rank letter floating on a flat dark field - indistinguishable from a
-   transparent image once it lands in a gallery or Instagram's editor. So the
-   card here is pushed apart from the page until the edge actually shows,
-   mixing the theme's own two colours rather than inventing a third.
-
-   And a canvas keeps an alpha channel unless told not to, so anything not
-   painted really is transparent. This one is opaque by construction. */
-
-/* Put any CSS colour through the canvas to get it back normalised, which also
-   catches a colour the browser refused: fillStyle simply does not change. */
-let _swatch = null;
-function cssColour(c, fallback) {
-  /* One scratch context, reused. legible() below calls this a few hundred
-     times while it walks the mix, and a fresh canvas per call is a fresh
-     graphics allocation per call. */
-  if (!_swatch) _swatch = document.createElement('canvas').getContext('2d');
-  _swatch.fillStyle = '#010203';
-  _swatch.fillStyle = c;
-  return _swatch.fillStyle === '#010203' ? fallback : _swatch.fillStyle;
-}
-function rgbOf(c) {
-  const h = cssColour(c, '#000000');
-  if (h[0] === '#') return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-  const m = h.match(/[\d.]+/g) || [0, 0, 0];
-  return [+m[0], +m[1], +m[2]];
-}
-function relLum(c) {
-  return rgbOf(c).map(v => v / 255)
-    .map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))
-    .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
-}
-function contrast(a, b) {
-  const x = relLum(a), y = relLum(b);
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
-}
-function mixHex(a, b, t) {
-  const A = rgbOf(a), B = rgbOf(b);
-  return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t)
-    .toString(16).padStart(2, '0')).join('');
-}
-/** Move `base` the shortest distance toward white or black that puts it
-    `floor` clear of whatever sits behind it.
-
-    It tries BOTH directions rather than picking by luminance. Ragnarok's card
-    lands on a mid grey at 0.38 relative luminance, which is the darker of the
-    two by that test, and yet white on it reaches only 2.4:1 while black
-    reaches 8.6:1. The +0.05 in the contrast formula tilts mid tones toward
-    the dark side, so the only reliable way to choose is to measure. */
-function legible(base, against, floor) {
-  if (contrast(base, against) >= floor) return base;
-  let best = null;
-  ['#ffffff', '#000000'].forEach(function (toward) {
-    for (let t = 0.05; t <= 1.0001; t += 0.05) {
-      const c = mixHex(base, toward, t);
-      if (contrast(c, against) >= floor) {
-        if (!best || t < best.t) best = { t: t, c: c };
-        return;
-      }
-    }
-  });
-  /* Nothing reached the floor, which means `against` sits mid grey and the
-     floor is high. Take the better extreme rather than failing quietly. */
-  if (best) return best.c;
-  return contrast('#ffffff', against) >= contrast('#000000', against) ? '#ffffff' : '#000000';
-}
+   Two things get overridden on the way out, and only two. Every background
+   goes transparent, because a see-through picture is the whole point. And the
+   text gets a black outline, because the photo underneath can be any colour
+   and the theme has no way to know that. Everything else - fonts, colours,
+   spacing, corners - is whatever the card already is. */
 
 async function shareCard(a, kind) {
   const W = 1080, H = kind === 'story' ? 1920 : 1350;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  /* alpha:false is the whole fix for "it saved a transparent PNG": the bitmap
-     has no alpha channel to leave empty. */
-  const x = cv.getContext('2d', { alpha: false });
-  const T = k => cssColour(tok(k), '#000000');
-  const disp = tok('--font-display') || 'system-ui';
-  const body = tok('--font-body') || 'system-ui';
 
-  /* Text drawn against a webfont that has not arrived yet renders in whatever
-     the fallback is, and on some engines does not render at all. */
+  /* A webfont that has not arrived renders as a fallback inside the SVG too. */
   try { await document.fonts.ready; } catch (e) {}
 
-  const page = T('--bg'), rawInk = T('--text-1');
-  const card = legible(T('--surface-1'), page, 1.6);
-  const edge = legible(T('--border'), card, 2.2);
-  const ink = legible(rawInk, card, 4.5);
-  const mut = legible(T('--text-muted'), card, 3);
-  const rank = c => legible(c, card, 3);
+  /* The real component, built off screen so it lays out for measuring. */
+  const stage = document.createElement('div');
+  stage.style.cssText = 'position:fixed;left:-99999px;top:0;width:460px;pointer-events:none';
+  const card = rankCard();
+  stage.appendChild(card);
+  document.body.appendChild(stage);
 
-  x.fillStyle = page; x.fillRect(0, 0, W, H);
+  let png = null;
+  try {
+    const box = card.getBoundingClientRect();
+    const cw = Math.max(1, Math.ceil(box.width)), ch = Math.max(1, Math.ceil(box.height));
 
-  const M = 72, top = kind === 'story' ? 300 : 120, cardH = H - top - M;
-  x.fillStyle = card; x.fillRect(M, top, W - M * 2, cardH);
-  x.strokeStyle = edge; x.lineWidth = 3;
-  x.strokeRect(M + 1.5, top + 1.5, W - M * 2 - 3, cardH - 3);
+    /* Scale up rather than blow up a small bitmap: the whole thing renders at
+       this size, so the type stays sharp. */
+    const scale = (W * 0.88) / cw;
+    const sw = cw * scale, sh = ch * scale;
+    const ox = (W - sw) / 2, oy = (H - sh) / 2 + H * 0.06;
 
-  /* The stack is measured and then centred, because the old version pinned
-     everything to the top of the card and left a quarter of the picture
-     empty underneath. */
-  const S = kind === 'story'
-    ? { letter: 470, pct: 104, cap: 42, sub: 38, bars: 200, pad: 72 }
-    : { letter: 350, pct: 86, cap: 36, sub: 32, bars: 150, pad: 56 };
-  const capH = S.letter * 0.72;
-  const stackH = capH + 54 + S.pct + 40 + S.cap + 14 + S.sub + 74 + S.bars;
-  const wordBand = 34 + 54;
-  const room = cardH - S.pad * 2 - wordBand;
-  let cy = top + S.pad + Math.max(0, (room - stackH) / 2);
+    /* The page's own stylesheets, and the tokens the theme wrote onto :root. */
+    const sheets = Array.prototype.map.call(document.querySelectorAll('style'),
+      n => n.textContent).join(String.fromCharCode(10));
+    const rootVars = document.documentElement.style.cssText || '';
 
-  x.textAlign = 'center';
-  x.textBaseline = 'alphabetic';
+    const override =
+      '*{background:transparent !important;box-shadow:none !important;' +
+      '-webkit-text-stroke:3px #000;paint-order:stroke fill;' +
+      'text-shadow:0 0 5px rgba(0,0,0,.85),0 0 5px rgba(0,0,0,.85) !important}' +
+      'button,.seg,.btns{display:none !important}';
 
-  x.font = '700 ' + S.letter + 'px ' + disp;
-  x.fillStyle = rank(rankColour(a.rank.k));
-  cy += capH;
-  x.fillText(a.rank.k, W / 2, cy);
+    const body = new XMLSerializer().serializeToString(card);
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+      '<foreignObject x="' + ox + '" y="' + oy + '" width="' + sw + '" height="' + sh + '">' +
+      '<div xmlns="http://www.w3.org/1999/xhtml" style="' + esc(rootVars) + '">' +
+      '<style>' + sheets + String.fromCharCode(10) + override + '</style>' +
+      '<div style="width:' + cw + 'px;transform:scale(' + scale + ');transform-origin:top left">' +
+      body + '</div></div></foreignObject></svg>';
 
-  cy += 54 + S.pct * 0.74;
-  x.font = '600 ' + S.pct + 'px ' + body; x.fillStyle = ink;
-  x.fillText(a.pct + '%', W / 2, cy);
-
-  cy += 40 + S.cap * 0.74;
-  x.font = '400 ' + S.cap + 'px ' + body; x.fillStyle = mut;
-  x.fillText('adherence over ' + a.days + ' days', W / 2, cy);
-
-  cy += 14 + S.sub * 0.9;
-  x.font = '400 ' + S.sub + 'px ' + body;
-  x.fillText(a.sessions + ' training session' + (a.sessions === 1 ? '' : 's'), W / 2, cy);
-
-  /* a bar per day, so the number carries its working */
-  const rows = a.rows.slice(-30), dw = (W - M * 2 - 80) / rows.length;
-  const dy = cy + 74;
-  const floorC = legible(T('--surface-3'), card, 1.5);
-  rows.forEach((r, i) => {
-    const h = r.pct == null ? 8 : Math.max(8, r.pct / 100 * S.bars);
-    x.fillStyle = r.pct == null ? floorC : rank(rankColour(rankFor(r.pct).k));
-    x.fillRect(M + 40 + i * dw, dy + S.bars - h, Math.max(3, dw - 6), h);
-  });
-
-  x.font = '700 34px ' + disp; x.fillStyle = mut;
-  x.fillText('STATUS', W / 2, top + cardH - 54);
+    png = await new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => {
+        const cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        res(cv.toDataURL('image/png'));
+      };
+      img.onerror = () => rej(new Error('could not draw the card'));
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    });
+  } finally {
+    stage.remove();
+  }
 
   const link = document.createElement('a');
   link.download = 'status-' + a.rank.k + '-' + a.pct + '-' + kind + '.png';
-  link.href = cv.toDataURL('image/png');
+  link.href = png;
   link.click();
-  UI.toast('Saved a ' + (kind === 'story' ? '1080&times;1920 story' : '1080&times;1350 post'));
+  UI.toast('Overlay saved');
 }
 
 function drawTrends(m) {
@@ -3765,7 +3718,7 @@ function drawTrends(m) {
   const e = TD.estimate();
   const c = card('TDEE', e.basis === 'measured' ? 'measured' : 'starting estimate');
   if (e.tdee == null) {
-    c.appendChild(el('div', 'empty', 'Log a weight and this starts working.'));
+    c.appendChild(el('div', 'empty', 'Log a weight and this starts working'));
   } else if (e.basis !== 'measured') {
     c.appendChild(el('div', 'hero', e.tdee.toLocaleString() + '<span class="u">kcal/day</span>'));
     c.appendChild(el('div', 'note', 'Your weight × ' + TD.perLb() + ', the same start your sheet uses. It becomes measured once there is ' + esc(e.why || 'more data') + '.'));
@@ -3890,7 +3843,7 @@ function drawTrends(m) {
      card that only works while you can take it in at a glance. */
   const c3 = card('Last 28 days');
   const shown = liveFields().filter(f => f.viz !== 0);
-  if (!shown.length) c3.appendChild(el('div', 'empty', 'Nothing is set to show here. Settings, Track, and turn one back on.'));
+  if (!shown.length) c3.appendChild(el('div', 'empty', 'Nothing is set to show here'));
   shown.forEach(f => {
     const days = Day.last(28);
     const r = el('div');
@@ -4274,7 +4227,7 @@ function removeAcct(a) {
   /* The payments stay either way — they carry the name, not a link. Saying so
      is the difference between a confident delete and a nervous one. */
   UI.confirm('Delete ' + a.name + '?',
-    used + ' payment' + (used === 1 ? '' : 's') + ' used it. They keep their record and stay on the money screen.',
+    used + ' payment' + (used === 1 ? '' : 's') + ' used it. They stay on the money screen.',
     { yes: 'DELETE', danger: true }).then(ok => { if (ok) go(); });
 }
 
@@ -4347,7 +4300,7 @@ function drawTrackTab(pane) {
     row.appendChild(ed);
     pane.appendChild(row);
   });
-  pane.appendChild(el('div', 'note', 'Tap a name to set its goal, its colour and which group it sits in. Turning one off hides it and keeps its history, and the arrows set the order on Today.'));
+  pane.appendChild(el('div', 'note', 'Tap a name to set its goal, colour and group. The arrows set the order on Today'));
 
   /* the library: an empty setup screen is a dead end */
   const have = fields();
@@ -4397,7 +4350,7 @@ function drawTrackTab(pane) {
 
   pane.appendChild(el('label', 'fl', 'Photos'));
   const n = shotCount();
-  pane.appendChild(el('div', 'note', n + ' stored, and photos are the only thing here big enough to fill the roughly 5MB a phone gives you.'));
+  pane.appendChild(el('div', 'note', n + ' stored. Photos are the largest thing here'));
   const clr = el('button', 'btn wide', 'Delete all photos');
   clr.onclick = () => UI.confirm('Delete every photo?', 'The entries they belong to stay.')
     .then(ok => { if (ok) { Rec.all('shot').forEach(r => Rec.del('shot', r.date, r.key)); drawSettingsPane('track'); } });
@@ -4632,7 +4585,7 @@ function newFieldForm(pane, existing) {
   save.style.marginTop = 'var(--s-4)';
   save.onclick = () => {
     const label = nm.value.trim();
-    if (!label) return UI.toast('It needs a name', { bad: true });
+    if (!label) return UI.toast('Needs a name', { bad: true });
     const spec = Object.assign({}, f, {
       id: f.id || uid(), label: label, unit: un.value.trim(), measure: measure,
     });
@@ -4848,7 +4801,7 @@ function drawGoalsTab(pane) {
        they do not, and a band of "close enough" is a place for a mistake to
        live. */
     if (off === 0) {
-      sum.appendChild(el('div', 'note', 'Your macros come to exactly your target.'));
+      sum.appendChild(el('div', 'note', 'Your macros come to exactly your target'));
     } else {
       sum.appendChild(el('div', 'warnbox',
         'Your macros come to <b>' + k.toLocaleString() + '</b>, which is ' +
@@ -4861,7 +4814,7 @@ function drawGoalsTab(pane) {
 
   paintSum();
 
-  fieldRow(pane, 'Goal weight (lb)', 'goalWeight', S.get('goalWeight', null), 'Optional, and drawn on the weight chart.');
+  fieldRow(pane, 'Goal weight (lb)', 'goalWeight', S.get('goalWeight', null), 'Optional, and drawn on the weight chart');
 
   /* The goal date is what turns a goal weight into a line you can be ahead of
      or behind. Without it the chart can only show a level. */
@@ -4874,7 +4827,7 @@ function drawGoalsTab(pane) {
   di.onchange = () => { S.set('goalDate', di.value); draw(); };
   gd.appendChild(di);
   gd.appendChild(el('div', 'note',
-    'Draws the line from where you are to where you said you would be, and above it means ahead.'));
+    'Draws a line to your goal. Above it is ahead'));
   pane.appendChild(gd);
 
   /* The chart scale. Left blank it fits the data; set, it is his. */
@@ -4896,17 +4849,29 @@ function drawGoalsTab(pane) {
   });
   pane.appendChild(sc);
   pane.appendChild(el('div', 'note',
-    'Blank fits the data, and a fixed scale keeps the chart steady so small changes stay visible.'));
+    'Blank fits the data'));
 
   pane.appendChild(el('label', 'fl', 'The estimator'));
-  pane.appendChild(el('div', 'note', 'Backtest before changing these, because they steer every estimate.'));
-  fieldRow(pane, 'Energy per lb (kcal)', 'ed', TD.ed(), 'What one pound of change is worth, as a working figure rather than a law.');
-  fieldRow(pane, 'Half-life (days)', 'halfLife', S.get('halfLife', 21), 'How fast old data stops counting, so at 21 a reading from three weeks ago counts half.');
-  fieldRow(pane, 'Adaptation rate', 'alpha', TD.alpha(), 'How far the estimate moves toward each new reading.');
-  fieldRow(pane, 'Trend window (days)', 'win', TD.win(), 'How far back the weight trend line looks.');
-  fieldRow(pane, 'History read (days)', 'lookback', S.get('lookback', 0), 'How far back anything is read. 0 reads all of it, which is what the weight chart draws.');
-  fieldRow(pane, 'Starting guess (kcal per lb)', 'perLb', TD.perLb(), 'Before there is data: weight × this. 13 is what your sheet used.');
-  fieldRow(pane, 'Brake (kcal)', 'guard', TD.guard(), 'The most one update may move the estimate.');
+  pane.appendChild(el('div', 'note', 'Backtest before changing these'));
+  fieldRow(pane, 'Half-life (days)', 'halfLife', S.get('halfLife', 21), 'How fast old data stops counting');
+  fieldRow(pane, 'Adaptation rate', 'alpha', TD.alpha(), 'How far the estimate moves toward each new reading');
+  fieldRow(pane, 'Trend window (days)', 'win', TD.win(), 'How far back the weight trend line looks');
+
+  /* A box wanting a number of days made you invent one. These are the four
+     anybody would have typed. */
+  pane.appendChild(el('label', 'fl', 'History read'));
+  const lbSeg = el('div', 'seg');
+  [[0, 'All'], [365, '1 year'], [180, '6 months'], [90, '90 days']].forEach(([n, lbl]) => {
+    const on = (num(S.get('lookback', 0), 0) || 0) === n;
+    const b = el('button', on ? 'on' : '', lbl);
+    b.onclick = () => { S.set('lookback', n); TD._dirty = true; draw(); };
+    lbSeg.appendChild(b);
+  });
+  pane.appendChild(lbSeg);
+  pane.appendChild(el('div', 'note', 'How far back anything is read'));
+
+  fieldRow(pane, 'Starting guess (kcal per lb)', 'perLb', TD.perLb(), 'Before there is data: weight × this');
+  fieldRow(pane, 'Brake (kcal)', 'guard', TD.guard(), 'The most one update may move the estimate');
 
   const bt = el('button', 'btn wide', 'Backtest the settings');
   bt.style.marginTop = 'var(--s-3)';
@@ -4933,8 +4898,8 @@ function runBacktest() {
     UI.dialog({
       title: 'BACKTEST', width: 500,
       body: b => {
-        b.appendChild(el('div', 'note', 'Each setting is scored on how well it predicted the next 14 days of weight change, across ' + base.n + ' stretches. Pounds out. Lower is better.'));
-        b.appendChild(el('div', 'note', 'Energy per lb is not tested here. It sets the estimate and converts it back again, so it cancels out and every value scores the same. Leave it at 3500 unless you have a reason.'));
+        b.appendChild(el('div', 'note', 'Scored on how well each predicted the next 14 days, across ' + base.n + ' stretches. Lower is better'));
+        b.appendChild(el('div', 'note', 'Energy per lb is not tested here'));
         const now = el('div', 'row');
         now.innerHTML = '<span class="nm">What you use now</span><span class="fig">' + r1(base.mae * 10) / 10 + ' lb off</span>';
         b.appendChild(now);
@@ -4956,12 +4921,12 @@ function runBacktest() {
 
 function drawSyncTab(pane) {
   settingsPane = pane;
-  pane.appendChild(el('div', 'note', 'Two ways out, and they do different jobs. <b>Backup</b> is a file that restores. <b>Export</b> is a spreadsheet you can read but not restore from. Both live in the DATA tab.'));
+  pane.appendChild(el('div', 'note', 'Backup creates a file you can restore from. Export creates a spreadsheet you can read, and it restores too. Both are in the DATA tab.'));
   const cfg = Mirror.settings;
 
   pane.appendChild(el('label', 'fl', 'GOOGLE SHEET MIRROR'));
-  pane.appendChild(el('div', 'warnbox', '<b>Untested.</b> I cannot try this end to end without your sheet, so treat the first run as the test. It never blocks anything: if the push fails, STATUS carries on and tries again next time.'));
-  pane.appendChild(el('div', 'note', 'Setup, once: make a blank Google Sheet → Extensions → Apps Script → paste the script below → Deploy → New deployment → Web app → Execute as <b>me</b>, access <b>anyone</b> → copy the URL → paste it here.'));
+  pane.appendChild(el('div', 'warnbox', '<b>Untested.</b> A failed push never blocks anything and goes again next time.'));
+  pane.appendChild(el('div', 'note', 'Setup, once: blank Google Sheet → Extensions → Apps Script → paste the script below → Deploy → New deployment → Web app → Execute as <b>me</b>, access <b>anyone</b> → copy the URL → paste it here.'));
 
   const u = document.createElement('input');
   u.type = 'text'; u.placeholder = 'https://script.google.com/macros/s/…/exec';
@@ -5004,8 +4969,8 @@ function drawSyncTab(pane) {
         title: 'APPS SCRIPT', width: 560,
         body: b => {
           b.appendChild(el('div', 'note', ok2
-            ? 'Copied, so paste it over everything in the Apps Script editor.'
-            : 'Select all of this and copy it, then paste it over everything in the Apps Script editor.'));
+            ? 'Copied. Paste it over everything in the Apps Script editor'
+            : 'Copy this and paste it over everything in the Apps Script editor'));
           b.appendChild(t);
           if (!ok2) setTimeout(() => { t.select(); }, 50);
         },
@@ -5093,7 +5058,7 @@ function exportSheets() {
 
 /* ══════════════ BOOT ══════════════ */
 
-Rec.onfull = () => UI.toast('<b>storage is full.</b> Settings → TRACK → delete photos, or back up and clear.', { bad: true });
+Rec.onfull = () => UI.toast('<b>Storage is full.</b> Photos are not being saved.', { bad: true });
 
 /* ── draw the buttons ──
    Anything in the markup carrying data-icon gets its drawing here. Called

@@ -218,6 +218,11 @@ const IO = {
     /* An app that says who it is has said enough. Keeping the sheet up to date
        is not something each app should have to remember to switch on. */
     try { Mirror.watch(spec.app); } catch (e) {}
+    /* And read the sheet once, now. watch() only ever fired after THIS device
+       wrote something, so a device that had nothing new never learned what the
+       other one had done - open STATUS on the laptop after logging on the
+       phone and it sat there showing yesterday. */
+    try { Mirror.onOpen(spec.app); } catch (e) {}
     return IO;
   },
 
@@ -1155,9 +1160,34 @@ const Mirror = {
       Mirror.sync(appId, true).then(ok => { if (!ok) dirty = 1; }, () => { dirty = 1; });
     };
     if (g.Rec && g.Rec.on) g.Rec.on(() => { dirty = 1; clearTimeout(t); t = setTimeout(run, 30000); });
+
+    /* Hidden means the phone is being locked or the tab is being left: push
+       what is waiting before it goes. Visible means you have just come back to
+       this device, which is exactly the moment the other one's work matters,
+       so read first and then send. */
     if (g.document) g.document.addEventListener('visibilitychange', () => {
-      if (g.document.visibilityState === 'hidden') run();
+      if (g.document.visibilityState === 'hidden') { run(); return; }
+      if (!mcfg.on || !mcfg.url) return;
+      Mirror.onOpen(appId).then(() => { if (dirty) run(); });
     });
+
+    /* A pull while you are actually looking at it, so a screen left open on
+       the desk catches up on its own. Forty five seconds, Tom's number, which
+       is about 1,900 calls a day against Apps Script's 20,000.
+
+       Two guards, and the second one matters more than it looks. The home
+       screen keeps every app it has opened in an iframe and hides the ones
+       you are not on with display:none. Those documents still report
+       themselves visible, so without the size check six hidden apps would
+       each be polling the sheet behind a screen showing one. A display:none
+       frame does no layout, so its body measures zero. */
+    setInterval(() => {
+      if (!mcfg.on || !mcfg.url) return;
+      if (!g.document || g.document.visibilityState !== 'visible') return;
+      const b = g.document.body;
+      if (b && !b.getBoundingClientRect().width) return;
+      Mirror.onOpen(appId);
+    }, 45000);
     return true;
   },
 
