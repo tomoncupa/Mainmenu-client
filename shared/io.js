@@ -208,6 +208,8 @@ function loadXLSX() {
   });
 }
 
+const DOT = '·';
+
 const IO = {
   /** an app describes itself once: which types it owns, and any sheets of its
       own it wants in the spreadsheet */
@@ -314,6 +316,11 @@ const IO = {
     const hit = Object.keys(apps).filter(a => (apps[a].types || []).indexOf(type) > -1);
     return hit.length ? hit[0] : null;
   },
+
+  /** how much a pull actually brought in. `merged` is counted like the rest:
+      a weight arriving from the other device is a change, and a sync that
+      reports nothing while the numbers move is how you stop trusting it. */
+  came(got) { return (got.changed || 0) + (got.added || 0) + (got.merged || 0); },
 
   /** the value at a dotted path, so a table can expose nested fields flat */
   reach(o, path) {
@@ -504,7 +511,10 @@ const IO = {
     /* The id goes in the SECOND column, never the first. Restore reads column
        one and needs to find the row's JSON sitting there, so the key the sheet
        matches on goes beside it rather than in front of it. */
-    const data = since ? [] : [['Motherbase rows. Do not edit by hand, the readable tabs are the ones to look at.']];
+    /* The banner goes on every push, delta included, because the tab is now
+       written line by line and the script has to know the first line is not
+       one of them. */
+    const data = [['Motherbase rows. Do not edit by hand, the readable tabs are the ones to look at.']];
     bag.rows.forEach(r => {
       if (since && !(r.updated_at > since)) return;
       data.push([JSON.stringify(r), r.id]);
@@ -522,23 +532,66 @@ const IO = {
     Object.keys(bag.local || {}).sort().forEach(k => set.push([k, bag.local[k]]));
 
     return [
-      { name: '_Data', rows: data, machine: true, key: 1 },
+      /* ── the one tab that is never cleared ──
+
+         Every other tab is rewritten whole on a full push, and for a readable
+         tab that is right: the device sending it has the whole picture.
+
+         _Data is different, because a device might not. Open STATUS on the
+         laptop for the first time and it holds nothing; if its first sync
+         rewrote this tab, a fortnight of weights would go off the sheet in one
+         move. The phone would still have them — nothing here can reach across
+         and delete a row on another device — but the sheet is the backup, and a
+         backup that empties itself when you open a second device is not one.
+
+         So this tab is matched on the row id and updated in place, always.
+         Rows only ever arrive. A row that really was deleted arrives as its own
+         tombstone, which is a line to write rather than a line to leave out. */
+      { name: IO.bagName(appId), rows: data, machine: true, key: 1, head: 1, upsert: 1 },
       /* two columns and a version stamp: cheap enough to send whole every time,
          and it is the tab that says what wrote the file */
-      { name: '_Settings', rows: set, machine: true, whole: true },
+      { name: IO.setName(appId), rows: set, machine: true, whole: true },
     ];
   },
 
-  /** read those two tabs back into a restorable bag */
-  bagFromTabs(tabs) {
-    const rows = [], local = {};
-    const data = tabs['_Data'] || tabs['_data'];
-    (data || []).forEach(line => {
+  /* ── one machinery tab per app, and it has to be ──
+
+     These two used to be called _Data and _Settings flat, by every app. Six
+     apps sync to one sheet, because the link is one setting for the whole
+     suite — and a full push clears the tab before it writes. So BLOCK's push
+     erased STATUS's rows, STATUS's next push erased BLOCK's, and _Settings,
+     which is sent whole every single time, was whichever app pushed last.
+
+     It looked like sync being flaky. It was two apps writing one address.
+     A readable tab is named after the data, because food is food no matter
+     who logs it. A machinery tab is the opposite: it is one app's save file,
+     and naming it after that app is not a claim, it is the fact. */
+  bagName(appId) { return '_Data ' + DOT + ' ' + appId; },
+  setName(appId) { return '_Settings ' + DOT + ' ' + appId; },
+
+  /** the flat names these tabs had before they were split per app, so a sheet
+      or a workbook written by the old code still reads back */
+  OLDBAG: ['_Data', '_data', 'Data'],
+  OLDSET: ['_Settings', '_settings'],
+
+  /** the rows out of one _Data grid. The banner line and anything somebody
+      typed in by hand are not JSON and are skipped rather than guessed at. */
+  bagRows(grid) {
+    const out = [];
+    (grid || []).forEach(line => {
       const cell = line && line[0];
       if (typeof cell !== 'string' || cell.charAt(0) !== '{') return;
-      try { rows.push(JSON.parse(cell)); } catch (e) {}
+      try { out.push(JSON.parse(cell)); } catch (e) {}
     });
-    const set = tabs['_Settings'] || tabs['_settings'];
+    return out;
+  },
+
+  /** read those two tabs back into a restorable bag */
+  bagFromTabs(tabs, appId) {
+    const local = {};
+    const pick = (names) => { for (let i = 0; i < names.length; i++) if (tabs[names[i]]) return tabs[names[i]]; return null; };
+    const rows = IO.bagRows(pick((appId ? [IO.bagName(appId)] : []).concat(IO.OLDBAG)));
+    const set = pick((appId ? [IO.setName(appId)] : []).concat(IO.OLDSET));
     (set || []).slice(1).forEach(line => {
       if (!line || !line[0] || line[0] === 'Setting') return;
       local[String(line[0])] = line[1] == null ? '' : String(line[1]);
@@ -631,10 +684,19 @@ const IO = {
         fr.onload = () => {
           try {
             const wb = X.read(new Uint8Array(fr.result), { type: 'array' });
+            /* The machinery tabs carry the app's name now — _Data · status —
+               so match on the front of the name rather than on the whole of
+               it, and keep reading the flat names a workbook saved by older
+               code still uses. */
             const tabs = {};
-            ['_Data', '_Settings', 'Data'].forEach(nm => {
-              if (wb.Sheets[nm]) tabs[nm === 'Data' ? '_Data' : nm] = X.utils.sheet_to_json(wb.Sheets[nm], { header: 1 });
+            let dataName = null, setName = null;
+            Object.keys(wb.Sheets).forEach(nm => {
+              const n = String(nm);
+              if (!dataName && (n.indexOf('_Data') === 0 || n === 'Data')) dataName = nm;
+              if (!setName && n.indexOf('_Settings') === 0) setName = nm;
             });
+            if (dataName) tabs['_Data'] = X.utils.sheet_to_json(wb.Sheets[dataName], { header: 1 });
+            if (setName) tabs['_Settings'] = X.utils.sheet_to_json(wb.Sheets[setName], { header: 1 });
             if (!tabs._Data) throw new Error('that spreadsheet has no _Data tab, so there is nothing to restore from, and only exports made by this app carry one');
             const bag = IO.bagFromTabs(tabs);
             if (!bag.rows.length) throw new Error('the _Data tab had no rows in it');
@@ -912,7 +974,7 @@ const Mirror = {
     if (!since) return all;
     /* a tab whose only line is its header changed nothing, and sending it says
        nothing at exactly the cost of saying something */
-    return all.filter(t => t.whole || t.rows.length > (t.key === 0 ? 1 : 0));
+    return all.filter(t => t.whole || t.rows.length > ((t.head || t.key === 0) ? 1 : 0));
   },
 
   /* ── 0: what does the sheet hold? ──
@@ -958,6 +1020,36 @@ const Mirror = {
         IO.applyTable(appId, diff);                 /* never deletes on a pull */
         diff.clashes.forEach(c => IO.logConflict(appId, c));
       });
+
+      /* ── the rows no table describes ──
+
+         A table is one line per thing with its fields in columns, so only a
+         payload that is flat can have one. A weight is not flat: `ev` holds a
+         list of timestamped entries, because "weigh once" and "log mood five
+         times" are the same shape underneath. There is no honest column for a
+         list, so `ev` has no table — and for a long time that meant it had no
+         way home either. It went up in _Data, and _Data was never read back.
+
+         That is the bug this fixes, and it was never only about weight. `day`,
+         `acct`, `shot`, the ticks and the app's own settings are all in the
+         same position: written to the sheet every push, and never once pulled
+         down. One device logged, the other went on showing yesterday.
+
+         Merged, not applied. Every row carries `updated_at` and the store's
+         rule decides — the newer write wins, per row — which is the same rule
+         a restore follows and the reason a stale sheet cannot overwrite work
+         done since. Tombstones come through it too, so a reading deleted on
+         the phone is deleted on the laptop instead of quietly returning. */
+      if (g.Rec) {
+        /* Ours first, then the flat _Data an older sheet still holds — rows
+           written before the tabs were split per app are real rows, and one
+           merge salvages them instead of stranding them. */
+        let rows = [];
+        [IO.bagName(appId)].concat(IO.OLDBAG).forEach(n => {
+          if (tabs[n]) rows = rows.concat(IO.bagRows(tabs[n]));
+        });
+        if (rows.length) out.merged = g.Rec.merge(rows);
+      }
       return out;
     };
 
@@ -969,22 +1061,57 @@ const Mirror = {
         const at = pre.index[n] && pre.index[n].edited;
         return at && at > (mcfg.seen[appId + '|' + n] || '');
       });
+      /* ── asking for _Data, which nobody types in ──
+
+         `edited` is stamped by onEdit, and onEdit only fires when a human
+         types into a tab with an id column. _Data is neither: the script
+         writes it, and its first cell is a warning rather than a header. So
+         its stamp is forever empty, the filter above always skips it, and the
+         one tab holding every row without a table was the one tab never asked
+         for.
+
+         The push receipt says it instead. `mb.at.<app>` is stamped by
+         whichever device last pushed, so a stamp that is neither the one we
+         last read nor the one we last wrote means the OTHER device has been
+         busy and _Data is worth the download. Our own push is excluded on
+         purpose: pulling back what we just sent is a large answer to a
+         question we already knew. */
+      const stamp = (pre.pushedAt || {})[appId] || '';
+      const bagKey = appId + '|_Data';
+      const seenBag = mcfg.seen[bagKey] || '';
+      /* Skipping our own push is only safe once we have read the tab at all.
+         A device that has never read it does not know what else is in there:
+         the laptop's first sync pushed, so the last stamp was its own, and on
+         that reasoning it went on skipping the one tab holding the phone's
+         entire history. Never read means always read. */
+      const mineLast = !!seenBag && stamp === (mcfg.pushed[appId] || '');
+      const bagTabsWanted = [];
+      if (mcfg.sheetV >= 3 && stamp && stamp !== seenBag && !mineLast) {
+        bagTabsWanted.push(IO.bagName(appId));
+        /* a sheet still carrying the flat tab from before the split */
+        if (pre.index['_Data']) bagTabsWanted.push('_Data');
+        bagTabsWanted.forEach(n => { if (want.indexOf(n) < 0) want.push(n); });
+      }
+
       /* Nobody has typed in the sheet since we last looked, so there is
          nothing to read. This is the ordinary case and it now costs nothing. */
       if (!want.length) return Promise.resolve({ skipped: 'nothing new', changed: 0, added: 0, clashes: 0 });
       return jsonp(mcfg.url, { app: appId, want: 'tables', only: want.join(',') }).then(reply => {
-        if (!reply || !reply.tabs) return { skipped: 'nothing came back' };
+        if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1 };
         const out = apply(reply.tabs);
         /* moved only after the rows are in, so a failure half way through
            means we read the tab again rather than skip it forever */
-        want.forEach(n => { mcfg.seen[appId + '|' + n] = pre.index[n].edited; });
+        want.forEach(n => {
+          if (bagTabsWanted.indexOf(n) > -1) mcfg.seen[bagKey] = stamp;
+          else mcfg.seen[appId + '|' + n] = pre.index[n].edited;
+        });
         msave();
         return out;
       });
     }
 
     return jsonp(mcfg.url, { app: appId, want: 'tables' }).then(reply => {
-      if (!reply || !reply.tabs) return { skipped: 'nothing came back' };
+      if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1 };
       return apply(reply.tabs);
     });
   },
@@ -1022,7 +1149,41 @@ const Mirror = {
        while this push is still in the air is newer than this stamp and goes
        next time; stamping afterwards would step straight over it. */
     const at = new Date().toISOString();
-    let tabs = Mirror.tabs(appId, { since: full ? '' : mcfg.pushed[appId], views: full });
+
+    /* ── sending everything, and clearing nothing ──
+
+       A full push rewrites each tab: the sheet clears it and writes what it was
+       handed. That is right when the device doing it holds the whole picture,
+       and wrong when it does not. Open STATUS on the laptop for the first time
+       and it holds almost nothing; a rewrite from there would take a fortnight
+       of weights off the sheet in one move.
+
+       A version 3 script protects _Data itself, because it is told to match
+       that tab line by line. An older one has never heard of that, and the
+       window between updating the app and redeploying the script is exactly
+       when a second device gets set up.
+
+       So the question is not how much to send — it is always everything — but
+       whether this device has earned the right to clear. It has if the sheet
+       can protect the save file itself, or if we have read the save file at
+       least once and therefore hold what is in it. Otherwise the same rows go
+       up matched on their ids instead, which adds and updates and never
+       removes. Nothing is skipped either way, so the boundary stays honest. */
+    const idx = (opts.index && opts.index.index) || {};
+    const bagHas = ((idx[IO.bagName(appId)] || {}).rows) || 0;
+    /* nobody has pushed since we did, so what is up there came from us */
+    const oursAlready = !!mcfg.pushed[appId] &&
+      ((opts.index && opts.index.pushedAt) || {})[appId] === mcfg.pushed[appId];
+    const wholePicture = mcfg.sheetV >= 3 ||     /* the sheet protects the save file itself */
+      !!mcfg.seen[appId + '|_Data'] ||           /* we have read it, so we hold what it holds */
+      bagHas <= 1 ||                             /* there is nothing up there to lose */
+      oursAlready;                               /* we are the one who put it there */
+    const clearing = full && wholePicture;
+    /* The derived read-outs — the calendar, the log, the daily totals — are
+       rewritten whole by whoever sends them, so they belong to the same rule.
+       A laptop with no meals on it should not blank the daily totals on its
+       way past. */
+    let tabs = Mirror.tabs(appId, { since: full ? '' : mcfg.pushed[appId], views: clearing });
     /* The settings tab is small and always built, which would make every idle
        sync a write of fourteen unchanged lines. Compare it with what was sent
        last time instead, and an afternoon where nothing was logged costs one
@@ -1038,7 +1199,7 @@ const Mirror = {
     /* Tabs this app wrote under the old prefixed name. The sheet drops them
        after writing the new ones, because a rename that leaves the old tab
        behind is how you end up reading last month's data and believing it. */
-    const body = JSON.stringify({ app: appId, at: at, mode: full ? 'full' : 'delta',
+    const body = JSON.stringify({ app: appId, at: at, mode: clearing ? 'full' : 'delta',
       tabs: tabs, retire: IO.oldPrefix(appId) });
     /* text/plain sidesteps the CORS preflight Apps Script cannot answer */
     const head = { 'Content-Type': 'text/plain;charset=utf-8' };
@@ -1067,10 +1228,10 @@ const Mirror = {
            make the tab twelve lines long. */
         if (((r.pushedAt || {})[appId] || '') === at) {
           mcfg.pushed[appId] = at;
-          if (full) mcfg.full[appId] = at;
+          if (clearing) mcfg.full[appId] = at;
           if (sig) mcfg.sig[appId] = sig;
           mcfg.at = g.Day.today(); msave();
-          return { state: 'confirmed', tabs: tabs.length, mode: full ? 'full' : 'delta' };
+          return { state: 'confirmed', tabs: tabs.length, mode: clearing ? 'full' : 'delta' };
         }
         return { state: 'failed', missing: tabs.length, of: tabs.length };
       }
@@ -1141,9 +1302,23 @@ const Mirror = {
   sync(appId, quiet, opts) {
     if (!mcfg.url) return Promise.resolve(false);
     if (!quiet) toast('Syncing…');
+    let idx = null;
     return Mirror.index(appId)
-      .then(pre => Mirror.pull(appId, pre).catch(() => ({ skipped: 'could not read' })))
-      .then(got => Mirror.push(appId, true, opts || {}).then(res => {
+      .then(pre => { idx = pre; return Mirror.pull(appId, pre).catch(() => ({ skipped: 'could not read', failed: 1 })); })
+      .then(got => {
+        /* ── read first, and if the read failed, do not write ──
+
+           A push rewrites the readable tabs whole. Doing that straight after a
+           read that failed means writing over a sheet we have just proved we
+           cannot see — and the thinner the device, the more it erases. The
+           boundary in `pushed` has not moved, so the same rows go up on the
+           next attempt; there is nothing to queue and nothing to lose by
+           waiting. */
+        if (got && got.failed) {
+          if (!quiet) toast('Could not read the sheet, so nothing was sent. ' + Mirror.why(), { bad: true, ms: 8000 });
+          return false;
+        }
+        return Mirror.push(appId, true, Object.assign({ index: idx }, opts || {})).then(res => {
         const ok2 = res && (res.state === 'confirmed' || res.state === 'clean');
         if (!quiet) {
           if (res && res.state === 'clean') toast('Already up to date.');
@@ -1152,12 +1327,13 @@ const Mirror = {
             toast('Sent <b>' + res.tabs + '</b> tabs and the sheet would not confirm, so open it and check.',
               { bad: true, ms: 8000 });
           } else if (got && got.clashes) toast('Synced, and <b>' + got.clashes + '</b> older sheet edits were kept aside.');
-          else if (got && (got.changed || got.added)) toast('Synced, with <b>' + (got.changed + got.added) + '</b> changes from the sheet.');
+          else if (got && (got.changed || got.added || got.merged)) toast('Synced, with <b>' + IO.came(got) + '</b> changes from the sheet.');
           else toast('Synced <b>' + res.tabs + '</b> tabs, and the sheet confirms it.');
         }
         if (ok2 && res.state === 'confirmed' && g.Sfx) g.Sfx.play('complete', { level: 2 });
         return ok2;
-      }));
+        });
+      });
   },
 
   /** ── keeping up without being asked ──
@@ -1221,8 +1397,8 @@ const Mirror = {
   onOpen(appId) {
     if (!mcfg.url || !mcfg.on) return Promise.resolve(false);
     return Mirror.index(appId).then(pre => Mirror.pull(appId, pre)).then(got => {
-      if (got && (got.changed || got.added)) {
-        toast('<b>' + (got.changed + got.added) + '</b> changes came in from the sheet.');
+      if (got && (got.changed || got.added || got.merged)) {
+        toast('<b>' + IO.came(got) + '</b> changes came in from the sheet.');
         if (g.Rec) g.Rec.reload && g.Rec.reload();
       }
       return true;
@@ -1233,14 +1409,23 @@ const Mirror = {
       protocol above. */
   script() {
     return [
-      '/* Motherbase sheet bridge, version 2. Paste into Extensions > Apps Script,',
+      '/* Motherbase sheet bridge, version 3. Paste into Extensions > Apps Script,',
       '   then Deploy > New deployment > Web app, execute as me, access anyone.',
       '',
       '   Version 2 can update one line in place instead of rewriting a whole tab.',
       '   That is what lets the phone send the eight sets you did this morning',
-      '   rather than all twelve thousand of them, every time. */',
+      '   rather than all twelve thousand of them, every time.',
       '',
-      'var MB_V = 2;',
+      '   Version 3 hands back a tab the app asks for by name. Everything with no',
+      '   readable tab of its own, such as a weight, a mood, or the note on a day,',
+      '   lives in the _Data tab, and that tab has a warning across the top rather',
+      '   than a header, so the old rule refused to send it. It went up and never',
+      '   came back down. This is the half that lets the other device read it.',
+      '',
+      '   It also never clears that tab, so opening the app on a second device',
+      '   cannot empty the sheet. */',
+      '',
+      'var MB_V = 3;',
       '',
       'function mbProps() { return PropertiesService.getScriptProperties(); }',
       '',
@@ -1286,6 +1471,12 @@ const Mirror = {
       '  if (!sh) { sh = ss.insertSheet(t.name); whole = true; }',
       '  if (sh.getLastRow() < 1) whole = true;',
       '',
+      '  /* A tab that must never lose a line it was not sent. _Data is the save',
+      '     file, and a device that has only just been opened does not have the',
+      '     whole of it to send, so its lines are matched on the id and updated',
+      '     in place, even when everything else is being rewritten. */',
+      '  if (t.upsert && sh.getLastRow() > 0) whole = false;',
+      '',
       '  if (whole) {',
       '    sh.clear();',
       '    sh.getRange(1, 1, grid.length, w).setValues(grid);',
@@ -1305,7 +1496,9 @@ const Mirror = {
       '    for (var i = 0; i < keys.length; i++) have[String(keys[i][0])] = i + 2;',
       '  }',
       '  var append = [];',
-      '  var from = t.editable ? 1 : 0;      /* skip the header line we were sent */',
+      '  var from = 0;                       /* skip the header line we were sent */',
+      '  if (t.editable) from = 1;',
+      '  if (t.head) from = 1;',
       '  for (var j = from; j < grid.length; j++) {',
       '    var line = grid[j];',
       '    var at = have[String(line[t.key])];',
@@ -1396,8 +1589,12 @@ const Mirror = {
       '    if (only && only.indexOf(name) < 0) return;',
       '    var vals = sh.getDataRange().getValues();',
       '    if (!vals.length) return;',
-      '    /* only the tabs with an id column can be read back */',
-      '    if (String(vals[0][0]).toLowerCase() !== "id") return;',
+      '    /* Only the tabs with an id column can be read back: a scratch tab',
+      '       somebody made by hand is not data. A tab the app named outright is',
+      '       different: it asked for that one, and _Data (every row that has no',
+      '       table, which is where a weight and a mood live) opens with a warning',
+      '       rather than a header, so the guard alone would never let it home. */',
+      '    if (String(vals[0][0]).toLowerCase() !== "id" && !(only && only.indexOf(name) > -1)) return;',
       '    out[name] = vals.map(function (row) {',
       '      /* Column 1 is the row date and belongs to the calendar, not the',
       '         clock: ISO would push the sheet local midnight back into the',

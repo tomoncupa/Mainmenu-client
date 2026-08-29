@@ -14,15 +14,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=c1aa13e8"></script>
-<script src="../shared/day.js?v=c1aa13e8"></script>
-<script src="../shared/records.js?v=c1aa13e8"></script>
-<script src="../shared/mobile.js?v=c1aa13e8"></script>
-<script src="../shared/sound.js?v=c1aa13e8"></script>
-<script src="../shared/ui.js?v=c1aa13e8"></script>
-<script src="../shared/io.js?v=c1aa13e8"></script>
-<script src="../shared/icons.js?v=c1aa13e8"></script>
-<script src="../shared/health.js?v=c1aa13e8"></script>
+<script src="../shared/skins.js?v=d8547856"></script>
+<script src="../shared/day.js?v=d8547856"></script>
+<script src="../shared/records.js?v=d8547856"></script>
+<script src="../shared/mobile.js?v=d8547856"></script>
+<script src="../shared/sound.js?v=d8547856"></script>
+<script src="../shared/ui.js?v=d8547856"></script>
+<script src="../shared/io.js?v=d8547856"></script>
+<script src="../shared/icons.js?v=d8547856"></script>
+<script src="../shared/health.js?v=d8547856"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -125,6 +125,13 @@ h2 .sub{margin-left:auto;letter-spacing:0;font-family:var(--font-mono);font-size
 /* the day card's top line: calories on the left, rank on the right */
 .islerow{display:flex;align-items:flex-start;gap:var(--s-3)}
 .islehero{flex:1;min-width:0}
+/* "609 / 2,220 left" is one reading and it breaks in half if it is allowed to
+   wrap: the number on one line and the word under it, which looks like two
+   facts. It stays on one line and steps down the type scale instead, because
+   a smaller number is still one number. */
+.islehero .hero{white-space:nowrap;overflow:hidden;text-overflow:clip}
+.islehero .hero.tight{font-size:var(--f-7)}
+.islehero .hero.tighter{font-size:var(--f-6)}
 .rankbadge{flex:0 0 auto;display:flex;align-items:center;gap:var(--s-2);
   background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit}
 .rankbadge .rk{width:46px;height:46px;display:flex;align-items:center;
@@ -166,6 +173,13 @@ h2 .sub{margin-left:auto;letter-spacing:0;font-family:var(--font-mono);font-size
 .tile .bar{height:2px;border-radius:1px;background:var(--surface-3);overflow:hidden;margin-top:var(--s-2)}
 .tile .bar i{display:block;height:100%;background:var(--accent)}
 .tile.over .bar i{background:var(--warn)}
+/* ── a tile being moved ──
+   `touch-action:none` goes on the GRID and only while something is lifted.
+   Put it on the tile permanently and the island stops being somewhere you can
+   start a scroll, which on a phone is most of the first screen. */
+.tiles.sorting{touch-action:none}
+.tile.lifted{box-shadow:var(--e-3);outline:2px solid var(--accent);
+  transform:scale(1.04);position:relative;z-index:2;opacity:.95}
 
 /* the two arrows that set the tile order, in Settings → Track */
 .ord{width:30px;height:34px;padding:0;border:0;border-radius:var(--radius-sm);
@@ -1947,7 +1961,8 @@ function photoBlock(body, kind, onText, onShot) {
    `days` it is due every day, which is what everything used to be. `slot` is
    just a word for when, printed next to it: "Sunday morning". */
 const dueToday = (f, date) => !f.days || !f.days.length || f.days.indexOf(Day.dow(date || vd())) > -1;
-const outstanding = () => liveFields().filter(f => f.once && dueToday(f) && !logged(vd(), f.id));
+const outstanding = () => inTileOrder(
+  liveFields().filter(f => f.once && dueToday(f) && !logged(vd(), f.id)), f => f.id);
 
 /* ── the quick add ──
    Two halves, and the top one empties itself.
@@ -2889,6 +2904,108 @@ function card(title, sub) {
   return c;
 }
 
+/* ── the order of the tiles on Today ──
+   One list of tile names, and the only truth about the order. The field tiles
+   are named by field id; the two that are not fields are named `@protein` and
+   `@spent`, with the @ so a field could never collide with one.
+
+   Anything missing from the list keeps the position it would have had and
+   sits after everything listed, so a field added tomorrow appears at the end
+   rather than being dropped or jumping to the front.
+
+   Settings has two arrows per field that do the same job. They write here
+   too, or the arrows and the tiles would each hold a different opinion about
+   the order and the last one you touched would appear to be the only one that
+   worked. */
+const tileOrder = () => S.get('tileOrder', []) || [];
+const setTileOrder = keys => S.set('tileOrder', keys);
+/** put a list in tile order, given how to read a name off each entry */
+function inTileOrder(list, keyOf) {
+  const ord = tileOrder();
+  if (!ord.length) return list;
+  const at = x => { const i = ord.indexOf(keyOf(x)); return i < 0 ? Infinity : i; };
+  return list.map((x, i) => [x, i]).sort((a, b) => (at(a[0]) - at(b[0])) || (a[1] - b[1])).map(x => x[0]);
+}
+
+/* ── hold a tile to move it ──
+   A press that stays put for 450ms picks the tile up; after that the tile
+   follows whatever is under the pointer and the others shuffle around it. A
+   press that travels first was a scroll, so it is let go.
+
+   Both surfaces, one path: pointer events cover the thumb and the mouse
+   without either needing its own version. Right-click is deliberately NOT
+   wired to this — you cannot drag with a button you are holding for a menu.
+
+   The click that follows a drag is swallowed. Without that, putting a tile
+   down also opens the sheet behind it. */
+function makeTilesSortable(g, commit) {
+  let wait = null, drag = null, dropped = false;
+
+  const stop = () => { if (wait) { clearTimeout(wait.timer); wait = null; } };
+  const end = () => {
+    stop();
+    if (!drag) return;
+    drag.t.classList.remove('lifted');
+    g.classList.remove('sorting');
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    dropped = true;
+    Mobile.feedback('select');
+    commit([...g.children].map(n => n.dataset.tile).filter(Boolean));
+  };
+
+  g.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.tile');
+    if (!t || !t.dataset.tile) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    wait = { t: t, id: e.pointerId, x: e.clientX, y: e.clientY, timer: setTimeout(() => {
+      if (!wait) return;
+      drag = { t: wait.t, id: wait.id, moved: false };
+      wait = null;
+      drag.t.classList.add('lifted');
+      g.classList.add('sorting');
+      Mobile.haptic('heavy');
+    }, 450) };
+  });
+
+  /* On the window, not the grid: a finger that leaves the tile it started on
+     still owns the gesture, and letting go outside the island must still put
+     the tile down rather than leave it stuck up. */
+  addEventListener('pointermove', e => {
+    if (wait && e.pointerId === wait.id) {
+      if (Math.abs(e.clientX - wait.x) + Math.abs(e.clientY - wait.y) > 10) stop();
+      return;
+    }
+    if (!drag || e.pointerId !== drag.id) return;
+    e.preventDefault();
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const over = under && under.closest ? under.closest('.tile') : null;
+    if (!over || over === drag.t || over.parentNode !== g) return;
+    /* which side of the tile you are on decides which side of it you land,
+       so dragging left and dragging right both do what they look like */
+    const r = over.getBoundingClientRect();
+    g.insertBefore(drag.t, (e.clientX - r.left) > r.width / 2 ? over.nextSibling : over);
+    drag.moved = true;
+    /* `nav` is the lightest buzz there is — one per tile you pass, so the
+       reshuffle is felt as well as seen without turning into a rattle. */
+    Mobile.haptic('nav');
+  }, { passive: false });
+
+  addEventListener('pointerup', end);
+  addEventListener('pointercancel', end);
+
+  /* iOS decides whether a touch scrolls the page early, and only a
+     non-passive touchmove that says no can stop it once a tile is up. */
+  g.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
+
+  g.addEventListener('click', e => {
+    if (!dropped) return;
+    dropped = false;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+}
+
 function tile(label, val, unit, cls, onclick, pct, sub) {
   const t = el('button', 'tile ' + (cls || ''));
   t.innerHTML = '<div class="vl">' + (val == null ? '–' : esc(val)) +
@@ -2932,7 +3049,11 @@ function islandCard(d, opts) {
   const c = card();
 
   const left = ct.v - Math.round(t.kcal);
-  const hero = el('div', 'hero',
+  /* How wide the reading actually is, in characters, so the size can come down
+     before it runs out of room. Four figures either side of the slash is the
+     case that used to wrap. */
+  const figures = left.toLocaleString().length + ct.v.toLocaleString().length;
+  const hero = el('div', 'hero' + (figures > 12 ? ' tighter' : figures > 10 ? ' tight' : ''),
     left.toLocaleString() + ' <span class="sl">/</span> ' + ct.v.toLocaleString() +
     '<span class="u">left</span>');
   if (left < 0) hero.style.color = 'var(--warn)';
@@ -2948,6 +3069,9 @@ function islandCard(d, opts) {
   c.appendChild(top);
 
   const g = el('div', 'tiles');
+  /* Named and collected before any of them is drawn, because the order is a
+     property of the whole set and cannot be decided one tile at a time. */
+  const made = [];
   liveFields().filter(f => dueToday(f, d)).forEach(f => {
     const v = value(d, f.id);
     let cls = v == null ? 'todo' : '';
@@ -2962,21 +3086,27 @@ function islandCard(d, opts) {
     /* a decaying field says what is still in you under its label, because the
        total you took today stops being the interesting number by mid-afternoon */
     const lf = (f.half && Day.isToday(d)) ? remaining(f) : null;
-    g.appendChild(tile(f.label, tileValue(f, v), f.unit, cls, () => fieldSheet(f, d), pct,
-      lf != null && lf >= 1 ? Math.round(lf) + (f.unit || '') + ' left' : null));
+    made.push({ key: f.id, node: tile(f.label, tileValue(f, v), f.unit, cls, () => fieldSheet(f, d), pct,
+      lf != null && lf >= 1 ? Math.round(lf) + (f.unit || '') + ' left' : null) });
   });
-  g.appendChild(tile('Protein', Math.round(t.p) + '/' + Math.round(TARGETS().p), 'g', t.p ? '' : 'todo', () => { TAB = 'food'; draw(); }, t.p / (TARGETS().p || 1)));
-  /* What you spent is the one thing on here nobody wants on a feed. */
-  if (opts.money !== false) {
-    g.appendChild(tile('Spent', Math.round(dayMoney(d)).toLocaleString(), '\u20b1', dayMoney(d) ? '' : 'todo', () => { TAB = 'money'; draw(); }));
+  made.push({ key: '@protein', node: tile('Protein', Math.round(t.p) + '/' + Math.round(TARGETS().p), 'g', t.p ? '' : 'todo', () => { TAB = 'food'; draw(); }, t.p / (TARGETS().p || 1)) });
+  /* Two different questions, and both have to say yes. `opts.money` is the
+     export asking not to put money into a picture that leaves the phone.
+     `spendTile` is Tom deciding he does not want to look at it at all. */
+  if (opts.money !== false && S.get('spendTile', 1)) {
+    made.push({ key: '@spent', node: tile('Spent', Math.round(dayMoney(d)).toLocaleString(), '\u20b1', dayMoney(d) ? '' : 'todo', () => { TAB = 'money'; draw(); }) });
   }
+  inTileOrder(made, x => x.key).forEach(x => { x.node.dataset.tile = x.key; g.appendChild(x.node); });
   c.appendChild(g);
+  /* Not wired on the export's copy: that one is built off screen to be
+     photographed, and nothing there is ever going to be held. */
+  if (opts.sortable) makeTilesSortable(g, keys => { setTileOrder(keys); draw(); });
   return c;
 }
 
 function drawNow(m) {
   const d = vd();
-  m.appendChild(islandCard(d, {}));
+  m.appendChild(islandCard(d, { sortable: true }));
 
   /* "Through the day" used to repeat every multi-entry field underneath the
      tiles, with its running total on the right — the same number the tile
@@ -3455,14 +3585,26 @@ const rankFloor = (k, floor) => {
   return i > f ? floor : k;
 };
 
-/* full marks within FULL of target, nothing by ZERO away, straight line between */
+/* ── two targets, two curves ──
+   A target you are trying to REACH - steps, protein, sleep - is scored in
+   proportion. Tom, 2026-08-29: "half the steps is half the score." Five
+   thousand steps is not a failed day, it is half a day's walking, and the
+   band below scored it zero because it treated 50% short the same as 200%
+   over. Within FULL of the target, or past it, is still full marks.
+
+   A target you are trying to LAND ON - calories - stays a band: full marks
+   within 5%, nothing by 20% out, either side. Half your calories is not half
+   a good day, it is a different kind of bad one, and proportion would score
+   starving as a partial success. */
 const FULL = 0.05, ZERO = 0.20;
 function closeness(v, target, both) {
   if (target == null || !target) return null;
   if (v == null) return 0;
-  const off = (v - target) / target;
-  if (!both && off >= 0) return 1;             /* over a floor target is full marks */
-  const d = Math.abs(off);
+  if (!both) {
+    const r = v / target;
+    return r >= 1 - FULL ? 1 : Math.max(0, r);
+  }
+  const d = Math.abs((v - target) / target);
   if (d <= FULL) return 1;
   if (d >= ZERO) return 0;
   return 1 - (d - FULL) / (ZERO - FULL);
@@ -3526,8 +3668,28 @@ function dayScore(date) {
 
   const scored = parts.filter(p => p.score != null);
   const pct = scored.length ? Math.round(scored.reduce((a, p) => a + p.score, 0) / scored.length * 100) : null;
+
+  /* ── a day you never opened is not a day you failed ──
+
+     Every pillar with no reading scores zero, which is right for a day you
+     used and missed on, and wrong for a day the app was not open. Those two
+     were being counted as the same thing, so the seven days before you started
+     were seven zeroes and the badge said F, 0% — on a morning with eight hours
+     of sleep, twelve thousand steps and every gram of protein in.
+
+     A first impression of F is not a motivator, it is a reason to close the
+     app, and CLAUDE.md is explicit that progress starts above zero and that
+     earned progress is never taken away. So a day with nothing on it at all is
+     left out of the average rather than counted as a nought, and the card says
+     how many days the number is actually built from. */
+  const used = ate || trainedOn(date) ||
+    !!(Rec.get('day', date, '') || {}).note ||
+    !!(Rec.get('day', date, '') || {}).rest ||
+    Object.values(fields()).some(f => logged(date, f.id));
+
   return {
     date: date, pct: pct, parts: scored, pending: pending,
+    used: used,
     trained: trainedOn(date),
     rest: !!(Rec.get('day', date, '') || {}).rest,
     partial: pending.length > 0,
@@ -3540,20 +3702,24 @@ function dayScore(date) {
 function adherence(days) {
   const rows = [];
   for (let i = days; i >= 1; i--) rows.push(dayScore(Day.shift(Day.today(), -i)));
-  const scored = rows.filter(r => r.pct != null);
-  /* Scored and logged are different questions: an empty day scores zero, which
-     is the point, but calling it "logged" is a lie. */
-  const touched = rows.filter(r => r.parts.some(p => p.score > 0) || r.trained);
-  const pct = scored.length ? Math.round(scored.reduce((a, r) => a + r.pct, 0) / scored.length) : 0;
+  /* Only days that were actually used. A day with nothing on it says nothing
+     about how you did, so it says nothing about the average either. */
+  const scored = rows.filter(r => r.pct != null && r.used);
+  const touched = rows.filter(r => r.used);
+  const pct = scored.length ? Math.round(scored.reduce((a, r) => a + r.pct, 0) / scored.length) : null;
 
   /* training is a letter, not an average */
   const sessions = rows.filter(r => r.trained).length;
   const want = num(S.get('trainPerWeek', 4), 4) * (days / 7);
   const hitTraining = sessions >= Math.floor(want);
 
-  let k = rankFor(pct).k;
-  if (hitTraining) k = rankUp(k, 1);
-  else k = rankCap(k, 'A');       /* no training, no S - a ceiling, never a clawback */
+  /* No days to go on means no letter. Showing F would be inventing a verdict
+     out of an absence of evidence. */
+  let k = pct == null ? null : rankFor(pct).k;
+  if (k) {
+    if (hitTraining) k = rankUp(k, 1);
+    else k = rankCap(k, 'A');     /* no training, no S - a ceiling, never a clawback */
+  }
 
   /* what is costing the most, by how much it gave up rather than by count */
   const lost = {};
@@ -3563,7 +3729,7 @@ function adherence(days) {
   const worst = Object.entries(lost).filter(w => w[1] > 0.5)
     .sort((a, b) => b[1] - a[1]).slice(0, 3);
 
-  return { pct: pct, rank: RANKS.find(r => r.k === k), days: days, rows: rows,
+  return { pct: pct, rank: k ? RANKS.find(r => r.k === k) : null, days: days, rows: rows,
            sessions: sessions, want: Math.floor(want), hitTraining: hitTraining,
            worst: worst, scoredDays: scored.length, loggedDays: touched.length };
 }
@@ -3572,6 +3738,9 @@ function adherence(days) {
 function todayScore() {
   const d = dayScore(Day.today());
   if (d.pct == null) return d;
+  /* Same rule as the days behind it: a morning you have not touched yet is not
+     a morning you are failing. It gets a number once it gets a reading. */
+  if (!d.used) { d.pct = null; return d; }
   let k = rankFor(d.pct).k;
   if (d.trained) k = rankFloor(rankUp(k, 1), 'E');
   if (d.partial) k = rankCap(k, 'A');
@@ -3584,11 +3753,16 @@ function todayScore() {
 function rankBadge() {
   const a = adherence(7), t = todayScore();
   const w = el('button', 'rankbadge mb-press mb-tap');
-  w.title = 'How the last 7 days went. Tap for the working.';
+  w.title = a.rank
+    ? 'How the last 7 days went. Tap for the working.'
+    : 'No completed days logged yet. Tap to see what it needs.';
+  /* Nothing to grade yet reads as a dash, not as an F. The letter arrives the
+     day after the first day you log. */
+  const mark = a.rank ? a.rank.k : '–';
+  const col = a.rank ? rankColour(a.rank.k) : tok('--text-muted');
   w.innerHTML =
-    '<span class="rk" style="color:' + rankColour(a.rank.k) + ';border-color:'
-      + rankColour(a.rank.k) + '">' + a.rank.k + '</span>' +
-    '<span class="rkm"><b>' + a.pct + '%</b>' +
+    '<span class="rk" style="color:' + col + ';border-color:' + col + '">' + mark + '</span>' +
+    '<span class="rkm"><b>' + (a.pct == null ? '' : a.pct + '%') + '</b>' +
     /* Today's grade waits until the day has settled. A number built out of
        two pillars at 9am is not a grade, it is a fraction of one, and a
        figure that climbs all day is one you stop reading. Tom, 2026-08-28:
@@ -3613,11 +3787,12 @@ function rankCard() {
   c.appendChild(seg);
 
   const head = el('div', 'rankrow');
+  const mk = a.rank ? a.rank.k : '–';
+  const mcol = a.rank ? rankColour(a.rank.k) : tok('--text-muted');
   head.innerHTML =
-    '<div class="rankmark" style="color:' + rankColour(a.rank.k) + ';border-color:'
-      + rankColour(a.rank.k) + '">' + a.rank.k + '</div>' +
-    '<div class="rankside"><div class="hero">' + a.pct + '<span class="u">%</span></div>' +
-    '<div class="lb">' + esc(a.rank.say) + '</div></div>';
+    '<div class="rankmark" style="color:' + mcol + ';border-color:' + mcol + '">' + mk + '</div>' +
+    '<div class="rankside"><div class="hero">' + (a.pct == null ? '–' : a.pct + '<span class="u">%</span>') + '</div>' +
+    '<div class="lb">' + esc(a.rank ? a.rank.say : 'Nothing to grade yet') + '</div></div>';
   c.appendChild(head);
 
   /* training, said plainly, because it is the only thing that moves a letter */
@@ -3631,14 +3806,22 @@ function rankCard() {
       a.worst.map(w => esc(w[0])).join(', ') + '.'));
   }
   if (!a.loggedDays) {
-    c.appendChild(el('div', 'note', 'Nothing logged in this stretch.'));
+    c.appendChild(el('div', 'note',
+      'Nothing logged in this stretch, so there is nothing to grade. Log a day and the letter arrives tomorrow.'));
+  } else if (a.loggedDays < days) {
+    /* Said out loud, because an average over two days and an average over
+       thirty are not the same claim and the letter looks identical. */
+    c.appendChild(el('div', 'note',
+      'Built from the <b>' + a.loggedDays + '</b> day' + (a.loggedDays === 1 ? '' : 's') +
+      ' you logged. Days the app was not opened are left out rather than counted as noughts.'));
   }
 
   /* today, kept out of the number above */
   const t = todayScore();
   c.appendChild(el('label', 'fl', 'Today'));
   if (t.pct == null) {
-    c.appendChild(el('div', 'note', 'Nothing due yet today.'));
+    c.appendChild(el('div', 'note',
+      t.used ? 'Nothing due yet today.' : 'Nothing logged yet today.'));
   } else {
     c.appendChild(el('div', 'note',
       '<b>' + t.pct + '%</b>' + (t.rank ? ' &middot; ' + t.rank.k : '') +
@@ -3745,7 +3928,7 @@ async function shareCard(a, kind) {
   }
 
   const link = document.createElement('a');
-  link.download = 'status-' + a.rank.k + '-' + a.pct + '-' + kind + '.png';
+  link.download = 'status-' + (a.rank ? a.rank.k : 'nograde') + '-' + (a.pct == null ? '0' : a.pct) + '-' + kind + '.png';
   link.href = png;
   link.click();
   UI.toast('Overlay saved');
@@ -4209,6 +4392,15 @@ function moveField(id, dir) {
   if ((list[j].cat || '') !== (list[i].cat || '')) return;
   list.splice(j, 0, list.splice(i, 1)[0]);
   list.forEach((f, n) => Rec.set('field', null, f.id, Object.assign({}, f, { order: n })));
+  /* Keep the tile order saying the same thing. The fields take the new
+     sequence; anything that is not a field — Protein, Spent — stays at the
+     index it already had, so an arrow never shuffles those two. */
+  const ord = tileOrder();
+  if (ord.length) {
+    const fresh = list.map(f => f.id).filter(id => ord.indexOf(id) > -1);
+    let k = 0;
+    setTileOrder(ord.map(key => (key.charAt(0) === '@' ? key : fresh[k++]) || key));
+  }
   Mobile.feedback('select');
   drawSettingsPane('track'); draw();
 }
@@ -4340,7 +4532,28 @@ function drawTrackTab(pane) {
     row.appendChild(ed);
     pane.appendChild(row);
   });
-  pane.appendChild(el('div', 'note', 'Tap a name to set its goal, colour and group. The arrows set the order on Today'));
+  pane.appendChild(el('div', 'note', 'Tap a name to set its goal, colour and group. The arrows set the order on Today, and so does holding a tile on Today and dragging it.'));
+
+  /* ── the two tiles that are not fields ──
+     Protein and Spent sit on Today beside the fields but are not in the list
+     above, because neither is something you set a goal on or turn into a
+     chart. Spent is the one people want gone, so it is the one with a switch.
+     Turning it off hides the tile and nothing else: the Money tab, the
+     Spending button and every payment already logged stay exactly where they
+     are, and turning it back on brings the tile back with them. */
+  pane.appendChild(el('label', 'fl', 'On Today'));
+  pane.appendChild(toggleRow('Spending', 'The Spent tile on Today. Your payments and the Money tab stay either way.',
+    !!S.get('spendTile', 1), on => { S.set('spendTile', on ? 1 : 0); drawSettingsPane('track'); draw(); }));
+  if (tileOrder().length) {
+    const rst = el('button', 'btn wide', 'Reset tile order');
+    rst.onclick = () => {
+      S.set('tileOrder', []);
+      Mobile.feedback('select');
+      UI.toast('Tiles back to their normal order');
+      drawSettingsPane('track'); draw();
+    };
+    pane.appendChild(rst);
+  }
 
   /* the library: an empty setup screen is a dead end */
   const have = fields();
