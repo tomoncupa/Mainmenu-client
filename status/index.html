@@ -149,6 +149,15 @@ h2 .sub{margin-left:auto;letter-spacing:0;font-family:var(--font-mono);font-size
 .hero .u{font-size:var(--f-2);font-weight:400;color:var(--text-muted);letter-spacing:0;margin-left:var(--s-2)}
 /* the divider in "1,680 / 2,400" - present, and quieter than either number */
 .hero .sl{color:var(--text-muted);font-weight:400;margin:0 .12em}
+/* the pass marks, as the table Tom drew them */
+.gradetbl{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin:var(--s-2) 0}
+.gradetbl .gr{display:grid;grid-template-columns:2.2em repeat(4,1fr);align-items:center;
+  font-family:var(--font-mono);font-size:var(--f-2);border-top:1px solid var(--border)}
+.gradetbl .gr:first-child{border-top:0}
+.gradetbl .gr>b,.gradetbl .gr>span{padding:var(--s-2) 0;text-align:center}
+.gradetbl .gr>b{font-weight:700}
+.gradetbl .hd{color:var(--text-muted);font-size:var(--f-1);letter-spacing:.06em}
+.gradetbl .hd b{font-weight:500}
 .shopt{display:flex;align-items:center;gap:var(--s-2);min-height:var(--tap);
   font-size:var(--f-2);color:var(--text-2);cursor:pointer}
 .shopt input{width:18px;height:18px;accent-color:var(--accent)}
@@ -2885,7 +2894,10 @@ const NAV = [['now', '◐', 'Today'], ['food', '◍', 'Food'], ['money', '₱', 
 function drawNav() {
   const n = document.getElementById('nav');
   n.innerHTML = '';
-  NAV.forEach(t => {
+  /* Two switches, not one. Tom, 2026-09-03: the tile off, the tab on. Wanting
+     the number off your main screen is a different wish from not tracking
+     money at all, and one toggle for both made you choose between them. */
+  NAV.filter(t => t[0] !== 'money' || S.get('moneyTab', 1)).forEach(t => {
     const b = el('button', TAB === t[0] ? 'on' : '', '<span class="g">' + t[1] + '</span>' + t[2]);
     b.onclick = () => {
       if (TAB === t[0]) return;
@@ -3093,7 +3105,7 @@ function islandCard(d, opts) {
   /* Two different questions, and both have to say yes. `opts.money` is the
      export asking not to put money into a picture that leaves the phone.
      `spendTile` is Tom deciding he does not want to look at it at all. */
-  if (opts.money !== false && S.get('spendTile', 1)) {
+  if (opts.money !== false && S.get('spendTile', 0)) {
     made.push({ key: '@spent', node: tile('Spent', Math.round(dayMoney(d)).toLocaleString(), '\u20b1', dayMoney(d) ? '' : 'todo', () => { TAB = 'money'; draw(); }) });
   }
   inTileOrder(made, x => x.key).forEach(x => { x.node.dataset.tile = x.key; g.appendChild(x.node); });
@@ -3634,10 +3646,18 @@ function ladderLetter(rungs, v) {
   return 'F';
 }
 
-/** how close you landed to a target, either side, as a percentage */
-function accuracy(v, target) {
+/** how close you landed to a target, as a percentage.
+
+    `overOk` makes it one-sided. Tom, 2026-09-03: "Going above protein is
+    okay, the accuracy only counts for under." Two hundred grams against a
+    target of a hundred and seventy five is not a miss by fourteen percent,
+    it is the target met, and grading it as a C was the model being tidy
+    rather than right. Calories stay two-sided: four hundred over is as
+    wrong as four hundred under. */
+function accuracy(v, target, overOk) {
   if (!target) return null;
   if (v == null) return 0;
+  if (overOk && v >= target) return 100;
   return Math.max(0, 100 - Math.abs(v - target) / target * 100);
 }
 
@@ -3645,7 +3665,7 @@ function accuracy(v, target) {
 function pillarLetter(id, v, target) {
   const st = STANDARDS();
   if (id === 'kcal' || id === 'protein') {
-    const a = accuracy(v, target);
+    const a = accuracy(v, target, id === 'protein');
     return a == null ? null : ladderLetter(st[id], a);
   }
   if (!st[id]) return null;
@@ -4463,10 +4483,11 @@ function fieldRow(pane, label, key, val, hint) {
 
 function openSettings() {
   UI.settings(APP.id, [
+    { id: 'quests', name: 'QUESTS', draw: drawQuestsTab },
     { id: 'track', name: 'TRACK', draw: drawTrackTab },
     { id: 'goals', name: 'GOALS', draw: drawGoalsTab },
   ], {
-    order: ['track', 'goals', 'app', 'data'],
+    order: ['quests', 'track', 'goals', 'app', 'data'],
     /* the sheet mirror is a way of getting data out, so it belongs under DATA
        with the backup and the export rather than in a tab of its own */
     append: { data: drawSyncTab },
@@ -4635,9 +4656,16 @@ function drawTrackTab(pane) {
      Turning it off hides the tile and nothing else: the Money tab, the
      Spending button and every payment already logged stay exactly where they
      are, and turning it back on brings the tile back with them. */
-  pane.appendChild(el('label', 'fl', 'On Today'));
-  pane.appendChild(toggleRow('Spending', 'The Spent tile on Today. Your payments and the Money tab stay either way.',
-    !!S.get('spendTile', 1), on => { S.set('spendTile', on ? 1 : 0); drawSettingsPane('track'); draw(); }));
+  pane.appendChild(el('label', 'fl', 'Money'));
+  pane.appendChild(toggleRow('Spent tile on Today', 'Off by default. Your payments stay either way.',
+    !!S.get('spendTile', 0), on => { S.set('spendTile', on ? 1 : 0); drawSettingsPane('track'); draw(); }));
+  pane.appendChild(toggleRow('Money tab', 'The tab at the bottom. Turning it off hides the screen, not the data.',
+    !!S.get('moneyTab', 1), on => {
+      S.set('moneyTab', on ? 1 : 0);
+      /* Standing on a tab that has just been hidden strands you there. */
+      if (!on && TAB === 'money') TAB = 'now';
+      drawSettingsPane('track'); draw();
+    }));
   if (tileOrder().length) {
     const rst = el('button', 'btn wide', 'Reset tile order');
     rst.onclick = () => {
@@ -4988,7 +5016,7 @@ function newFieldForm(pane, existing) {
   pane.appendChild(back);
 }
 
-function drawGoalsTab(pane) {
+function drawTargets(pane) {
   settingsPane = pane;
   const tg = TARGETS();
   let mode = S.get('calMode', 'fixed');
@@ -5160,6 +5188,97 @@ function drawGoalsTab(pane) {
   }
 
   paintSum();
+
+}
+
+/* ══════════════ DAILY QUESTS ══════════════
+   What you are actually doing right now, and the five things it is judged on.
+
+   A phase is not a label. Tom, 2026-09-03: picking one sets the numbers and
+   the pass marks, and you can still type over the rate afterwards. Cutting
+   and massing are not the same job done at different speeds - the margin for
+   error is smaller when you are eating under, so what counts as close enough
+   moves with it. */
+const PHASES = [
+  { id: 'cut',  name: 'Cutting',     rate: 1.0,  say: 'eating under, holding muscle' },
+  { id: 'hold', name: 'Maintenance', rate: 0,    say: 'holding where you are' },
+  { id: 'mass', name: 'Massing',     rate: -0.5, say: 'eating over, adding size' },
+];
+const phaseNow = () => PHASES.filter(p => p.id === S.get('phase', 'hold'))[0] || PHASES[1];
+
+/** Pick a phase: it sets the rate and switches the target to follow your TDEE.
+    Anything you have typed by hand afterwards is yours and is left alone. */
+function setPhase(id) {
+  const ph = PHASES.filter(p => p.id === id)[0];
+  if (!ph) return;
+  S.set('phase', id);
+  S.set('goalRate', ph.rate);
+  S.set('calMode', 'tdee');
+  TD._dirty = true;
+}
+
+function drawQuestsTab(pane) {
+  settingsPane = pane;
+
+  pane.appendChild(el('label', 'fl', 'Phase'));
+  const seg = el('div', 'seg');
+  const now = phaseNow();
+  PHASES.forEach(ph => {
+    const b = el('button', ph.id === now.id ? 'on' : '', ph.name);
+    b.onclick = () => { setPhase(ph.id); Mobile.feedback('select'); drawSettingsPane('quests'); draw(); };
+    seg.appendChild(b);
+  });
+  pane.appendChild(seg);
+  pane.appendChild(el('div', 'note', esc(now.say)));
+
+  /* Everything that decides a daily number: the calorie target, the macros
+     you are chasing, and the rate the phase set for you. */
+  drawTargets(pane);
+
+  /* ── the pass marks ──
+     The table, on the screen, because a grade you cannot see the rules for is
+     a grade you argue with. */
+  pane.appendChild(el('label', 'fl', 'What each letter needs'));
+  const st = STANDARDS();
+  const tbl = el('div', 'gradetbl');
+  const cols = [['sleep', 'Sleep'], ['steps', 'Steps'], ['kcal', 'Cals'], ['protein', 'Protein']];
+  tbl.innerHTML =
+    '<div class="gr hd"><b></b>' + cols.map(c => '<b>' + c[1] + '</b>').join('') + '</div>' +
+    RANKS.map(r => {
+      const cells = cols.map(c => {
+        const rung = (st[c[0]] || []).filter(x => x[0] === r.k)[0];
+        const v = rung ? rung[1] : null;
+        if (v == null) return '<span>·</span>';
+        if (c[0] === 'kcal' || c[0] === 'protein') return '<span>' + v + '%</span>';
+        return '<span>' + (v >= 1000 ? v.toLocaleString() : v) + '</span>';
+      }).join('');
+      return '<div class="gr"><b style="color:' + rankColour(r.k) + '">' + r.k + '</b>' + cells + '</div>';
+    }).join('');
+  pane.appendChild(tbl);
+  pane.appendChild(el('div', 'note',
+    'Calories count either side. Protein counts only under'));
+
+  /* ── training ──
+     Graded against the plan rather than a flat number, so the question is
+     what you said you would do, not what somebody else does. */
+  pane.appendChild(el('label', 'fl', 'Sessions a week'));
+  const tseg = el('div', 'seg');
+  const per = num(S.get('trainPerWeek', 4), 4);
+  [2, 3, 4, 5, 6].forEach(n => {
+    const b = el('button', n === per ? 'on' : '', String(n));
+    b.onclick = () => { S.set('trainPerWeek', n); Mobile.feedback('select'); drawSettingsPane('quests'); draw(); };
+    tseg.appendChild(b);
+  });
+  pane.appendChild(tseg);
+  const col = TRAIN_STANDARD()[Math.max(2, Math.min(6, per))] || {};
+  pane.appendChild(el('div', 'note',
+    Object.keys(col).sort((a, b) => b - a)
+      .map(n => n + ' \u2192 ' + col[n]).join('   ')));
+}
+
+
+function drawGoalsTab(pane) {
+  settingsPane = pane;
 
   fieldRow(pane, 'Goal weight (lb)', 'goalWeight', S.get('goalWeight', null), 'Optional, and drawn on the weight chart');
 
