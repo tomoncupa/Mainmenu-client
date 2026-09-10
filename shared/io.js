@@ -54,7 +54,12 @@ const toast = (h, o) => g.UI ? g.UI.toast(h, o) : console.log(h.replace(/<[^>]+>
    one where somebody typed "todo" in lower case.
 
    Anything not in the map passes through untouched — an unknown value is data,
-   and quietly blanking it would be worse than showing it raw. */
+   and quietly blanking it would be worse than showing it raw.
+
+   A FOURTH element lists the names the column used to have. Columns are matched
+   to the sheet by their heading, so renaming one would otherwise leave every
+   sheet already written unable to find it. Say what it was called and both
+   spellings land in the same field. */
 const colMap = col => {
   /* A function, resolved at export time, so a table spec written near the top
      of a file can name a vocabulary declared further down it without tripping
@@ -219,7 +224,7 @@ const IO = {
      own back as `sheetV` when it answers, so the two can be compared and a
      sheet running an old script can say so instead of failing in ways nobody
      can place. */
-  SCRIPT_V: 3,
+  SCRIPT_V: 4,
 
   register(spec) {
     apps[spec.app] = Object.assign({ types: [], sheets: null, tables: null, name: spec.app }, spec);
@@ -266,6 +271,8 @@ const IO = {
          fill    how much of the width the component takes, default .88
          anchor  where its middle sits, top to bottom, default .46
          width   CSS width to lay a loose node out at, default 390
+         scrim   paint a soft dark gradient behind it, so the picture reads on
+                 a bright photograph as well as a dark one
          before  run once it is laid out and the fonts have arrived, for
                  anything that has to measure before the picture is taken
        })  ->  Promise of a data URL
@@ -340,8 +347,30 @@ const IO = {
       const sheets = Array.prototype.map.call(document.querySelectorAll('style'),
         n => n.textContent).join(String.fromCharCode(10));
 
+      /* ── the scrim ──
+         A photo can be any brightness, and a see-through card on a white sky
+         is unreadable. The general answer is not a light mode and a dark mode
+         to choose between - it is to put your own darkness underneath, which
+         is what every app that overlays text on a photo does.
+
+         Softest at the top, deepest below the content, so it reads as the
+         picture getting darker towards the bottom rather than as a box. */
+      let scrim = '';
+      if (opts.scrim) {
+        const mid = Math.max(0, Math.min(1, (oy + sh / 2) / H));
+        scrim =
+          '<defs><linearGradient id="mbscrim" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#000" stop-opacity="0"/>' +
+          '<stop offset="' + Math.max(0.01, mid - 0.34).toFixed(3) + '" stop-color="#000" stop-opacity="0.10"/>' +
+          '<stop offset="' + mid.toFixed(3) + '" stop-color="#000" stop-opacity="0.42"/>' +
+          '<stop offset="1" stop-color="#000" stop-opacity="0.72"/>' +
+          '</linearGradient></defs>' +
+          '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#mbscrim)"/>';
+      }
+
       const svg =
         '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+        scrim +
         '<foreignObject x="' + ox + '" y="' + oy + '" width="' + sw + '" height="' + sh + '">' +
         '<div xmlns="http://www.w3.org/1999/xhtml" style="' + esc(stand) + '">' +
         '<style>' + sheets + '</style>' +
@@ -363,15 +392,78 @@ const IO = {
   },
 
   /** IO.shot, then hand it to the person. `name` gets .png put on it. */
+  /* ── handing the picture over ──
+     Tom, 2026-09-06: "I want the export to automatically save to photos,
+     rather than dealing with the share menu."
+
+     A web page CANNOT write to the photo library. That is an iOS rule, not
+     something to code around, and any claim otherwise is wrong. What it can do
+     is hand the file to the operating system, which is what the phone's own
+     share sheet is - and on iOS "Save Image" is the first thing in it.
+
+     That is still better than what was here. `<a download>` is the documented
+     iOS trap: on a phone it can silently do nothing at all, which is the worst
+     of both, and where it works it puts the file in Files rather than Photos.
+
+     The catch is timing. iOS only allows a share inside the gesture that asked
+     for it, and the picture takes a moment to draw - measured at about 40ms,
+     which is inside what Safari allows. If the gesture has expired anyway, the
+     picture is put on screen and a long press adds it to Photos, which needs
+     no permission from anybody. */
   saveShot(node, name, opts) {
+    const file = String(name || 'shot').replace(/\.png$/i, '') + '.png';
     return IO.shot(node, opts).then(png => {
-      const a = el('a');
-      a.download = String(name || 'shot').replace(/\.png$/i, '') + '.png';
-      a.href = png;
-      a.click();
-      toast('Picture saved');
-      return png;
+      return IO.handOver(png, file).then(() => png);
     }, err => { toast(esc(err.message), { bad: true }); throw err; });
+  },
+
+  /** data URL -> Blob, so the file can be handed to the system as a file. */
+  _blobOf(dataUrl) {
+    const parts = String(dataUrl).split(',');
+    const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+    const bin = atob(parts[1]);
+    const n = bin.length, u = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
+    return new Blob([u], { type: mime });
+  },
+
+  handOver(png, fileName) {
+    let f = null;
+    try { f = new File([IO._blobOf(png)], fileName, { type: 'image/png' }); } catch (e) {}
+
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) {
+      return navigator.share({ files: [f] })
+        .then(() => { toast('Saved'); },
+              err => {
+                /* A cancel is not a failure and must not nag. Anything else
+                   means the gesture is gone, so fall back to the picture. */
+                if (err && (err.name === 'AbortError' || /abort|cancel/i.test(err.message || ''))) return;
+                return IO._showShot(png, fileName);
+              });
+    }
+
+    /* No share at all: a desktop, where a download is exactly right. */
+    if (!/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const a = el('a');
+      a.download = fileName; a.href = png; a.click();
+      toast('Picture saved');
+      return Promise.resolve();
+    }
+    return IO._showShot(png, fileName);
+  },
+
+  /** The picture, full screen. Hold it and iOS offers Add to Photos. */
+  _showShot(png, fileName) {
+    const veil = el('div', 'mb-shotveil');
+    const img = el('img');
+    img.src = png; img.alt = fileName;
+    const say = el('div', 'mb-shotsay', 'Press and hold the picture, then <b>Add to Photos</b>');
+    const close = el('button', 'mb-shotx', 'Done');
+    close.onclick = () => veil.remove();
+    veil.onclick = e => { if (e.target === veil) veil.remove(); };
+    veil.appendChild(img); veil.appendChild(say); veil.appendChild(close);
+    document.body.appendChild(veil);
+    return Promise.resolve();
   },
 
   /* ══════════════ EDITABLE TABLES ══════════════
@@ -514,19 +606,72 @@ const IO = {
   /** Whatever a spreadsheet put in the date column, as YYYY-MM-DD or null. */
   sheetDate: sheetDate,
 
+  /** ── which column of the sheet is which field ──
+
+      The header line, matched by NAME. It used to be counted instead: column
+      three of the sheet was the third field declared, and that held right up
+      until a column was added in the middle of the list.
+
+      When Calcium went in between Potassium and Caffeine, every sheet already
+      written had thirteen food columns and the app went looking for fourteen.
+      So Caffeine read the old Price, Price read the column after it — the
+      `edited` stamp — and a food that cost 180 pesos came back costing 2026,
+      which is not a price, it is the year the row was last touched. The pull
+      runs before the push, so the wreckage went straight back up to the sheet
+      and both copies agreed on it.
+
+      Names cannot drift like that. A column the sheet does not have is left
+      alone rather than guessed at, which is the whole lesson: a reader that
+      cannot find a field must decline to write one, never take whatever is
+      standing in that position.
+
+      Returns null when the grid has no header to read, because a tab whose
+      first line is data is one we have no honest way to interpret. */
+  columns(t, head) {
+    if (!head || !head.length) return null;
+    const norm = v => String(v == null ? '' : v).trim().toLowerCase();
+    const seen = {};
+    head.forEach((h, i) => { const k = norm(h); if (k && !(k in seen)) seen[k] = i; });
+    /* The same guard the Apps Script uses. Without it a tab of pure data would
+       have its first line silently eaten as a header. */
+    if (seen.id !== 0) return null;
+    const find = c => {
+      const names = [c[1]].concat(c[3] || []);   /* the name now, then any it used to have */
+      for (let i = 0; i < names.length; i++) {
+        const at = seen[norm(names[i])];
+        if (at != null) return at;
+      }
+      return -1;
+    };
+    const at = t.cols.map(find);
+    return {
+      id: 0,
+      date: seen.date == null ? 1 : seen.date,
+      at: at,
+      edited: seen.edited == null ? -1 : seen.edited,
+      /* what this sheet has never heard of, so a caller can say so */
+      missing: t.cols.filter((c, i) => at[i] < 0).map(c => c[1]),
+    };
+  },
+
   /** Read one table's grid back and work out what changed.
       Returns {changed, added, removed, clashes} without writing anything, so a
       caller can show the damage before doing it. */
   readTable(appId, tableName, grid) {
     const S = IO.spec(appId), R = g.Rec;
     const t = (S.tables || []).filter(x => x.name === tableName)[0];
-    const out = { changed: [], added: [], removed: [], clashes: [] };
+    const out = { changed: [], added: [], removed: [], clashes: [], missing: [] };
     if (!t || !grid || grid.length < 2) return out;
+    const col = IO.columns(t, grid[0]);
+    /* No header, no reading. Returning nothing leaves the store exactly as it
+       was, and the next full push gives the tab a header it can be read by. */
+    if (!col) { out.noHeader = true; return out; }
+    out.missing = col.missing;
 
     const seen = {};
     grid.slice(1).forEach(line => {
       if (!line || !line.length) return;
-      const id = String(line[0] || '').trim();
+      const id = String(line[col.id] || '').trim();
       /* A date cell reaches us as a Date object turned into an ISO timestamp,
          never as the YYYY-MM-DD the store requires. Left alone it becomes half
          of a second row id for a fact that already has one — see repairDates
@@ -534,8 +679,11 @@ const IO = {
          the boundary, because this is the one place a sheet's idea of a date
          becomes ours. Read back in local time: the sheet meant its own
          midnight, and slicing the string would file it a day early. */
-      const date = sheetDate(line[1]);
-      const blank = t.cols.every((c, i) => String(line[2 + i] == null ? '' : line[2 + i]).trim() === '');
+      const date = sheetDate(line[col.date]);
+      /* Only the columns this sheet actually has can say a line is empty. One
+         it has never heard of is not blank, it is absent. */
+      const blank = t.cols.every((c, i) => col.at[i] < 0 ||
+        String(line[col.at[i]] == null ? '' : line[col.at[i]]).trim() === '');
       if (id) seen[id] = true;
 
       if (id && blank) { out.removed.push({ key: id, date: date }); return; }
@@ -545,7 +693,8 @@ const IO = {
       const payload = prev ? JSON.parse(JSON.stringify(prev.payload)) : {};
       let differs = false;
       t.cols.forEach((c, i) => {
-        let v = line[2 + i];
+        if (col.at[i] < 0) return;               /* not in this sheet, so not ours to change */
+        let v = line[col.at[i]];
         if (typeof v === 'string') v = v.trim();
         v = storedFor(c, v);
         /* a column that held a number keeps holding one */
@@ -571,7 +720,7 @@ const IO = {
       /* updated_at is an ISO string, so both sides get parsed to numbers.
          Comparing a number against the string silently coerced to NaN and no
          clash was ever detected — the sheet always appeared to win. */
-      const sheetAt = Date.parse(line[2 + t.cols.length] || '') || 0;
+      const sheetAt = col.edited < 0 ? 0 : (Date.parse(line[col.edited] || '') || 0);
       const ourAt = Date.parse(prev.updated_at) || 0;
       if (sheetAt && ourAt && sheetAt < ourAt) {
         out.clashes.push({
@@ -693,10 +842,10 @@ const IO = {
          So this tab is matched on the row id and updated in place, always.
          Rows only ever arrive. A row that really was deleted arrives as its own
          tombstone, which is a line to write rather than a line to leave out. */
-      { name: IO.bagName(appId), rows: data, machine: true, key: 1, head: 1, upsert: 1 },
+      { name: IO.bagName(appId), rows: data, machine: true, key: 1, head: 1, upsert: 1, order: 90 },
       /* two columns and a version stamp: cheap enough to send whole every time,
          and it is the tab that says what wrote the file */
-      { name: IO.setName(appId), rows: set, machine: true, whole: true },
+      { name: IO.setName(appId), rows: set, machine: true, whole: true, order: 91 },
     ];
   },
 
@@ -781,9 +930,17 @@ const IO = {
   backupAll() {
     const R = g.Rec;
     const bag = { kind: 'motherbase-backup', v: 1, app: '*', at: new Date().toISOString(), rows: R.export() };
-    save('motherbase-all-' + g.Day.today() + '.json', JSON.stringify(bag), 'application/json');
-    Object.keys(apps).forEach(a => { try { localStorage.setItem(BK(a), g.Day.today()); } catch (e) {} });
-    toast('<b>' + bag.rows.length + '</b> rows backed up, every app');
+    /* Waits for the file, like backup() does. This one stamped every app as
+       backed up before the share sheet had even been answered, so cancelling
+       it marked the whole suite safe — the exact failure backup() was made
+       careful about, still live in the button next to it. */
+    return save('motherbase-all-' + g.Day.today() + '.json', JSON.stringify(bag), 'application/json')
+      .then(done => {
+        if (!done) { toast('nothing saved', { bad: true }); return false; }
+        Object.keys(apps).forEach(a => { try { localStorage.setItem(BK(a), g.Day.today()); } catch (e) {} });
+        toast('<b>' + bag.rows.length + '</b> rows backed up, every app');
+        return true;
+      });
   },
 
   read(file) {
@@ -932,15 +1089,37 @@ const IO = {
   },
   isStale(appId, limit) { const n = IO.staleDays(appId); return n === null || n >= (limit || 14); },
 
-  /* ── the DATA tab, identical in every app ── */
-  panel(pane, appId) {
+  /** The "backed up Nd ago" line, as HTML. One builder, so the line cannot
+      say one thing when the panel opens and a different thing after a
+      backup. */
+  freshLine(appId) {
     const n = IO.staleDays(appId), R = g.Rec;
     const stats = R ? R.stats() : { live: 0, kb: 0 };
+    return (n === null ? '<b style="color:var(--warn,#ffb347)">Never backed up.</b>'
+      : n === 0 ? 'Backed up <b>today</b>.' : 'Backed up <b>' + n + 'd ago</b>.') +
+      ' <span style="opacity:.6">' + stats.live + ' rows \u00b7 ' + stats.kb + 'kb</span>';
+  },
 
-    pane.appendChild(el('p', null,
-      (n === null ? '<b style="color:var(--warn,#ffb347)">Never backed up.</b>'
-        : n === 0 ? 'Backed up <b>today</b>.' : 'Backed up <b>' + n + 'd ago</b>.') +
-      ' <span style="opacity:.6">' + stats.live + ' rows · ' + stats.kb + 'kb</span>'));
+  /* ── the DATA tab, identical in every app ── */
+  panel(pane, appId) {
+    /* ── the line updates when the thing it describes changes ──
+
+       Tom, 2026-09-10: "If I back up, it still says backed up 14 days ago."
+
+       It did, on purpose, and the note that used to be here said so: the pane
+       was not repainted because redrawing it from inside a button's own
+       handler rebuilds the node that handler is attached to. That hazard is
+       real and the conclusion drawn from it was not. Backing up and being told
+       you have not backed up in a fortnight is the app calling you a liar, and
+       "it will be right next time you open this" is not a thing anybody can be
+       expected to know.
+
+       So the LINE is repainted, not the pane. It is one text node that owns no
+       handlers, so rewriting it cannot pull the ground out from under the
+       button that asked for it. */
+    const fresh = el('p', null, IO.freshLine(appId));
+    pane.appendChild(fresh);
+    const repaint = () => { try { fresh.innerHTML = IO.freshLine(appId); } catch (e) {} };
 
     const opt = (ic, t, d, fn, cls) => {
       const b = el('button', 'mb-opt mb-press flat' + (cls ? ' ' + cls : ''));
@@ -948,19 +1127,17 @@ const IO = {
       b.onclick = fn; pane.appendChild(b); return b;
     };
 
-    /* No repaint of this pane afterwards: opt() closes over `pane` and
-       redrawing it from inside a handler rebuilds the node that handler is
-       attached to, which locks the renderer. The line updates next open. */
-    opt('⭳', 'Back up', 'The file that can be restored.', () => IO.backup(appId));
+    opt('⭳', 'Back up', 'The file that can be restored.', () => IO.backup(appId).then(repaint));
     opt('⭱', 'Restore', 'From a backup or an exported spreadsheet. Fills in what is missing, never overwrites newer.',
       () => IO.pick(f => IO.readAny(f).then(bag => {
         const c = IO.restore(bag, 'merge');
         toast(c ? '<b>' + c + '</b> rows restored' : 'nothing to restore — this device is already up to date');
+        repaint();   /* the row count moved even when the backup date did not */
       }).catch(e => toast(esc(e.message), { bad: true }))));
     opt('⟲', 'Rewind', 'Replaces everything with the file. Discards anything newer.',
       () => IO.pick(f => IO.readAny(f).then(bag =>
         (g.UI ? g.UI.confirm('Rewind to the backup from ' + (bag.at || '?') + '?', 'Anything newer than the file is discarded.', { yes: 'REWIND', danger: true }) : Promise.resolve(confirm('Rewind?')))
-          .then(ok => { if (!ok) return; const c = IO.restore(bag, 'replace'); toast('<b>' + c + '</b> rows restored'); })
+          .then(ok => { if (!ok) return; const c = IO.restore(bag, 'replace'); toast('<b>' + c + '</b> rows restored'); repaint(); })
       ).catch(e => toast(esc(e.message), { bad: true }))), 'bad');
 
     opt('▦', 'Export a spreadsheet', 'Every tab, readable, and it restores too.', () => IO.export(appId));
@@ -968,7 +1145,7 @@ const IO = {
 
     opt('⌫', 'Delete this app’s data', 'Ticks and activities are shared and stay.',
       () => (g.UI ? g.UI.confirm('Delete all of ' + IO.spec(appId).name + '’s data?', 'Back up first. This cannot be undone.', { yes: 'DELETE', danger: true }) : Promise.resolve(confirm('Delete?')))
-        .then(ok => { if (!ok) return; const c = g.Rec.clear(IO.spec(appId).types); toast('<b>' + c + '</b> rows deleted'); }), 'bad');
+        .then(ok => { if (!ok) return; const c = g.Rec.clear(IO.spec(appId).types); toast('<b>' + c + '</b> rows deleted'); repaint(); }), 'bad');
   },
 };
 
@@ -1007,6 +1184,84 @@ const IO = {
 
 const MKEY = 'mb.mirror';
 const watching = Object.create(null);
+
+/* ── one attempt at a time, and never a stuck one ──
+
+   Boot, coming back to the app, the forty five second tick and the debounce
+   after a change can all want to sync at once, and two in the air at the same
+   time race for the same boundary. So an app syncs one at a time.
+
+   Held as a TIME rather than as a promise, because on a phone the promise is
+   the thing that goes missing: background the app and the tab is frozen mid
+   request, so nothing resolves, nothing rejects, and a flag set on the way in
+   is never cleared on the way out. A stamp expires on its own. */
+/* ── the sync log ──
+
+   Tom, 2026-09-09: "The sync error codes don't actually mean anything or help
+   at all, they just worry the users. Configure them to be useful to you since
+   you're the one actually debugging."
+
+   Right on both halves. A red banner reading "the sheet did not take 3 of 5
+   tabs, which usually means the deployment is running older code" tells a
+   user something is broken, gives them nothing they can do, and is wrong as
+   often as it is right. Meanwhile the sync that mattered - the automatic one,
+   on the phone - was SILENT, so the one failure worth knowing about left no
+   trace at all. That is how a phone went weeks without pushing.
+
+   So the two audiences are split. The person gets plain sentences and only
+   ever gets a red one when there is something they can actually do. Every
+   attempt, silent ones included, writes a line here instead.
+
+   Kept short on purpose, in localStorage rather than in the store, because a
+   diagnostic is not data: it must not sync, must not appear in a backup, and
+   must not grow. Sixty lines is a couple of days of ticks and about 6KB.
+
+   Keys are short because there are sixty of them:
+     t  when, local, to the second      a  which app
+     w  what triggered it: open, tick, edit, hidden, back, manual
+     r  how it ended: ok, skip, fail
+     y  the reason code, when it is not ok
+     ms how long it took                v  the script version the sheet answered with
+     o  was this device holding unsent rows when it started
+     p  the push: state/mode/tabs       g  what the pull brought: changed+added+merged
+   Anything absent was not reached. */
+const LOGKEY = 'mb.mirror.log';
+const LOG_MAX = 60;
+const two = n => (n < 10 ? '0' : '') + n;
+const logRead = () => { try { return JSON.parse(localStorage.getItem(LOGKEY) || '[]'); } catch (e) { return []; } };
+/* An uneventful attempt is one that reached the sheet and found nothing to do
+   in either direction. There are about 1,900 of those a day at one tick every
+   forty five seconds, and sixty lines of "nothing to do" would push the one
+   failure worth reading off the end long before Tom got round to copying it.
+   So a run of identical quiet ones collapses to a single line with a count and
+   the time of the most recent, and anything that actually happened - rows in,
+   rows out, a skip, a failure - always takes a line of its own. */
+const quietLine = l => l && l.r === 'ok' && !l.g && !l.p && !l.c && !l.y;
+const sameKind = (a, b) => a.a === b.a && a.w === b.w && a.r === b.r && a.y === b.y;
+
+function mlog(entry) {
+  try {
+    const d = new Date();
+    const line = Object.assign({
+      t: two(d.getMonth() + 1) + '-' + two(d.getDate()) + ' ' +
+         two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds()),
+    }, entry);
+    const all = logRead();
+    const last = all[all.length - 1];
+    if (last && quietLine(last) && quietLine(line) && sameKind(last, line)) {
+      last.n = (last.n || 1) + 1;
+      last.t = line.t;
+      last.ms = line.ms;
+    } else all.push(line);
+    localStorage.setItem(LOGKEY, JSON.stringify(all.slice(-LOG_MAX)));
+  } catch (e) {}
+}
+
+const inflight = Object.create(null);
+const BUSY_MS = 60000;
+const busy = appId => !!inflight[appId] && (Date.now() - inflight[appId]) < BUSY_MS;
+const hold = appId => { inflight[appId] = Date.now(); };
+const release = appId => { inflight[appId] = 0; };
 /* `pushed` is the line between what the sheet has and what it has not: rows
    written after it are the next push, and it only moves when the sheet
    confirms. A failed sync therefore needs no queue and no retry list — the
@@ -1055,7 +1310,23 @@ function adoptOldLink(appId) {
   } catch (e) {}
 }
 
-/** ask the sheet for its editable tabs, by script tag */
+/** ask the sheet for its editable tabs, by script tag
+
+    ── how long to wait ──
+
+    Twelve seconds, and fifteen for the bigger call, which is what the sync log
+    off Tom's iPhone says is too short. Nine failures in a row came in at almost
+    exactly 27 seconds, which is those two numbers added up: both calls ran out
+    the clock rather than going wrong. An Apps Script web app that has not been
+    touched for a while cold-starts, and a cold start on mobile data regularly
+    takes longer than twelve seconds before it has even begun.
+
+    A timeout that is shorter than the thing it is waiting for does not protect
+    anybody. It just converts a slow sync into a failed one.
+
+    The error says WHICH, because "could not reach the sheet" covers three
+    different faults and only one of them is worth acting on. */
+const JSONP_MS = 30000;
 function jsonp(url, params, ms) {
   return new Promise((res, rej) => {
     const cb = 'mbcb' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
@@ -1064,15 +1335,26 @@ function jsonp(url, params, ms) {
     const tag = document.createElement('script');
     let done = false;
     const clean = () => { delete g[cb]; tag.remove(); };
-    const timer = setTimeout(() => {
-      if (done) return; done = true; clean();
-      rej(new Error('the sheet did not answer'));
-    }, ms || 15000);
+    const fail = (code, msg) => {
+      const e = new Error(msg); e.code = code;
+      if (done) return; done = true; clearTimeout(timer); clean(); rej(e);
+    };
+    const timer = setTimeout(() => fail('timeout', 'the sheet did not answer in time'),
+      ms || JSONP_MS);
     g[cb] = data => { if (done) return; done = true; clearTimeout(timer); clean(); res(data); };
-    tag.onerror = () => { if (done) return; done = true; clearTimeout(timer); clean(); rej(new Error('could not reach the sheet')); };
+    tag.onerror = () => fail('unreachable', 'could not reach the sheet');
     tag.src = url + sep + q + '&callback=' + cb;
     document.head.appendChild(tag);
   });
+}
+
+/* An Apps Script that throws answers with something, just not with tabs. Worth
+   telling apart from silence, because one is the script and one is the network
+   and they need different people to fix them. */
+function readWhy(reply) {
+  if (!reply) return 'no-reply';
+  if (reply.error) return 'script-error:' + String(reply.error).slice(0, 80);
+  return 'no-tabs';
 }
 
 const Mirror = {
@@ -1083,6 +1365,29 @@ const Mirror = {
   set(patch) { Object.assign(mcfg, patch || {}); msave(); return Mirror.settings; },
   get url() { return mcfg.url; },
   ready() { return !!mcfg.url; },
+
+  /** Is this device holding rows the sheet has not confirmed?
+
+      `pushed[appId]` is the line: rows written after it have not landed. That
+      line lives in localStorage and only moves when the sheet says it has the
+      rows, so it survives a reload, a discarded tab and a phone that was put
+      in a pocket mid-request. Asking it is what makes a push recoverable
+      without a retry queue — which is what the comment on `watch` always
+      claimed, and was not true while the trigger was a flag in memory.
+
+      No boundary at all means nothing has ever landed, so everything is
+      outstanding. */
+  outstanding(appId) {
+    const R = g.Rec;
+    if (!R || !R.newerThan) return false;
+    const since = mcfg.pushed[appId];
+    if (!since) return true;
+    const S = IO.spec(appId);
+    /* the same set the push sends: what the app owns, the shared vocabulary,
+       and the app's own settings */
+    if (R.newerThan((S.types || []).concat(['tick', 'activity']), since)) return true;
+    return R.newerThan(['setting'], since, appId + '.');
+  },
 
   /** Every tab this app owns: the read-outs, then the ones you can type into.
 
@@ -1095,7 +1400,14 @@ const Mirror = {
   tabs(appId, opts) {
     opts = opts || {};
     const since = opts.since || '';
-    const edit = IO.tables(appId, since).map(t => ({ name: t.name, rows: t.rows, editable: true, key: t.key }));
+    /* ── the order the tabs sit in ──
+       A number per tab, not a position, so the sheet can sort what it was
+       given and leave every tab it has never heard of exactly where it is.
+       Ten for the ones you type into, twenty for the read-outs, ninety for
+       the machinery. A read-out may name its own — STATUS's Summary asks for
+       0, which is how it ends up leftmost. */
+    const edit = IO.tables(appId, since).map((t, i) =>
+      ({ name: t.name, rows: t.rows, editable: true, key: t.key, order: 10 + i }));
     const taken = {};
     edit.forEach(t => { taken[t.name.toLowerCase()] = 1; });
 
@@ -1111,7 +1423,8 @@ const Mirror = {
       const key = name.toLowerCase().replace(/s$/, '');
       if (taken[name.toLowerCase()] || taken[key] || taken[key + 's']) return;
       taken[name.toLowerCase()] = 1;
-      read.push({ name: name, rows: s.rows, editable: false, whole: true });
+      read.push({ name: name, rows: s.rows, editable: false, whole: true,
+        order: s.order == null ? 20 + read.length : s.order });
     });
     /* the machinery last, so the sheet is a complete save file rather than a
        pretty view of one */
@@ -1132,7 +1445,7 @@ const Mirror = {
   index(appId) {
     adoptOldLink(appId);
     if (!mcfg.url) return Promise.resolve({ v: 0, skipped: 'no link' });
-    return jsonp(mcfg.url, { app: appId, want: 'index' }, 12000).then(r => {
+    return jsonp(mcfg.url, { app: appId, want: 'index' }, 25000).then(r => {
       if (r && r.index) {
         mcfg.sheetV = r.v || 2; msave();
         return { v: mcfg.sheetV, index: r.index, pushedAt: r.pushedAt || {} };
@@ -1143,7 +1456,7 @@ const Mirror = {
          fetched a second time. */
       if (r && r.tabs) { mcfg.sheetV = 1; msave(); return { v: 1, dump: r.tabs }; }
       return { v: 0 };
-    }).catch(() => ({ v: 0, failed: 1 }));
+    }).catch(e => ({ v: 0, failed: 1, why: (e && e.code) || 'threw' }));
   },
 
   /* ── 1 and 2: pull and resolve ── */
@@ -1243,7 +1556,7 @@ const Mirror = {
          nothing to read. This is the ordinary case and it now costs nothing. */
       if (!want.length) return Promise.resolve({ skipped: 'nothing new', changed: 0, added: 0, clashes: 0 });
       return jsonp(mcfg.url, { app: appId, want: 'tables', only: want.join(',') }).then(reply => {
-        if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1 };
+        if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1, why: readWhy(reply) };
         const out = apply(reply.tabs);
         /* moved only after the rows are in, so a failure half way through
            means we read the tab again rather than skip it forever */
@@ -1253,13 +1566,13 @@ const Mirror = {
         });
         msave();
         return out;
-      });
+      }, e => ({ skipped: 'could not read', failed: 1, why: (e && e.code) || 'threw' }));
     }
 
     return jsonp(mcfg.url, { app: appId, want: 'tables' }).then(reply => {
-      if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1 };
+      if (!reply || !reply.tabs) return { skipped: 'nothing came back', failed: 1, why: readWhy(reply) };
       return apply(reply.tabs);
-    });
+    }, e => ({ skipped: 'could not read', failed: 1, why: (e && e.code) || 'threw' }));
   },
 
   /** A row the sheet wanted to change and lost. Kept as a row of its own so
@@ -1286,11 +1599,29 @@ const Mirror = {
        and nothing breaks on the day between pasting the new script and
        deploying it. */
     const canDelta = mcfg.sheetV >= 2 && !!mcfg.pushed[appId];
+    /* ── a delta is safe when a read has just failed ──
+
+       `opts.delta` means "send, but only in the kind that cannot erase". A
+       delta is matched on row ids: it adds and it updates, and there is no
+       tab-clearing step in it anywhere. Only a FULL push rewrites tabs, and
+       that is the one thing a device must not do after a read it could not
+       complete.
+
+       This is what was keeping Tom's phone mute. Read first and do not write
+       after a failed read is the right rule and it was being applied to both
+       kinds of push, so a sheet that was slow to answer - which on iOS over
+       mobile data was nearly always - blocked the write as well. Four days of
+       logging sat on the phone behind a rule that only needed to stop half of
+       it. */
     /* The derived tabs are rebuilt on a full push. Once a day is enough for a
        calendar view: it is a read-out, and a read-out being a few hours behind
        is visible, where a set going missing is not. */
     const stale = !mcfg.full[appId] || (Date.now() - (Date.parse(mcfg.full[appId]) || 0) > 20 * 3600 * 1000);
-    const full = !!opts.full || !canDelta || stale;
+    /* A delta cannot be forced when there is no boundary to delta FROM, so
+       canDelta still has the final say. The twenty-hour staleness rebuild of
+       the derived read-outs is a nicety and stands aside for a recovery push:
+       a calendar tab a few hours behind is visible, a lost set is not. */
+    const full = opts.delta ? (!canDelta) : (!!opts.full || !canDelta || stale);
     /* Take the boundary BEFORE reading the rows, never after. A set logged
        while this push is still in the air is newer than this stamp and goes
        next time; stamping afterwards would step straight over it. */
@@ -1335,6 +1666,27 @@ const Mirror = {
        last time instead, and an afternoon where nothing was logged costs one
        question and no answer. The signature moves only when the sheet
        confirms, like every other boundary here. */
+    /* ── a recovery push writes only what cannot erase ──
+
+       `mode: "delta"` stops the sheet clearing a tab, with one exception: a tab
+       the app marks `whole` is still cleared and rewritten, and _Settings is
+       marked whole because it is small and sent every time. That is fine on an
+       ordinary sync, where the read succeeded and this device therefore holds
+       what the sheet holds.
+
+       It is not fine here. A recovery push happens precisely because we could
+       NOT read, so anything this device would rewrite whole it would be
+       rewriting blind — and for _Settings that means the theme and sound the
+       other device picked. The rows themselves are safe either way, because
+       they live in _Data as `setting` rows and merge on updated_at, but there
+       is no reason to touch the readable copy while half blind.
+
+       So a recovery push drops every whole-rewrite tab and sends only the
+       upsert kind. What it cannot send now, it sends on the next sync that
+       manages to read. */
+    if (opts.delta) tabs = tabs.filter(t => !t.whole);
+    if (!tabs.length) return Promise.resolve({ state: 'clean', tabs: 0 });
+
     let sig = null;
     if (!full) {
       const now = JSON.stringify((tabs.filter(t => t.name === '_Settings')[0] || {}).rows || []);
@@ -1365,7 +1717,7 @@ const Mirror = {
 
        The caller phrases from this rather than from whether a promise
        rejected. */
-    const landed = () => jsonp(mcfg.url, { app: appId, want: 'index' }, 12000).then(r => {
+    const landed = () => jsonp(mcfg.url, { app: appId, want: 'index' }, 25000).then(r => {
       if (r && r.index) {
         mcfg.sheetV = r.v || 2;
         /* The sheet echoes back the stamp it was handed, so "did it land" is a
@@ -1384,7 +1736,7 @@ const Mirror = {
       /* an older sheet cannot echo anything, so fall back to counting rows */
       const want = {};
       tabs.forEach(t => { want[t.name] = t.rows.length; });
-      return jsonp(mcfg.url, { app: appId, want: 'stat' }, 12000).then(r2 => {
+      return jsonp(mcfg.url, { app: appId, want: 'stat' }, 25000).then(r2 => {
         const stat = (r2 && r2.stat) || {};
         const missing = Object.keys(want).filter(n => !stat[n]);
         const short = Object.keys(want).filter(n => stat[n] && stat[n] < want[n]);
@@ -1395,16 +1747,18 @@ const Mirror = {
       });
     }).catch(() => ({ state: 'unconfirmed', tabs: tabs.length }));
 
+    /* Said plainly, and not in red. None of these is something to do anything
+       about: the boundary has not moved, so whatever did not land goes again
+       by itself. The detail that would actually diagnose it is in the sync
+       log, where it does not have to be frightening to be complete. */
     const speak = res => {
       if (!quiet) {
         if (res.state === 'failed') {
-          toast('The sheet did not take <b>' + res.missing + '</b> of ' + res.of +
-            ' tabs, which usually means the deployment is running older code.', { bad: true, ms: 8000 });
+          toast('Nothing went up this time. It will go again — <b>settings → sync</b> shows what the sheet is running.');
         } else if (res.state === 'unconfirmed') {
-          toast('Sent <b>' + res.tabs + '</b> tabs and the sheet would not confirm, so open it and check.',
-            { bad: true, ms: 8000 });
+          toast('Sent. The sheet did not answer back, which some browsers always do.');
         } else if (res.short) {
-          toast('Synced, though <b>' + res.short + '</b> tabs came out shorter than sent.');
+          toast('Synced <b>' + res.tabs + '</b> tabs.');
         } else {
           toast('Synced <b>' + res.tabs + '</b> tabs, and the sheet confirms it.');
         }
@@ -1423,31 +1777,51 @@ const Mirror = {
         return fetch(mcfg.url, { method: 'POST', mode: 'no-cors', headers: head, body: body })
           .then(() => landed()).then(speak)
           .catch(() => {
-            if (!quiet) toast(Mirror.why(), { bad: true, ms: 7000 });
+            const f = Mirror.fault();
+            if (!quiet) toast(f.say, f.act ? { bad: true, ms: 7000 } : null);
             return { state: 'failed', missing: tabs.length, of: tabs.length };
           });
       });
   },
 
-  /** Why a sync probably failed.
+  /** Why a sync probably failed — split into what to SAY and what to LOG.
 
-      "Could not reach the sheet" is true and useless. Every one of these has
-      the same symptom and a different fix, and the link itself tells us which
-      is likely — so say the likely one rather than making him guess. */
-  why() {
+      `act` is the whole point. Three of these are a thing the person can fix
+      in ten seconds and should be told about in red. The fourth is "it did not
+      go through this time", which is transient far more often than not — no
+      signal, a frozen tab, Google being slow — and self-heals, because the
+      boundary did not move and the same rows go again on the next attempt.
+      Painting that red taught him to ignore red.
+
+      The old text for that case advised redeploying the Apps Script, which is
+      a real fix for a real cause and the wrong thing to say to somebody who
+      walked into a lift. The version line in Settings already reports an out
+      of date deployment, from the sheet's own answer rather than from a
+      guess, so that advice lives where it can be true. */
+  fault() {
     const u = mcfg.url || '';
-    if (!u) return 'Paste the link first.';
+    if (!u) return { code: 'no-link', act: true, say: 'Paste the sheet link in first.' };
     if (u.indexOf('script.google.com') < 0)
-      return 'That link is not an Apps Script web app, so check you copied the one ending in /exec.';
+      return { code: 'bad-link-host', act: true,
+               say: 'That link is not the Apps Script one. Copy the one that ends in /exec.' };
     if (!/\/exec\s*$/.test(u))
-      return 'That link should end in /exec, and a link ending in /dev only works while you are signed in.';
-    return 'Could not reach the sheet, and the usual cause is pasting new code without deploying it again, so try Deploy, Manage deployments, the pencil, Version New version.';
+      return { code: 'bad-link-dev', act: true,
+               say: 'That link should end in /exec. A /dev one only works while you are signed in.' };
+    return { code: 'unreachable', act: false,
+             say: 'Could not reach the sheet just now. Nothing was lost, and it will go again on its own.' };
+  },
+
+  /** kept because callers already say why(); it is the sentence half */
+  why() {
+    return Mirror.fault().say;
   },
 
   /** the whole round trip, in the order that makes it safe */
   sync(appId, quiet, opts) {
-    if (!mcfg.url) return Promise.resolve(false);
+    if (!mcfg.url) { mlog({ a: appId, w: 'manual', r: 'skip', y: 'no-link' }); return Promise.resolve(false); }
     if (!quiet) toast('Syncing…');
+    const t0 = Date.now();
+    const mline = { a: appId, w: quiet ? 'auto' : 'manual', o: Mirror.outstanding(appId) ? 1 : 0 };
     let idx = null;
     return Mirror.index(appId)
       .then(pre => { idx = pre; return Mirror.pull(appId, pre).catch(() => ({ skipped: 'could not read', failed: 1 })); })
@@ -1461,17 +1835,52 @@ const Mirror = {
            next attempt; there is nothing to queue and nothing to lose by
            waiting. */
         if (got && got.failed) {
-          if (!quiet) toast('Could not read the sheet, so nothing was sent. ' + Mirror.why(), { bad: true, ms: 8000 });
-          return false;
+          const f = Mirror.fault();
+          const why = 'read-failed:' + ((got && got.why) || (idx && idx.why) || f.code);
+          /* Pressing the button and being told the sheet could not be read,
+             while four days of logging sits on the phone, is the app declining
+             to try the half of the job that was always safe. */
+          if (!Mirror.outstanding(appId) || f.act) {
+            mline.r = 'fail'; mline.y = why; mline.ms = Date.now() - t0; mlog(mline);
+            if (!quiet) toast(f.say, f.act ? { bad: true, ms: 8000 } : null);
+            return false;
+          }
+          return Mirror.push(appId, true, { index: idx, delta: true }).then(res => {
+            const sent = !!(res && (res.state === 'confirmed' || res.state === 'clean'));
+            mline.r = sent ? 'ok' : 'fail';
+            mline.y = why + (sent ? '+sent-anyway' : '+' + (res && res.state || 'push-failed'));
+            mline.p = (res && res.state || '?') + '/' + (res && res.mode || '-') + '/' + (res && res.tabs || 0);
+            mline.ms = Date.now() - t0; mlog(mline);
+            if (!quiet) {
+              toast(sent
+                ? 'Could not read the sheet, so sent what was waiting and read nothing. <b>' +
+                  (res.tabs || 0) + '</b> tabs went up.'
+                : f.say, (!sent && f.act) ? { bad: true, ms: 8000 } : null);
+            }
+            return sent;
+          }, () => {
+            mline.r = 'fail'; mline.y = why + '+push-threw';
+            mline.ms = Date.now() - t0; mlog(mline);
+            if (!quiet) toast(f.say, f.act ? { bad: true, ms: 8000 } : null);
+            return false;
+          });
         }
         return Mirror.push(appId, true, Object.assign({ index: idx }, opts || {})).then(res => {
         const ok2 = res && (res.state === 'confirmed' || res.state === 'clean');
+        mline.v = (idx && idx.v) || 0;
+        mline.g = IO.came(got || {}) || 0;
+        mline.p = (res && res.state || '?') + '/' + (res && res.mode || '-') + '/' + (res && res.tabs || 0);
+        mline.r = ok2 ? 'ok' : 'fail';
+        if (!ok2) mline.y = (res && res.state === 'unconfirmed') ? 'no-confirm' : Mirror.fault().code;
+        mline.ms = Date.now() - t0;
+        mlog(mline);
         if (!quiet) {
           if (res && res.state === 'clean') toast('Already up to date.');
-          else if (!res || res.state === 'failed') toast(Mirror.why(), { bad: true, ms: 8000 });
-          else if (res.state === 'unconfirmed') {
-            toast('Sent <b>' + res.tabs + '</b> tabs and the sheet would not confirm, so open it and check.',
-              { bad: true, ms: 8000 });
+          else if (!res || res.state === 'failed') {
+            const f = Mirror.fault();
+            toast(f.say, f.act ? { bad: true, ms: 8000 } : null);
+          } else if (res.state === 'unconfirmed') {
+            toast('Sent. The sheet did not answer back, which some browsers always do.');
           } else if (got && got.clashes) toast('Synced, and <b>' + got.clashes + '</b> older sheet edits were kept aside.');
           else if (got && (got.changed || got.added || got.merged)) toast('Synced, with <b>' + IO.came(got) + '</b> changes from the sheet.');
           else toast('Synced <b>' + res.tabs + '</b> tabs, and the sheet confirms it.');
@@ -1484,38 +1893,68 @@ const Mirror = {
 
   /** ── keeping up without being asked ──
 
-      Three moments, and none of them is a button. On open, because the sheet
-      may have been typed in on a laptop since. Half a minute after the last
-      thing he logs, because syncing on every tap would send a set, then the
-      same set with its weight corrected, then again. And the moment the app
-      goes out of view, which is the best one of the three: the work is done,
-      the phone is about to be locked, and nobody is waiting on it.
+      Four moments, and none of them is a button. On open, ten seconds after
+      the last thing he logs, the moment the app goes out of view, and every
+      forty five seconds while he is looking at it.
 
       There is no retry queue, deliberately. What goes next time is decided by
       the boundary in `pushed`, and that only moves when the sheet confirms —
       so a sync that fails leaves the boundary where it was and the same rows
       go again at the next moment. A queue would be a second copy of a fact
-      the store already holds. */
+      the store already holds.
+
+      ── why that was not true, and what it cost ──
+
+      Every one of those moments used to be gated on `dirty`, a flag in memory
+      saying "something changed since this page loaded". That IS a second copy
+      of a fact the store already holds, and it is the copy a phone loses.
+
+      Background a phone browser and the tab is frozen within a fraction of a
+      second, then discarded. So: log a meal, pocket the phone. `dirty` was
+      cleared on the way into the sync, the request froze in mid air, and the
+      handler that would have set it back never ran because a frozen promise
+      neither resolves nor rejects. Come back, and the page is a fresh load
+      with `dirty` at zero — and open, becoming visible and the forty five
+      second tick all only ever PULLED. Nothing pushed until he logged
+      something new, and then that push froze the same way.
+
+      A laptop never showed it: the tab stays alive and visible, so the ten
+      second timer actually fires with the page still running.
+
+      Now every moment asks `Mirror.outstanding`, which reads the boundary in
+      localStorage against the rows in the store. Both survive a reload, so a
+      push that died in a pocket is retried the next time the app is opened
+      rather than being forgotten. */
   watch(appId) {
     if (watching[appId]) return false;
     watching[appId] = 1;
-    let dirty = 0, t = null;
-    const run = () => {
+    let t = null;
+    /* One path for all four moments. `onOpen` reads, then sends whatever the
+       boundary says is still here, and holds the one-at-a-time lock while it
+       does — so the debounce, the tick and coming back to the app cannot end
+       up racing each other for the same boundary. */
+    const run = (why) => {
       clearTimeout(t); t = null;
-      if (!dirty || !mcfg.on || !mcfg.url) return;
-      dirty = 0;
-      Mirror.sync(appId, true).then(ok => { if (!ok) dirty = 1; }, () => { dirty = 1; });
-    };
-    if (g.Rec && g.Rec.on) g.Rec.on(() => { dirty = 1; clearTimeout(t); t = setTimeout(run, 30000); });
-
-    /* Hidden means the phone is being locked or the tab is being left: push
-       what is waiting before it goes. Visible means you have just come back to
-       this device, which is exactly the moment the other one's work matters,
-       so read first and then send. */
-    if (g.document) g.document.addEventListener('visibilitychange', () => {
-      if (g.document.visibilityState === 'hidden') { run(); return; }
       if (!mcfg.on || !mcfg.url) return;
-      Mirror.onOpen(appId).then(() => { if (dirty) run(); });
+      Mirror.onOpen(appId, why || 'edit');
+    };
+    /* Ten seconds, not thirty. The debounce is there so that correcting a
+       weight straight after typing it sends one row and not three, and ten is
+       long enough for that. Thirty was long enough for the phone to be back in
+       a pocket, which made the timer that was meant to be the common case into
+       the one that almost never fired. */
+    if (g.Rec && g.Rec.on) g.Rec.on(() => { clearTimeout(t); t = setTimeout(() => run('edit'), 10000); });
+
+    /* Hidden means the phone is being locked or the tab is being left: try to
+       push what is waiting before it goes, knowing it may well be frozen
+       before the request lands. That is now a bonus rather than the only
+       chance. Visible means you have just come back to this device, which is
+       exactly the moment the other one's work matters, so read first and then
+       send. */
+    if (g.document) g.document.addEventListener('visibilitychange', () => {
+      if (g.document.visibilityState === 'hidden') { run('hidden'); return; }
+      if (!mcfg.on || !mcfg.url) return;
+      Mirror.onOpen(appId, 'back');
     });
 
     /* A pull while you are actually looking at it, so a screen left open on
@@ -1533,22 +1972,109 @@ const Mirror = {
       if (!g.document || g.document.visibilityState !== 'visible') return;
       const b = g.document.body;
       if (b && !b.getBoundingClientRect().width) return;
-      Mirror.onOpen(appId);
+      Mirror.onOpen(appId, 'tick');
     }, 45000);
     return true;
   },
 
   /** on open, quietly. Never blocks anything and never says anything unless
-      it actually brought something back. */
-  onOpen(appId) {
-    if (!mcfg.url || !mcfg.on) return Promise.resolve(false);
-    return Mirror.index(appId).then(pre => Mirror.pull(appId, pre)).then(got => {
-      if (got && (got.changed || got.added || got.merged)) {
-        toast('<b>' + IO.came(got) + '</b> changes came in from the sheet.');
-        if (g.Rec) g.Rec.reload && g.Rec.reload();
-      }
-      return true;
-    }).catch(() => false);
+      it actually brought something back.
+
+      Reads, and then sends anything this device is still holding. It used to
+      only read, which is why a phone could pull for a week and never once
+      push: this is the moment that runs on boot, on coming back to the app and
+      on every forty five second tick, and it was the only reliable moment a
+      phone had. The send is silent and costs nothing when the boundary says
+      there is nothing outstanding, which is the ordinary case.
+
+      Read first, and if the read failed do not write — the same rule the
+      manual button follows, and for the same reason: a push rewrites the
+      readable tabs whole, so writing after a failed read is writing over a
+      sheet we have just proved we cannot see. */
+  onOpen(appId, why) {
+    const w = why || 'open';
+    /* Logged, not ignored. "Nothing happened and I do not know why" was the
+       whole problem: a sync that declines to run is as worth a line as one
+       that fails, and these three are the difference between "the phone is
+       broken" and "the toggle is off". */
+    if (!mcfg.url) { mlog({ a: appId, w: w, r: 'skip', y: 'no-link' }); return Promise.resolve(false); }
+    if (!mcfg.on) { mlog({ a: appId, w: w, r: 'skip', y: 'switched-off' }); return Promise.resolve(false); }
+    if (busy(appId)) { mlog({ a: appId, w: w, r: 'skip', y: 'already-running' }); return Promise.resolve(false); }
+    hold(appId);
+    const t0 = Date.now();
+    const held = Mirror.outstanding(appId);
+    let idx = null, line = { a: appId, w: w, o: held ? 1 : 0 };
+    const job = Mirror.index(appId)
+      .then(pre => {
+        idx = pre;
+        line.v = (pre && pre.v) || 0;
+        if (pre && pre.failed) line.y = 'sheet-silent';
+        return Mirror.pull(appId, pre).catch(() => ({ failed: 1 }));
+      })
+      .then(got => {
+        line.g = IO.came(got || {}) || 0;
+        if (got && got.clashes) line.c = got.clashes;
+        if (got && (got.changed || got.added || got.merged)) {
+          toast('<b>' + IO.came(got) + '</b> changes came in from the sheet.');
+          if (g.Rec) g.Rec.reload && g.Rec.reload();
+        }
+        const readFailed = !!(got && got.failed);
+        if (readFailed) line.y = 'read-failed:' + ((got && got.why) || (idx && idx.why) || '?');
+        /* Nothing of ours to send, so a failed read is the end of it. */
+        if (!held) return !readFailed;
+        /* A read that failed still allows the kind of push that cannot erase.
+           Without this the phone stayed silent for four days behind a rule
+           meant only to stop a full rewrite. */
+        return Mirror.push(appId, true, { index: idx, delta: readFailed }).then(res => {
+          line.p = (res && res.state || '?') + '/' + (res && res.mode || '-') + '/' + (res && res.tabs || 0);
+          if (res && res.state === 'failed') line.y = (readFailed ? line.y + '+' : '') + 'sheet-refused';
+          if (res && res.state === 'unconfirmed') line.y = (readFailed ? line.y + '+' : '') + 'no-confirm';
+          return !!(res && (res.state === 'confirmed' || res.state === 'clean'));
+        }, () => { line.y = (readFailed ? line.y + '+' : '') + 'push-threw'; return false; });
+      })
+      .catch(() => { line.y = line.y || 'threw'; return false; });
+    const done = ok => {
+      release(appId);
+      line.r = ok ? 'ok' : 'fail';
+      line.ms = Date.now() - t0;
+      mlog(line);
+      return ok;
+    };
+    return job.then(done, () => done(false));
+  },
+
+  /** The last sixty sync attempts, newest last. Read by the button in
+      Settings that copies them out, and by anyone debugging this. */
+  log() { return logRead(); },
+  /** only so the checks can drive the collapsing without a network */
+  logProbe(entry) { mlog(entry); },
+  clearLog() { try { localStorage.removeItem(LOGKEY); } catch (e) {} },
+
+  /** The log as something Tom can paste into a conversation.
+
+      One line per attempt and a header saying what device wrote it, because
+      the first question about a sync bug is always "which of the two is this"
+      and the second is "what does the sheet think it is running". */
+  logText() {
+    const rows = logRead();
+    const head = [
+      'MOTHERBASE SYNC LOG',
+      'written  ' + new Date().toString(),
+      'device   ' + (g.navigator ? g.navigator.userAgent : 'unknown'),
+      'link     ' + (mcfg.url ? (/\/exec\s*$/.test(mcfg.url) ? 'set, ends /exec' : 'set, DOES NOT end /exec') : 'not set'),
+      'auto     ' + (mcfg.on ? 'on' : 'OFF'),
+      'app script v' + IO.SCRIPT_V + ', sheet answered v' + (mcfg.sheetV || 0),
+      'last confirmed push per app:',
+    ];
+    Object.keys(mcfg.pushed || {}).forEach(a => head.push('  ' + a + '  ' + mcfg.pushed[a]));
+    if (!Object.keys(mcfg.pushed || {}).length) head.push('  (none ever confirmed)');
+    head.push('');
+    head.push('t=FINISHED at (local) w=what-triggered-it r=result y=why');
+    head.push('o=had-unsent-rows ms=took v=sheet-version-that-answered');
+    head.push('g=rows-in p=push(state/mode/tabs) n=quiet-runs-collapsed');
+    head.push('');
+    if (!rows.length) return head.concat(['(no attempts recorded yet)']).join('\n');
+    return head.concat(rows.map(r => Object.keys(r).map(k => k + '=' + r[k]).join(' '))).join('\n');
   },
 
   /** The Apps Script to paste. Generated here so it cannot drift from the
@@ -1569,7 +2095,12 @@ const Mirror = {
       '   came back down. This is the half that lets the other device read it.',
       '',
       '   It also never clears that tab, so opening the app on a second device',
-      '   cannot empty the sheet. */',
+      '   cannot empty the sheet.',
+      '',
+      '   Version 4 puts the tabs in order, colours them for what they are, and',
+      '   hides the machinery. Green means type in me. Blue means I am worked out',
+      '   for you and I get rewritten. Grey and hidden is the save file. It moves',
+      '   no tab it was not handed, so any tab of your own is left alone. */',
       '',
       'var MB_V = ' + IO.SCRIPT_V + ';',
       '',
@@ -1654,6 +2185,48 @@ const Mirror = {
       '  if (append.length) sh.getRange(last + 1, 1, append.length, w).setValues(append);',
       '}',
       '',
+      '/* ── the tabs, put in order and marked for what they are ──',
+      '',
+      '   Cosmetic, and deliberately so: nothing here reads or writes a single',
+      '   value. It runs only on a full write, which is about once a day, so it',
+      '   costs nothing on the syncs that happen while you are using the app.',
+      '',
+      '   A tab this script was not given is never moved, never coloured and',
+      '   never hidden. Your own tabs are yours. They will end up sitting after',
+      '   the ones the app owns, because the app tabs are moved to the front. */',
+      'function mbTidy(ss, tabs) {',
+      '  var want = [];',
+      '  tabs.forEach(function (t) { if (t.order !== null && t.order !== undefined) want.push(t); });',
+      '  want.sort(function (a, b) { return a.order - b.order; });',
+      '  /* Where everything already is, in one call, so a tab that is already in',
+      '     the right place costs nothing. Nothing normally moves after the first',
+      '     run, and every call into a spreadsheet is a round trip, so the steady',
+      '     state should be reads and not writes. */',
+      '  var at = {};',
+      '  ss.getSheets().forEach(function (sh, i) { at[sh.getName()] = i + 1; });',
+      '  var pos = 1;',
+      '  want.forEach(function (t) {',
+      '    var sh = ss.getSheetByName(t.name);',
+      '    if (!sh) return;',
+      '    try {',
+      '      /* The machinery goes grey and out of sight. It is the save file and',
+      '         a row of it means nothing to read, so the honest thing is to stop',
+      '         offering it. Hidden, never deleted. */',
+      '      if (t.machine) {',
+      '        sh.setTabColor("#9aa0a6");',
+      '        if (!sh.isSheetHidden()) sh.hideSheet();',
+      '        return;',
+      '      }',
+      '      /* Green means type in me. Blue means I am worked out for you and',
+      '         I will be rewritten, so anything you put here will not last. */',
+      '      sh.setTabColor(t.editable ? "#188038" : "#1a73e8");',
+      '      if (sh.isSheetHidden()) sh.showSheet();',
+      '      if (at[t.name] !== pos) { ss.setActiveSheet(sh); ss.moveActiveSheet(pos); }',
+      '      pos = pos + 1;',
+      '    } catch (err) {}',
+      '  });',
+      '}',
+      '',
       'function doPost(e) {',
       '  var body = JSON.parse(e.postData.contents);',
       '  var ss = SpreadsheetApp.getActiveSpreadsheet();',
@@ -1671,6 +2244,11 @@ const Mirror = {
       '    try { mbWriteTab(ss, t, mode); wrote.push(t.name); }',
       '    catch (err) { failed.push(t.name + ": " + err); }',
       '  });',
+      '',
+      '  /* Order, colour and hide. After the writing, so every tab it wants to',
+      '     move already exists, and only on a full write, because dragging tabs',
+      '     about on every background sync would be work for nothing. */',
+      '  if (mode !== "delta") { try { mbTidy(ss, tabs); } catch (err) {} }',
       '',
       '  /* Tabs written under an older name. Dropped only after the new ones exist,',
       '     so nothing is ever deleted before its replacement is there. */',

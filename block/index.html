@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-built="90a8fdfb">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BLOCK — routine scheduler</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='28' y='20' width='17' height='20' rx='5' fill='%237EE8FA'/><rect x='55' y='20' width='17' height='20' rx='5' fill='%237EE8FA'/><rect x='16' y='34' width='68' height='46' rx='9' fill='%237EE8FA'/></svg>">
 <!-- No font link. skins.js fetches the face the chosen theme asks for and
      falls back to a system stack offline; a link here meant every theme
      rendered in Chakra Petch. -->
@@ -196,7 +196,7 @@ main{display:flex;flex:1;min-height:0}
 .bin-target:hover{border-color:var(--acc-d);color:var(--txt)}
 .bin-target b{color:var(--acc);font-family:var(--f1);font-weight:600;flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lane.over{border-color:var(--acc-d);box-shadow:0 0 0 1px var(--acc-d)}
-.lane-head{padding:9px 10px 8px;border-bottom:1px solid var(--line)}
+.lane-head{padding:var(--s-2) var(--s-3) var(--s-2);border-bottom:1px solid var(--line)}
 .lane-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .lane-name{
   flex:1;background:none;border:1px solid transparent;border-radius:5px;padding:2px 5px;
@@ -207,25 +207,34 @@ main{display:flex;flex:1;min-height:0}
 .lane-x{color:var(--dim2);font-size:12px;padding:2px 4px;opacity:0}
 .lane:hover .lane-x{opacity:.55}
 .lane-x:hover{color:var(--bad);opacity:1}
-.lane-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.lane-row{display:flex;align-items:center;gap:var(--s-1);font-size:var(--f-1);color:var(--dim)}
 .lane-row input[type=time]{
   background:var(--surface-1);border:1px solid var(--line);border-radius:5px;padding:2px 5px;
   font-family:var(--f1);font-size:11.5px;color:var(--acc);outline:none;
 }
 .lane-row input[type=time]:focus{border-color:var(--acc-d)}
 .lane-row .end{font-family:var(--f1);color:var(--txt)}
-.lane-meta{display:flex;align-items:center;gap:5px;margin-top:6px;flex-wrap:wrap;font-size:10.5px;color:var(--dim2);font-family:var(--f1);letter-spacing:.04em}
-.lane-meta .tag{padding:1px 5px;border:1px solid var(--line);border-radius:4px}
+/* Sizes here were 10.5px type, a 5px gap, 1px/5px padding and a 4px radius:
+   four values, none of them on any scale, chosen one at a time. On the scale
+   the type is a step larger, which is why deleting a row mattered more than
+   shrinking one would have. */
+.lane-meta{display:flex;align-items:center;gap:var(--s-1);margin-top:var(--s-2);flex-wrap:wrap;font-size:var(--f-1);line-height:1.5;color:var(--dim2);font-family:var(--f1);letter-spacing:.04em}
+.lane-meta .tag{padding:0 var(--s-1);border:1px solid var(--line);border-radius:var(--radius-sm)}
+/* a readout, not a control: no border, so the buttons beside it read as buttons */
+.lane-meta .read{color:var(--dim2);opacity:.85}
 .lane-meta .tag.over{border-color:color-mix(in srgb, var(--danger) 34%, var(--bg));color:var(--bad)}
 .lane-meta .tag.ok{border-color:color-mix(in srgb, var(--success) 30%, var(--bg));color:var(--good)}
 .lane-meta .tag.warn{border-color:color-mix(in srgb, var(--warn) 32%, var(--bg));color:var(--warn)}
-.bars{margin-top:7px;display:flex;flex-direction:column;gap:4px}
-.prog{height:3px;border-radius:2px;background:var(--surface-1);overflow:hidden}
+/* Two bars 4px apart, both often green, read as one bar with a seam. They
+   answer different questions — how much is done, and how the effort is spread
+   — so they are spaced apart, and the one you actually check is the taller. */
+.bars{margin-top:var(--s-2);display:flex;flex-direction:column;gap:var(--s-2)}
+.prog{height:var(--s-1);border-radius:var(--radius-sm);background:var(--surface-1);overflow:hidden}
 .prog i{display:block;height:100%;background:linear-gradient(90deg,color-mix(in srgb, var(--success) 55%, var(--accent)),var(--good));transition:width .25s}
-.loadbar{display:flex;height:5px;gap:1px;border-radius:3px;overflow:hidden;background:var(--surface-1)}
+.loadbar{display:flex;height:3px;gap:1px;border-radius:var(--radius-sm);overflow:hidden;background:var(--surface-1);opacity:.7}
 .loadbar i{display:block;height:100%}
-.lane-tools{display:flex;gap:4px;margin-top:8px}
-.lane-tools .btn{flex:1;text-align:center;padding:3px 0;font-size:10.5px;letter-spacing:.05em}
+.lane-tools{display:flex;gap:var(--s-1);margin-top:var(--s-2)}
+.lane-tools .btn{flex:1;text-align:center;padding:var(--s-1) 0;font-size:var(--f-1);letter-spacing:.05em}
 .lane-tools .hov{opacity:.25;transition:opacity .12s}
 .lane:hover .lane-tools .hov{opacity:1}
 .lane-body{flex:1;overflow-y:auto;padding:9px;display:flex;flex-direction:column;gap:8px;min-height:74px}
@@ -236,7 +245,7 @@ main{display:flex;flex:1;min-height:0}
 #addlane:hover{border-color:var(--acc-d);color:var(--acc)}
 
 /* ---------- block ---------- */
-.brick{
+.block{
   position:relative;border-radius:8px;padding:8px 9px 10px;flex:0 0 auto;
   display:flex;flex-direction:column;gap:2px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--c) 26%,var(--surface-1)),color-mix(in srgb,var(--c) 13%,var(--surface-1)));
@@ -245,22 +254,22 @@ main{display:flex;flex:1;min-height:0}
   box-shadow:0 2px 0 color-mix(in srgb,var(--c) 22%,var(--bg)), 0 4px 12px rgba(0,0,0,.35);
   cursor:grab;touch-action:none;user-select:none;
 }
-.brick.pinned{box-shadow:0 0 0 1px var(--acc) inset,0 2px 0 color-mix(in srgb,var(--c) 22%,var(--bg))}
-.brick.done{opacity:.42;filter:saturate(.4)}
-.brick.hid{opacity:.3;filter:grayscale(.7);border-style:dashed}
-.brick.sel{box-shadow:0 0 0 2px var(--acc),0 4px 14px rgba(0,0,0,.4)}
-.brick.ongoing{border-left:3px dashed color-mix(in srgb,var(--c) 75%,var(--surface-1))}
+.block.pinned{box-shadow:0 0 0 1px var(--acc) inset,0 2px 0 color-mix(in srgb,var(--c) 22%,var(--bg))}
+.block.done{opacity:.42;filter:saturate(.4)}
+.block.hid{opacity:.3;filter:grayscale(.7);border-style:dashed}
+.block.sel{box-shadow:0 0 0 2px var(--acc),0 4px 14px rgba(0,0,0,.4)}
+.block.ongoing{border-left:3px dashed color-mix(in srgb,var(--c) 75%,var(--surface-1))}
 .b-cover{
   position:absolute;left:-1px;right:-1px;top:100%;pointer-events:none;border-radius:0 0 8px 8px;
   background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 13%,transparent) 0 7px,transparent 7px 14px);
   border:1px dashed color-mix(in srgb,var(--c) 32%,transparent);border-top:0;
 }
 .b-cover b{position:absolute;bottom:3px;right:6px;font-family:var(--f1);font-size:8.5px;color:color-mix(in srgb,var(--c) 70%,var(--text-1));opacity:.75}
-.brick.hid .b-name{text-decoration:line-through;text-decoration-style:dotted}
+.block.hid .b-name{text-decoration:line-through;text-decoration-style:dotted}
 .b-link{font-family:var(--f1);font-size:9px;color:var(--dim2);opacity:.75}
-.brick.done .b-name{text-decoration:line-through;text-decoration-color:var(--dim2)}
-.brick.broke{border-color:color-mix(in srgb, var(--danger) 52%, var(--bg))}
-.brick.celebrate{animation:cel .5s ease}
+.block.done .b-name{text-decoration:line-through;text-decoration-color:var(--dim2)}
+.block.broke{border-color:color-mix(in srgb, var(--danger) 52%, var(--bg))}
+.block.celebrate{animation:cel .5s ease}
 @keyframes cel{0%{box-shadow:0 0 0 0 var(--good)}50%{box-shadow:0 0 0 3px rgba(110,231,168,.5)}100%{box-shadow:0 0 0 0 transparent}}
 .b-top{display:flex;align-items:center;gap:5px;flex-wrap:wrap;row-gap:2px;min-height:15px}
 .b-time{
@@ -277,7 +286,7 @@ main{display:flex;flex:1;min-height:0}
 .b-sp{flex:1}
 .b-dur{font-family:var(--f1);font-size:10.5px;color:var(--dim);display:flex;align-items:center;gap:3px}
 .b-dur button{color:var(--dim2);padding:0 3px;font-size:12px;line-height:1;opacity:.3;transition:opacity .12s}
-.brick:hover .b-dur button{opacity:1}
+.block:hover .b-dur button{opacity:1}
 .b-dur button:hover{color:var(--acc)}
 .b-dur b{min-width:30px;text-align:center;color:var(--txt);font-weight:500;border-radius:3px;cursor:text}
 .b-dur b:hover{background:rgba(0,0,0,.35);box-shadow:0 0 0 1px var(--line2)}
@@ -291,11 +300,17 @@ main{display:flex;flex:1;min-height:0}
 .b-check.on{background:var(--good);border-color:var(--good);color:color-mix(in srgb, var(--success) 12%, var(--bg));font-weight:700}
 /* struck out and stood down: clearly not outstanding, clearly not done */
 .b-check.skip{background:transparent;border-style:dashed;border-color:var(--dim);color:var(--dim);font-weight:700}
-.brick.skipped{opacity:.5}
-.brick.skipped .b-name{text-decoration:line-through;text-decoration-thickness:1px}
+.block.skipped{opacity:.5}
+.block.skipped .b-name{text-decoration:line-through;text-decoration-thickness:1px}
 .b-txt{flex:1;min-width:0}
 .b-name{font-size:12.5px;line-height:1.28;outline:none;border-radius:4px;padding:1px 2px;margin-left:-2px;word-break:break-word;cursor:text}
 .b-name:focus{background:var(--bg);box-shadow:0 0 0 1px var(--acc-d)}
+/* A block whose title goes somewhere. Underlined rather than coloured: colour
+   on a block already says which lane it belongs to, and two meanings on one
+   channel is how a board stops being readable. */
+.b-titlelink{display:block;cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px;text-decoration-color:var(--acc);color:inherit}
+.b-titlelink:hover{text-decoration-thickness:2px}
 .b-note{font-size:10.5px;color:var(--dim);line-height:1.34;outline:none;padding:1px 2px;margin-left:-2px;border-radius:4px;cursor:text}
 .b-note:focus{background:var(--bg);box-shadow:0 0 0 1px var(--acc-d)}
 .b-note:empty:before{content:'note…';color:var(--dim2);opacity:.4}
@@ -316,17 +331,17 @@ main{display:flex;flex:1;min-height:0}
 .b-dayex:hover{border-color:var(--warn)}
 .lane-untimed{font-family:var(--f1);font-size:11.5px;color:var(--dim2);border:1px dashed var(--line);border-radius:5px;padding:2px 7px}
 .lane-untimed:hover{border-color:var(--acc-d);color:var(--acc)}
-.lane-days{font-family:var(--f1);font-size:10.5px;color:var(--dim2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.lane-days{font-family:var(--f1);font-size:var(--f-1);color:var(--dim2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:0 var(--s-1)}
 .lane-days:hover{border-color:var(--acc-d);color:var(--acc)}
 .b-ctl{margin-left:auto;display:flex;gap:2px;align-items:center}
 .b-ctl button{color:var(--dim2);font-size:10.5px;padding:1px 3px;border-radius:4px}
 .b-ctl button:hover{color:var(--txt);background:rgba(0,0,0,.44)}
 .b-ctl button.on{color:var(--acc)}
 .b-ctl .hov{opacity:0;transition:opacity .12s}
-.brick:hover .b-ctl .hov{opacity:1}
+.block:hover .b-ctl .hov{opacity:1}
 .b-badge{font-family:var(--f1);font-size:8.5px;font-weight:700;letter-spacing:.04em;border:1px solid var(--line);border-radius:3px;padding:1px 3px;color:var(--dim2);line-height:1.1}
 .b-badge.dim{opacity:0;transition:opacity .12s}
-.brick:hover .b-badge.dim{opacity:.55}
+.block:hover .b-badge.dim{opacity:.55}
 .b-badge.p1{color:var(--danger);border-color:color-mix(in srgb, var(--danger) 40%, var(--bg));background:color-mix(in srgb, var(--danger) 18%, var(--bg))}
 .b-badge.p2{color:var(--warn);border-color:color-mix(in srgb, var(--warn) 32%, var(--bg));background:color-mix(in srgb, var(--warn) 15%, var(--bg))}
 .b-badge.p3{color:var(--info);border-color:var(--info);background:var(--info)}
@@ -336,21 +351,21 @@ main{display:flex;flex:1;min-height:0}
 .b-grip{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize}
 .b-grip:hover{background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--c) 45%,transparent))}
 /* --- compact row for the one-minute stuff --- */
-.brick.mini{flex-direction:row;align-items:center;gap:8px;padding:5px 9px 5px 9px;min-height:0!important}
-.brick.mini .b-main{flex:1;min-width:0;align-items:center;gap:7px}
-.brick.mini .b-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brick.mini .b-mtime{font-family:var(--f1);font-size:10px;color:color-mix(in srgb,var(--c) 80%,var(--text-1));white-space:nowrap;border-radius:4px;padding:1px 4px;cursor:text}
-.brick.mini .b-mtime:hover{background:rgba(0,0,0,.35);box-shadow:0 0 0 1px var(--line2)}
-.brick.mini .b-mtime.anc{color:var(--acc)}
-.brick.mini .b-mdays{font-family:var(--f1);font-size:9px;color:var(--dim2);white-space:nowrap}
-.brick.mini .b-foot{
+.block.mini{flex-direction:row;align-items:center;gap:8px;padding:5px 9px 5px 9px;min-height:0!important}
+.block.mini .b-main{flex:1;min-width:0;align-items:center;gap:7px}
+.block.mini .b-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block.mini .b-mtime{font-family:var(--f1);font-size:10px;color:color-mix(in srgb,var(--c) 80%,var(--text-1));white-space:nowrap;border-radius:4px;padding:1px 4px;cursor:text}
+.block.mini .b-mtime:hover{background:rgba(0,0,0,.35);box-shadow:0 0 0 1px var(--line2)}
+.block.mini .b-mtime.anc{color:var(--acc)}
+.block.mini .b-mdays{font-family:var(--f1);font-size:9px;color:var(--dim2);white-space:nowrap}
+.block.mini .b-foot{
   position:absolute;top:0;right:0;bottom:0;margin:0;padding:0 8px 0 26px;
   background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--c) 17%,var(--surface-1)) 32%);
   opacity:0;transition:opacity .12s;
 }
-.brick.mini:hover .b-foot{opacity:1}
-.brick.mini .b-days,.brick.mini .b-grip{display:none}
-.brick.mini .b-ctl .hov{opacity:1}
+.block.mini:hover .b-foot{opacity:1}
+.block.mini .b-days,.block.mini .b-grip{display:none}
+.block.mini .b-ctl .hov{opacity:1}
 /* the now line floats OVER the blocks, at the real position inside the current one */
 .lane-body{position:relative}
 .nowline{
@@ -363,20 +378,20 @@ main{display:flex;flex:1;min-height:0}
   background:var(--danger);border-radius:3px;padding:1px 4px;box-shadow:0 2px 6px rgba(0,0,0,.45);
 }
 .nowline em{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:0 0 auto;box-shadow:0 0 8px var(--danger)}
-.brick.past{opacity:.5}
-.brick.past.done{opacity:.3}
+.block.past{opacity:.5}
+.block.past.done{opacity:.3}
 /* proportional mode — an hour looks like an hour; tiny blocks stay legible slivers */
 .lane-body.prop{gap:4px;overflow:hidden}
-.lane-body.prop .brick{padding:4px 8px;gap:0;overflow:hidden}
-.lane-body.prop .brick.squeezed{flex-direction:row;align-items:center;gap:6px;padding:2px 8px}
-.lane-body.prop .brick.squeezed .b-top,.lane-body.prop .brick.squeezed .b-foot,
-.lane-body.prop .brick.squeezed .b-note,.lane-body.prop .brick.squeezed .b-grip{display:none}
-.lane-body.prop .brick.squeezed .b-main{flex:1;align-items:center;min-width:0}
-.lane-body.prop .brick.squeezed .b-name{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
-.lane-body.prop .brick.squeezed .b-check{width:12px;height:12px;font-size:8px;margin:0}
-.lane-body.prop .brick.squeezed .b-mtime,.lane-body.prop .brick.squeezed .b-mdays{font-size:8.5px}
+.lane-body.prop .block{padding:4px 8px;gap:0;overflow:hidden}
+.lane-body.prop .block.squeezed{flex-direction:row;align-items:center;gap:6px;padding:2px 8px}
+.lane-body.prop .block.squeezed .b-top,.lane-body.prop .block.squeezed .b-foot,
+.lane-body.prop .block.squeezed .b-note,.lane-body.prop .block.squeezed .b-grip{display:none}
+.lane-body.prop .block.squeezed .b-main{flex:1;align-items:center;min-width:0}
+.lane-body.prop .block.squeezed .b-name{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
+.lane-body.prop .block.squeezed .b-check{width:12px;height:12px;font-size:8px;margin:0}
+.lane-body.prop .block.squeezed .b-mtime,.lane-body.prop .block.squeezed .b-mdays{font-size:8.5px}
 .lane-body.prop .b-foot{padding-top:2px}
-.lane-body.prop .brick .b-note{display:none}
+.lane-body.prop .block .b-note{display:none}
 .placeholder{flex:0 0 auto;border:1px dashed var(--acc);border-radius:8px;background:var(--surface-2);opacity:.7}
 #dragghost{position:fixed;z-index:9999;pointer-events:none;opacity:.92;transform:rotate(-1.4deg) scale(1.02);width:240px}
 #dragghost.tplghost{
@@ -392,6 +407,7 @@ main{display:flex;flex:1;min-height:0}
 .sumcards{display:flex;gap:10px;flex-wrap:wrap}
 .freshrow{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;
   margin-top:var(--s-4)}
+.freshlab{color:var(--text-muted);font-size:var(--f-1);letter-spacing:.06em;text-transform:uppercase}
 .freshnote{color:var(--text-muted);font-size:var(--f-1)}
 .sumcard{
   flex:1 1 150px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel);
@@ -585,14 +601,15 @@ footer .sp{flex:1}
 <!-- The touch layer. One line, and this app gets safe areas, real tap
      targets, no zoom-on-focus, contained overscroll, keyboard handling
      and the back gesture closing what is open. -->
-<script src="../shared/skins.js?v=4af52223"></script>
-<script src="../shared/icons.js?v=4af52223"></script>
-<script src="../shared/mobile.js?v=4af52223"></script>
+<script src="../shared/skins.js?v=90a8fdfb"></script>
+<script src="../shared/icons.js?v=90a8fdfb"></script>
+<script src="../shared/mobile.js?v=90a8fdfb"></script>
+<script src="../shared/ui.js?v=90a8fdfb"></script>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="logo">🧱 <b>BLOCK</b></div>
+    <div class="logo">BLO<b>CK</b></div>
     <div class="views">
       <button id="vDay" class="on" data-tip="<b>Day</b> — build one routine out of blocks">Day</button>
       <button id="vWeek" data-tip="<b>Week</b> — which <b>day</b> runs on which weekday">Week</button>
@@ -671,7 +688,7 @@ footer .sp{flex:1}
 <div id="toast"></div>
 <div id="tip"></div>
 
-<script src="../shared/day.js?v=4af52223"></script>
+<script src="../shared/day.js?v=90a8fdfb"></script>
 <script>
 /* Per app, not per suite: BLOCK can wear Block while STATUS wears Ice.
 
@@ -691,8 +708,8 @@ Skins.load('../shared/skins.json').then(() => {
    different paths rather than a different colour. */
 if (window.Icons) Icons.paint();
 </script>
-<script src="../shared/records.js?v=4af52223"></script>
-<script src="../shared/io.js?v=4af52223"></script>
+<script src="../shared/records.js?v=90a8fdfb"></script>
+<script src="../shared/io.js?v=90a8fdfb"></script>
 <script>
 /* ══════════════════════════ LIFEOS KERNEL v2 ══════════════════════════
    Identical in every app that shares data — edit the copy in index.html and
@@ -1253,7 +1270,7 @@ window.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); }
 window.addEventListener('blur', closeMenu);
 
 /* ============================ state ============================ */
-const KEY = 'block_v1';
+const KEY = 'brick_v1';
 /* name, minutes, colour index, energy */
 /* ── the skeleton it opens with ──
    Twice revised, and the second revision is the interesting one.
@@ -1729,7 +1746,7 @@ const laneEnd = laneId => {
 };
 const laneMins = laneId => items(laneId).filter(x => !x.hidden).reduce((a, b) => a + b.dur, 0);
 /** duration sets a FLOOR — content decides the real height, so nothing can ever overlap */
-const brickMin = d => Math.max(52, 22 + d * SCALE);
+const blockMin = d => Math.max(52, 22 + d * SCALE);
 /** ≤10 min collapses to one row by default; it.compact overrides either way, at any duration */
 const isMini = it => it.compact != null ? !!it.compact : it.dur < 10;
 /** single minutes below 10, fives from 10 up */
@@ -1923,9 +1940,29 @@ function logDay(k) {
 }
 function logToday() { logDay(todayKey()); }
 /** completion rate per block name across the recorded history */
+/* ── what the record covers ──
+   Tom, 2026-09-05: "if I reset the date then I don't want the feedback on
+   where im falling short thats the point."
+
+   He is right and the old behaviour undid itself. Drawing a line under the
+   past and then being told "0% of the 13 times it came up" about days on the
+   far side of that line is not a fresh start, it is the same verdict with a
+   new number next to it.
+
+   A restart is a real device, not a comfort: a temporal landmark raises what
+   people are willing to attempt, which is the entire reason to offer one. And
+   the panel's own copy already says self-blame makes the next attempt less
+   likely — then it listed thirty-seven failures. It cannot say both.
+
+   So the line moves the START OF THE RECORD, not just the streak counter.
+   Every old day is still logged, still on the chart, still in the backup. It
+   is simply not evidence about the plan you are running now. */
+function statsFrom() { return S.streakFrom || null; }
+
 function blockStats() {
   const m = {};
-  Object.values(S.log || {}).forEach(e => {
+  const from = statsFrom();
+  Object.keys(S.log || {}).filter(k => !from || k >= from).map(k => S.log[k]).forEach(e => {
     (e.t || []).forEach(k => { (m[k] = m[k] || { key: k, n: keyName(k), where: String(k).split('||')[1] || '', seen: 0, done: 0 }).seen++; });
     (e.d || []).forEach(k => { if (m[k]) m[k].done++; });
   });
@@ -1993,7 +2030,7 @@ function toggleDone(it) {
   logToday();
   render();
   if (todays.length && !open.length) {
-    document.querySelectorAll('.brick').forEach(n => n.classList.add('celebrate'));
+    document.querySelectorAll('.block').forEach(n => n.classList.add('celebrate'));
     beep('complete');
     toast('✓ <b>' + todays.length + '/' + todays.length + '</b> — day complete, logged. Clearing the boxes…');
     setTimeout(() => { clearForNextPass(vid); render(); }, 1500);
@@ -2546,21 +2583,25 @@ function renderBoard() {
       un.onclick = () => { snap(); L.start = '09:00'; render(); };
       row.appendChild(un);
     } else {
-      const st = el('input'); st.type = 'time'; st.value = L.start;
+      /* UI.timeField, not a raw time input: on a PC that is a box you type
+         into with an AM/PM button beside it, instead of three little spinners
+         you have to tab between. The phone still gets its wheel. */
+      const st = UI.timeField(L.start, v => { snap(); L.start = v || '00:00'; render(); });
       st.dataset.tip = 'When this routine starts — everything below flows from here.<br>Right-click for “no set time”.';
-      st.onchange = () => { snap(); L.start = st.value || '00:00'; render(); };
       st.oncontextmenu = ev => { ev.preventDefault(); snap(); L.start = null; render(); toast('<b>' + esc(L.name) + '</b> is now untimed'); };
       row.appendChild(st);
       row.appendChild(el('span', null, '→'));
       row.appendChild(el('span', 'end', fmt(laneEnd(L.id))));
     }
-    head.appendChild(row);
 
     const sc = schedule(L.id);
     const meta = el('div', 'lane-meta');
     const nb = sc.length;
-    meta.appendChild(el('span', 'tag', nb + (nb === 1 ? ' block' : ' blocks')));
-    meta.appendChild(el('span', 'tag', dur2s(laneMins(L.id))));
+    /* Count and length are things the routine IS, not things you can press.
+       They were two bordered chips sitting in a row of buttons that look
+       identical, so nothing in the row said what was clickable. One quiet
+       line, no border, and the buttons beside it become obvious. */
+    meta.appendChild(el('span', 'read', nb + (nb === 1 ? ' block' : ' blocks') + ' · ' + dur2s(laneMins(L.id))));
     if (L.target && L.start != null) {
       const delta = laneEnd(L.id) - hm2min(L.target);
       const t = el('span', 'tag ' + (delta > 0 ? 'over' : 'ok'), (delta > 0 ? '+' : '') + dur2s(Math.abs(delta)) + (delta > 0 ? ' over' : ' spare'));
@@ -2578,18 +2619,54 @@ function renderBoard() {
     const bump = !mySpan ? [] : S.lanes.filter(O => O.id !== L.id && O.start != null && items(O.id).length)
       .filter(O => mySpan[0] < laneEnd(O.id) && hm2min(O.start) < mySpan[1]).map(O => O.name);
     if (sc.length && bump.length) {
-      const b2 = el('span', 'tag warn', '⚠ overlaps ' + bump[0] + (bump.length > 1 ? ' +' + (bump.length - 1) : ''));
+      /* This chip used to carry the other routine's name, and a routine can be
+         called "Deep Work/ Main Quest Work". In a 278px column that one chip
+         wrapped the header onto five lines. The name lives in the tooltip,
+         which already listed every overlapping routine in full. */
+      const b2 = el('span', 'tag warn', '⚠ overlaps' + (bump.length > 1 ? ' ×' + bump.length : ''));
       b2.dataset.tip = 'This routine runs at the same wall-clock time as <b>' + esc(bump.join(', ')) + '</b>';
       meta.appendChild(b2);
     }
-    const ld = el('button', 'lane-days', daysShort(L.days || [1, 1, 1, 1, 1, 1, 1]));
-    ld.dataset.tip = 'Days this whole routine runs — blocks follow it unless they carry an exception';
+    /* ── the header must not say "never" while listing blocks that run ──
+       A routine with no days of its own, holding blocks that each carry their
+       own, is not a routine that never runs. That is the shape you get when a
+       routine exists to hold a few things on separate schedules: Sunday Meds
+       on Sundays, Thursday Meds on Thursdays. The header was describing the
+       container and ignoring the contents, so it read "never" above two blocks
+       that between them run four days a week. It now reports what actually
+       runs, which is the only number anyone wanted from it. */
+    const ownDays = L.days || [1, 1, 1, 1, 1, 1, 1];
+    const runDays = ownDays.some(Boolean) ? ownDays
+      : [0, 1, 2, 3, 4, 5, 6].map(d => items(L.id).some(it => !it.hidden && effDays(L, it)[d]) ? 1 : 0);
+    const ld = el('button', 'lane-days', daysShort(runDays));
+    ld.dataset.tip = ownDays.some(Boolean)
+      ? 'Days this whole routine runs — blocks follow it unless they carry an exception'
+      : 'This routine has no days of its own, so these are the days its blocks run on.';
     ld.onclick = ev => { ev.stopPropagation(); laneMenu(L, ev.clientX, ev.clientY); };
     meta.appendChild(ld);
-    const tg = el('button', 'tag', L.target ? '⏱ ' + L.target : '⏱ target');
-    tg.dataset.tip = 'Set a “must be done by” time for this routine';
-    tg.onclick = () => { const v = prompt('Target end time (HH:MM), blank to clear', L.target || ''); if (v !== null) { snap(); L.target = v.trim(); render(); } };
-    meta.appendChild(tg);
+    /* A "must be done by" time means nothing on a routine that has no start
+       time — the code below already refuses to draw the over/spare chip
+       without one. So the button was offering something that could not work,
+       and on an untimed routine it was the chip that pushed the row onto a
+       second line. It appears once there is a clock to measure against. */
+    if (L.start != null) {
+      const tg = el('button', 'tag', L.target ? '⏱ ' + L.target : '⏱ target');
+      tg.dataset.tip = 'Set a “must be done by” time for this routine';
+      tg.onclick = () => { const v = prompt('Target end time (HH:MM), blank to clear', L.target || ''); if (v !== null) { snap(); L.target = v.trim(); render(); } };
+      meta.appendChild(tg);
+    }
+    /* ── when it runs, and what is in it, are one line ──
+       These were two rows only because they are built at two points in this
+       function. On a routine holding eleven blocks nobody noticed. On one
+       holding two, the header stood taller than its contents: 164px of chrome
+       over 74px of blocks, measured. Same information, one row less, on every
+       routine on the board. */
+    /* An untimed routine says "no set time" in 88px and joins the chip row.
+       A timed one carries a real time field, which is 219px on a desktop and
+       wrapped the row onto four lines, so it keeps its own line. Merging both
+       was the tidier-looking change and the worse-measuring one. */
+    if (L.start == null) meta.insertBefore(row, meta.firstChild);
+    else head.appendChild(row);
     head.appendChild(meta);
 
     /* progress + load meters */
@@ -2604,12 +2681,21 @@ function renderBoard() {
       sc.forEach(({ it }) => { const i = el('i'); i.style.flex = it.dur; i.style.background = ECOL[energyOf(it)]; lb.appendChild(i); });
       bars.appendChild(lb);
       head.appendChild(bars);
-      const lm = el('div', 'lane-meta');
-      lm.appendChild(el('span', 'tag', 'load ' + laneLoad(L.id).toFixed(1)));
+      /* The "load 0.1" chip that used to sit here showed the same effort the
+         bar directly above it draws in colour, and the bar's own tooltip
+         already gives the number. Two elements, one fact, and one of them a
+         figure nobody can act on. Deleting it took a whole row off every
+         routine on the board. The heavy-in-a-row warning stays: that is not a
+         readout, it is the one thing here worth interrupting for. */
       let run = 0, worst = 0;
       items(L.id).forEach(it => { run = energyOf(it) === 3 ? run + 1 : 0; worst = Math.max(worst, run); });
-      if (worst > 1) { const w = el('span', 'tag warn', '⚡ ' + worst + ' heavy in a row'); w.dataset.tip = 'Back-to-back heavy blocks — consider putting something light between them'; lm.appendChild(w); }
-      head.appendChild(lm);
+      if (worst > 1) {
+        const lm = el('div', 'lane-meta');
+        const w = el('span', 'tag warn', '⚡ ' + worst + ' heavy in a row');
+        w.dataset.tip = 'Back-to-back heavy blocks — consider putting something light between them';
+        lm.appendChild(w);
+        head.appendChild(lm);
+      }
     }
 
     const tools = el('div', 'lane-tools');
@@ -2632,7 +2718,7 @@ function renderBoard() {
     head.appendChild(tools);
     d.appendChild(head);
 
-    d.addEventListener('contextmenu', ev => { if (ev.target.closest('.brick')) return; ev.preventDefault(); laneMenu(L, ev.clientX, ev.clientY); });
+    d.addEventListener('contextmenu', ev => { if (ev.target.closest('.block')) return; ev.preventDefault(); laneMenu(L, ev.clientX, ev.clientY); });
 
     const body = el('div', 'lane-body'); body.dataset.lane = L.id;
     body.onclick = () => { if (focusId !== L.id) { focusId = L.id; renderBoard(); renderBin(); } };
@@ -2644,7 +2730,7 @@ function renderBoard() {
     /* view-only priority ordering: the clock times stay attached to the real order */
     const view = L.byPri ? sc.slice().sort((a, b) => ((a.it.pri || 9) - (b.it.pri || 9)) || (a.s - b.s)) : sc;
     view.forEach(({ it, s, e, gap, clash, hidden }) => {
-      const nd = brickNode(L.id, it, s, e, { gap, clash, ongoing: it.ongoing });
+      const nd = blockNode(L.id, it, s, e, { gap, clash, ongoing: it.ongoing });
       if (showNow && e != null && e <= nowM && !hidden) nd.classList.add('past');
       body.appendChild(nd);
     });
@@ -2972,7 +3058,7 @@ function beep(kind) {
   } catch (e) {}
 }
 
-function brickNode(laneId, it, s, e, meta) {
+function blockNode(laneId, it, s, e, meta) {
   meta = meta || {};
   const broke = RULECHK.byItem.get(it.id);
   const mini = isMini(it);
@@ -2980,10 +3066,10 @@ function brickNode(laneId, it, s, e, meta) {
      block's own flag — that flag is today's, and today is one of many days */
   const col = viewCol(), vL = lane(laneId);
   const isDn = isDoneOn(it, col, vL), isSk = isSkippedOn(it, col, vL);
-  const n = el('div', 'brick' + (mini ? ' mini' : '') + (it.pin ? ' pinned' : '') + (isDn ? ' done' : '') + (isSk ? ' skipped' : '') + (it.hidden ? ' hid' : '') + (it.ongoing ? ' ongoing' : '') + (broke ? ' broke' : ''));
+  const n = el('div', 'block' + (mini ? ' mini' : '') + (it.pin ? ' pinned' : '') + (isDn ? ' done' : '') + (isSk ? ' skipped' : '') + (it.hidden ? ' hid' : '') + (it.ongoing ? ' ongoing' : '') + (broke ? ' broke' : ''));
   n.dataset.id = it.id; n.dataset.lane = laneId;
   n.style.setProperty('--c', it.color);
-  if (!mini) n.style.minHeight = brickMin(it.dur) + 'px';
+  if (!mini) n.style.minHeight = blockMin(it.dur) + 'px';
 
   const startTip = it.at
     ? 'Starts at <b>' + it.at + '</b> — anchored, so it holds this time and the rest flows around it.<br>Click to change or release.'
@@ -3046,6 +3132,29 @@ function brickNode(laneId, it, s, e, meta) {
   ck.oncontextmenu = ev => { ev.preventDefault(); ev.stopPropagation(); setSkippedOn(it, col, vL); };
   main.appendChild(ck);
   const txt = el('div', 'b-txt');
+
+  /* ── a block that goes somewhere ──
+     Tom, 2026-09-05: "I want the title itself to act at the link." He is
+     right. "Todoist Run Through" IS the link — a second line under it saying
+     where it goes is the same fact written twice, and on forty-one blocks
+     that is a wall.
+
+     So a block with a link has a title you click to go there, and renaming it
+     moves to the menu, which is where everything else about a block already
+     lives. A block WITHOUT a link is untouched: the title is still the thing
+     you click to rename, because that is the common case and it should not
+     get worse to serve the rare one. */
+  if (it.link) {
+    const a = el('a', 'b-name b-titlelink');
+    a.textContent = it.name;
+    a.href = it.link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.title = it.link + '  —  right-click the block to rename it';
+    a.onclick = ev => ev.stopPropagation();
+    txt.appendChild(a);
+  } else {
+
   const nm = el('div', 'b-name', esc(it.name));
   nm.contentEditable = 'true'; nm.spellcheck = false;
   nm.onblur = () => {
@@ -3066,6 +3175,7 @@ function brickNode(laneId, it, s, e, meta) {
   };
   nm.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); nm.blur(); } ev.stopPropagation(); };
   txt.appendChild(nm);
+  }
   if (it.note || it.noteOpen) {
     const no = el('div', 'b-note', linkify(it.note || ''));
     no.contentEditable = 'true'; no.spellcheck = false;
@@ -3209,6 +3319,34 @@ function blockMenu(laneId, it, x, y) {
         ];
       } },
     { sep: 1 },
+    /* ── the link, and the rename it displaces ──
+       A linked block's title opens the link, so renaming has to live here.
+       Only shown on a block that HAS one: an extra line in the menu for every
+       block, to serve the few that go somewhere, is the same clutter in a
+       different place. */
+    { label: it.link ? 'Change where it goes' : 'Make the title a link',
+      fn: () => {
+        const now = prompt(
+          'Paste an address. The title becomes a link to it.' +
+          String.fromCharCode(10) + String.fromCharCode(10) +
+          'Leave it empty to remove the link.' + String.fromCharCode(10) +
+          'https://todoist.com/app/today' + String.fromCharCode(10) +
+          'https://calendar.google.com/calendar/r/day',
+          it.link || 'https://');
+        if (now === null) return;
+        const v = now.trim();
+        if (v && !LINK_OK.test(v)) return toast('Only web addresses, starting <b>http</b> or <b>https</b>');
+        snap();
+        it.link = v || '';
+        syncKin(it, { link: it.link });
+        render();
+        toast(v ? '<b>' + esc(it.name) + '</b> opens that now' : 'link removed');
+      } },
+    ...(it.link ? [{ label: 'Rename', fn: () => {
+        const v = (prompt('Rename this block', it.name) || '').replace(/\s+/g, ' ').trim();
+        if (!v || v === it.name) return;
+        snap(); it.name = v; syncKin(it, { name: v }); ensureInBin(it); render();
+      } }] : []),
     { label: it.note ? 'Edit note' : 'Add note', fn: () => { it.noteOpen = true; it.compact = false; render(); } },
     { label: 'Pin position', check: !!it.pin, fn: () => { snap(); it.pin = !it.pin; render(); } },
     { label: 'Timeless — no clock, just a to-do', check: !!it.timeless,
@@ -3426,27 +3564,40 @@ function renderSum() {
   cards.appendChild(card(stats.length ? stats.filter(s => s.rate >= .8 && s.seen >= 3).length : 0, 'blocks you reliably do', 'Done 80%+ of the times they came up'));
   p.appendChild(cards);
 
-  /* Quiet, under the numbers rather than beside them: this is not something to
-     reach for often, and a loud button would invite it. */
+  /* ── where the record starts ──
+     A date, not a button. Tom, 2026-09-05: "I don't need a count from the
+     beginning again button, maybe we can manually set the count date." A
+     two-state toggle only ever offers today or the beginning, and neither is
+     the answer when what you want is "from the Monday I actually restarted".
+
+     Everything before this date stays logged and stays on the chart. It stops
+     being evidence, not history. */
   const fresh = el('div', 'freshrow');
-  const fb = el('button', 'btn');
-  fb.textContent = S.streakFrom ? 'Count from the beginning again' : 'Start the streak from today';
-  fb.dataset.tip = S.streakFrom
-    ? 'Go back to counting from the first day you logged'
-    : 'Draw a line under everything before today. Nothing is deleted — every tick, chart and backup stays exactly as it is';
-  fb.onclick = () => {
+  fresh.appendChild(el('span', 'freshlab', 'Counting since'));
+  const fd = document.createElement('input');
+  fd.type = 'date';
+  fd.value = S.streakFrom || '';
+  fd.max = todayKey();
+  fd.dataset.tip = 'Days before this stay logged and stay on the chart. They stop counting toward the streak, and the notes below stop being about them.';
+  fd.onchange = () => {
     const was = S.streakFrom || null;
-    S.streakFrom = was ? null : todayKey();
+    S.streakFrom = fd.value || null;
     save(); render();
     if (window.UI && UI.undo) {
-      UI.undo(was ? 'Counting from the beginning again' : 'Streak starts from today',
+      UI.undo(S.streakFrom ? 'Counting from ' + S.streakFrom : 'Counting from the first day you logged',
         () => { S.streakFrom = was; save(); render(); });
     }
   };
-  fresh.appendChild(fb);
+  fresh.appendChild(fd);
   if (S.streakFrom) {
-    fresh.appendChild(el('span', 'freshnote',
-      'Counting from ' + esc(S.streakFrom) + '. Everything before it is still logged.'));
+    const clr = el('button', 'btn sm', 'All of it');
+    clr.dataset.tip = 'Count from the first day you ever logged';
+    clr.onclick = () => {
+      const was = S.streakFrom;
+      S.streakFrom = null; save(); render();
+      if (window.UI && UI.undo) UI.undo('Counting all of it', () => { S.streakFrom = was; save(); render(); });
+    };
+    fresh.appendChild(clr);
   }
   p.appendChild(fresh);
 
@@ -3461,26 +3612,38 @@ function renderSum() {
   p.appendChild(el('h4', 'sumh', 'Last 14 days'));
   p.appendChild(spark);
 
-  /* the point of all this: name the blocks that keep not happening */
-  const chronic = stats.filter(s => s.seen >= 4 && s.rate < .5);
+  /* ── naming what keeps not happening ──
+     Only ever about days since the line, and never more than three at once.
+     Thirty-seven cards is not feedback, it is an inventory of failure, and
+     nobody acts on an inventory. Three is a thing you can do something about
+     this week. */
+  const chronic = stats.filter(s => s.seen >= 4 && s.rate < .5).slice(0, 3);
   const solid = stats.filter(s => s.seen >= 3 && s.rate >= .8);
+  const sinceLine = statsFrom() ? days.filter(k => k >= statsFrom()).length : days.length;
   p.appendChild(el('h4', 'sumh', 'What the record says'));
   const advice = el('div', 'advice');
-  if (!days.length) {
-    advice.appendChild(el('div', 'adv', 'Tick a few days off and this fills in. Two weeks is enough to see a pattern; one bad day is never a pattern.'));
+  /* A restart means there is nothing to report yet, and saying so is the
+     point. Four days is the floor for calling anything a pattern. */
+  if (statsFrom() && sinceLine < 4) {
+    advice.appendChild(el('div', 'adv',
+      'Counting from <b>' + esc(statsFrom()) + '</b>. ' +
+      (sinceLine ? sinceLine + (sinceLine === 1 ? ' day' : ' days') + ' in.' : 'Starts today.') +
+      ' <span class="dim">Nothing to say yet.</span>'));
+  } else if (!days.length) {
+    advice.appendChild(el('div', 'adv', 'Tick a few days off and this fills in. One bad day is never a pattern.'));
   } else if (!chronic.length) {
     /* competence + autonomy, not praise for its own sake: name the specific thing that worked */
     const best = solid[solid.length - 1];
     advice.appendChild(el('div', 'adv good',
-      '<b>Everything here is holding.</b> <span class="dim">' +
-      (best ? '<b>' + esc(best.n) + '</b> is running at ' + Math.round(best.rate * 100) + '%. ' : '') +
-      'Data shows this routine can be added to.</span>'));
+      '<b>Everything is holding.</b> <span class="dim">' +
+      (best ? esc(best.n) + ' at ' + Math.round(best.rate * 100) + '%. ' : '') +
+      'Room to add something.</span>'));
   } else {
+    /* One line. The long version said the right things and said them four
+       times; he has read it. */
     advice.appendChild(el('div', 'adv note',
       '<b>' + chronic.length + (chronic.length > 1 ? ' blocks are' : ' block is') + ' not sticking.</b> ' +
-      '<span class="dim">Worth saying plainly: this is information about the <i>plan</i>, not about you. A block that keeps getting skipped is usually mis-sized, ' +
-      'mis-placed, or missing a cue — and self-blame reliably makes the next attempt <i>less</i> likely, not more. Shrink it until it is almost too easy, ' +
-      'attach it to something you already do without thinking, and let the size grow back on its own.</span>'));
+      '<span class="dim">That is the plan, not you. Make it smaller, or put it after something you already do.</span>'));
   }
   chronic.forEach(s => {
     const pct = Math.round(s.rate * 100);
@@ -3589,8 +3752,8 @@ function onDragMove(ev) {
     } else {
       if (c.kind === 'lib') drag.payload = mkItem(c.src);
       else { const f = findItem(c.id); if (!f) return cancelDrag(); drag.payload = f.it; drag.from = f; f.arr.splice(f.i, 1); }
-      g = brickNode('ghost', drag.payload, 0, drag.payload.dur, {});
-      h = Math.max(brickMin(drag.payload.dur), 68);
+      g = blockNode('ghost', drag.payload, 0, drag.payload.dur, {});
+      h = Math.max(blockMin(drag.payload.dur), 68);
     }
     g.id = 'dragghost'; g.style.minHeight = h + 'px';
     document.body.appendChild(g); drag.ghost = g;
@@ -3609,7 +3772,7 @@ function onDragMove(ev) {
   if (!body) { if (drag.ph.parentNode) drag.ph.remove(); drag.target = null; return; }
   body.closest('.lane').classList.add('over');
   drag.target = body.dataset.lane;
-  const kids = [...body.children].filter(k => k.classList.contains('brick'));
+  const kids = [...body.children].filter(k => k.classList.contains('block'));
   let idx = kids.length;
   for (let i = 0; i < kids.length; i++) {
     const r = kids[i].getBoundingClientRect();
@@ -3663,7 +3826,7 @@ function startResize(ev, it, node) {
     const h = Math.max(30, h0 + (e.clientY - y0));
     const raw = (h - 22) / SCALE;
     const d = raw < 15 ? Math.max(1, Math.round(raw)) : Math.round(raw / 5) * 5;
-    if (d !== last) { last = d; node.style.minHeight = brickMin(d) + 'px'; const b = node.querySelector('.b-dur b'); if (b) b.textContent = dur2s(d); }
+    if (d !== last) { last = d; node.style.minHeight = blockMin(d) + 'px'; const b = node.querySelector('.b-dur b'); if (b) b.textContent = dur2s(d); }
   };
   const up = () => {
     window.removeEventListener('pointermove', mv);
@@ -3978,7 +4141,16 @@ function openRules() {
 function selfTest() {
   const backup = JSON.stringify(S);
   const R = [];
-  const ok = (name, fn) => { try { const r = fn(); R.push([r === true, name, r === true ? '' : String(r)]); } catch (e) { R.push([false, name, e.message]); } };
+  /* Three results, not two. A check that needs a laid-out window cannot answer
+     anything in a pane with no height, and reporting that as FAIL is how a list
+     of checks stops being read. Return 'skip: <reason>' and it says so. */
+  const ok = (name, fn) => {
+    try {
+      const r = fn();
+      if (typeof r === 'string' && r.slice(0, 5) === 'skip:') { R.push(['skip', name, r.slice(5).trim()]); return; }
+      R.push([r === true, name, r === true ? '' : String(r)]);
+    } catch (e) { R.push([false, name, e.message]); }
+  };
   const pd = (n, x, y) => n.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0, pointerId: 1 }));
   const pm = (x, y) => window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
   const pu = (x, y) => window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
@@ -3992,7 +4164,7 @@ function selfTest() {
      BEHAVIOUR did. A test that pins the contents of an editable list is testing
      the wrong thing. */
   const nthChip = i => [...document.querySelectorAll('.chip')][i];
-  const bricks = () => [...document.querySelectorAll('.brick')];
+  const blocks = () => [...document.querySelectorAll('.block')];
   const tap = n => { const r = n.getBoundingClientRect(); pd(n, r.x + 25, r.y + 4); pu(r.x + 25, r.y + 4); };
 
   try {
@@ -4024,18 +4196,18 @@ function selfTest() {
       return items(L2).length === 1 || 'landed ' + items(L2).length;
     });
     ok('block: drag between routines', () => {
-      const b = bricks()[0], r = b.getBoundingClientRect(), t = document.querySelectorAll('.lane')[1].getBoundingClientRect();
+      const b = blocks()[0], r = b.getBoundingClientRect(), t = document.querySelectorAll('.lane')[1].getBoundingClientRect();
       pd(b, r.x + 40, r.y + 2); pm(r.x + 50, r.y + 30); pm(t.x + t.width / 2, t.y + 2); pu(t.x + t.width / 2, t.y + 2);
       return items(L2).length === 2 || 'landed ' + items(L2).length;
     });
     ok('block: start-time popover anchors it', () => {
-      bricks()[0].querySelector('.b-time,.b-mtime').click();
+      blocks()[0].querySelector('.b-time,.b-mtime').click();
       const p = document.querySelector('.pop'); if (!p) return 'no popover';
       p.querySelector('input').value = '07:30'; p.querySelector('.btn.acc').click();
-      return !!findItem(bricks()[0].dataset.id) && S.lanes.flatMap(l => items(l.id)).some(i => i.at === '07:30') || 'not anchored';
+      return !!findItem(blocks()[0].dataset.id) && S.lanes.flatMap(l => items(l.id)).some(i => i.at === '07:30') || 'not anchored';
     });
     ok('block: end-time popover sets the duration', () => {
-      const b = bricks().find(x => x.querySelector('.b-end')); if (!b) return 'no full card';
+      const b = blocks().find(x => x.querySelector('.b-end')); if (!b) return 'no full card';
       const it = findItem(b.dataset.id).it, before = it.dur;
       const st = schedule(findItem(b.dataset.id).laneId).find(r => r.it.id === it.id);
       b.querySelector('.b-end').click();
@@ -4044,7 +4216,7 @@ function selfTest() {
       return it.dur === 45 || 'dur ' + it.dur + ' (was ' + before + ')';
     });
     ok('block: duration popover accepts 1 minute', () => {
-      const b = bricks().find(x => x.querySelector('.b-dur b'));
+      const b = blocks().find(x => x.querySelector('.b-dur b'));
       const it = findItem(b.dataset.id).it;
       b.querySelector('.b-dur b').click();
       const p = document.querySelector('.pop'); p.querySelector('input').value = '1'; p.querySelector('.btn.acc').click();
@@ -4058,9 +4230,9 @@ function selfTest() {
       const r = n.classList.contains('mini'); it.compact = null; render();
       return r || 'did not compact';
     });
-    ok('right-click: block menu opens', () => { rc(bricks()[0]); const m = document.querySelector('.ctxmenu'); const n = m && m.querySelectorAll('.mi').length; closeMenu(); return n > 8 || 'items ' + n; });
+    ok('right-click: block menu opens', () => { rc(blocks()[0]); const m = document.querySelector('.ctxmenu'); const n = m && m.querySelectorAll('.mi').length; closeMenu(); return n > 8 || 'items ' + n; });
     ok('right-click: submenu survives crossing sibling rows', () => {
-      rc(bricks()[0]);
+      rc(blocks()[0]);
       const m = document.querySelector('.ctxmenu');
       const days = [...m.querySelectorAll('.mi')].find(x => x.textContent.startsWith('Days'));
       enter(days);
@@ -4071,8 +4243,8 @@ function selfTest() {
       return alive || 'submenu vanished on the way over';
     });
     ok('right-click: submenu action applies', () => {
-      const it = findItem(bricks()[0].dataset.id).it;
-      rc(bricks()[0]);
+      const it = findItem(blocks()[0].dataset.id).it;
+      rc(blocks()[0]);
       const m = document.querySelector('.ctxmenu');
       enter([...m.querySelectorAll('.mi')].find(x => x.textContent.startsWith('Days')));
       const row = [...document.querySelector('.ctxmenu.sub').querySelectorAll('.mi')].find(x => /every day/i.test(x.textContent));
@@ -4086,7 +4258,7 @@ function selfTest() {
       const vid = routineForToday(), td = todaysBlocks(vid);
       if (!td.length) return 'nothing scheduled today';
       td.forEach(b => b.done = true); render();
-      const allOn = document.querySelectorAll('.b-check.on').length === document.querySelectorAll('.brick').length;
+      const allOn = document.querySelectorAll('.b-check.on').length === document.querySelectorAll('.block').length;
       clearDone(vid); render();
       return allOn || 'checkboxes did not all show';
     });
@@ -4094,7 +4266,7 @@ function selfTest() {
       const nm = S.lanes.flatMap(l => items(l.id))[0].name;
       S.rules = [{ id: 'test', kind: 'notafter', a: nm, time: '00:01', on: true }];
       render();
-      const found = RULECHK.count > 0 && document.querySelectorAll('.brick.broke').length > 0;
+      const found = RULECHK.count > 0 && document.querySelectorAll('.block.broke').length > 0;
       S.rules = []; render();
       return found || 'not flagged';
     });
@@ -4107,6 +4279,29 @@ function selfTest() {
       addItem(L, { name: 'zz', dur: 5, color: '#fff', energy: 1 });
       undo();
       return items(L).length === before || 'expected ' + before + ' got ' + items(L).length;
+    });
+    /* ── one level under "Check Ins also ticks Bed" ──
+       The symptom was two named blocks moving together. The mechanism is that
+       a block's tick identity could stop matching its name, and then any two
+       blocks could collide, in any combination, with no clue on screen. So the
+       check is on the mechanism: a rename must move the identity with it. */
+    ok('a renamed block takes its tick identity with it', () => {
+      const it = addItem(L, { name: 'New block', dur: 5, color: '#fff', energy: 1 });
+      const before = actIdOf(it);
+      it.name = 'Check Ins & Online Coaching';
+      const after = actIdOf(it);
+      removeItem(L, it.id);
+      if (before !== 'new-block') return 'placeholder id was ' + before;
+      return after === 'check-ins-online-coaching' || 'stayed ' + after;
+    });
+    ok('no two differently-named blocks share one tick identity', () => {
+      const seen = {}, bad = [];
+      S.variants.forEach(v => S.lanes.forEach(l => (v.items[l.id] || []).forEach(it => {
+        const id = actIdOf(it);
+        if (seen[id] && seen[id] !== it.name) bad.push(seen[id] + ' + ' + it.name + ' = ' + id);
+        seen[id] = it.name;
+      })));
+      return !bad.length || bad.join(', ');
     });
     ok('week view renders 7 days', () => { S.view = 'week'; render(); const n = document.querySelectorAll('.day').length; S.view = 'day'; render(); return n === 7 || 'got ' + n; });
     ok('week view: a checkbox ticks the block', () => {
@@ -4189,11 +4384,11 @@ function selfTest() {
     });
     ok('multi-select: ctrl-click selects, bulk menu opens', () => {
       SEL.clear();
-      const bs = [...document.querySelectorAll('.brick')].slice(0, 2);
+      const bs = [...document.querySelectorAll('.block')].slice(0, 2);
       if (bs.length < 2) return 'need 2 blocks';
       bs.forEach(b => { const r = b.getBoundingClientRect(); b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: r.x + 60, clientY: r.y + 2, button: 0, ctrlKey: true, pointerId: 1 })); });
       const n = SEL.size;
-      const first = document.querySelector('.brick.sel');
+      const first = document.querySelector('.block.sel');
       if (first) rc(first);
       const bulk = document.querySelector('.ctxmenu') && /selected/.test(document.querySelector('.ctxmenu').textContent);
       closeMenu(); SEL.clear(); render();
@@ -4253,18 +4448,32 @@ function selfTest() {
       const b = buildPrint(true, true), without = !/private note/.test(b.innerHTML);
       return (withNote && without) || 'full ' + withNote + ', client ' + without;
     });
+    /* ── this check spent weeks red without a bug behind it ──
+       An earlier check seeds thirty days of history into S.log to exercise
+       streaks, ticking one block every fifth day. reset() clears the boxes but
+       never touched the log, so this check ticked today, counted every column
+       showing a tick, and found the seeded one sitting in the past. The app
+       was right: a backfilled tick BELONGS on its own date. The check was
+       asking its question in a room it had not tidied.
+
+       Permanent red is worse than no check, because it teaches you to skim the
+       list, and this one sat next to real failures. It now owns the log for
+       the length of the question and puts it back afterwards. */
     ok('week ticks belong to a date, not to the block', () => {
       reset();
+      const heldLog = S.log; S.log = {};
+      const restore = () => { S.log = heldLog; };
       S.week = S.week.map(() => S.current); S.view = 'week'; render();
       const cols = [...document.querySelectorAll('.day')];
       const todayCol = cols.find(c => c.classList.contains('today'));
-      if (!todayCol) { S.view = 'day'; render(); return 'no today column'; }
+      if (!todayCol) { restore(); S.view = 'day'; render(); return 'no today column'; }
       const ck = todayCol.querySelector('.day-ck');
-      if (!ck) { S.view = 'day'; render(); return 'no checkbox'; }
+      if (!ck) { restore(); S.view = 'day'; render(); return 'no checkbox'; }
       ck.click();
       const per = [...document.querySelectorAll('.day')].map(c => c.querySelectorAll('.day-ck.on').length);
       const onlyToday = per.filter(n => n > 0).length === 1;
       S.lanes.forEach(l => items(l.id).forEach(i => i.done = false));
+      restore();
       S.view = 'day'; render();
       return onlyToday || 'ticks showed in ' + per.filter(n => n > 0).length + ' columns';
     });
@@ -4344,6 +4553,12 @@ function selfTest() {
       S.proportional = true; render(); runLayout();
       const body = document.querySelector('[data-lane="' + L + '"] .lane-body') || document.querySelector('.lane-body');
       const a = body.querySelector('[data-id="' + arr[0].id + '"]'), b = body.querySelector('[data-id="' + arr[1].id + '"]');
+      /* "and still fits" is a question about a real window. In a hidden preview
+         pane innerHeight is 0 and every block measures 0, while .lane-body
+         still reports 74 because it carries a min-height — which is why
+         checking the lane alone was not enough to notice. This check spent
+         weeks red for that reason and no other. */
+      if (!innerHeight || !body.clientHeight) { S.proportional = false; render(); return 'skip: needs a window with height'; }
       const ok2 = a && b && a.offsetHeight > b.offsetHeight * 2 && body.scrollHeight <= body.clientHeight + 3;
       S.proportional = false; render();
       return ok2 || 'heights ' + (a && a.offsetHeight) + '/' + (b && b.offsetHeight) + ' body ' + body.clientHeight;
@@ -4383,11 +4598,12 @@ function selfTest() {
     S = JSON.parse(backup); render();
   }
 
-  const fails = R.filter(r => !r[0]).length;
+  const fails = R.filter(r => r[0] === false).length;
+  const skips = R.filter(r => r[0] === 'skip').length;
   openModal(
-    '<div class="modal-head"><h3>SELF-TEST — ' + (R.length - fails) + '/' + R.length + ' passed</h3><button class="btn sm" id="mX" aria-label="Close" data-icon="close"></button></div>' +
+    '<div class="modal-head"><h3>SELF-TEST — ' + (R.length - fails - skips) + '/' + (R.length - skips) + ' passed' + (skips ? ', ' + skips + ' skipped' : '') + '</h3><button class="btn sm" id="mX" aria-label="Close" data-icon="close"></button></div>' +
     '<div class="modal-body"><div class="hint">Every check drives the real mouse/keyboard events, not the functions behind them. Your own data was restored afterwards.</div>' +
-    R.map(([p, n, why]) => '<div class="rule' + (p ? '' : ' broke') + '"><span class="st' + (p ? '' : ' bad') + '">' + (p ? 'PASS' : 'FAIL') + '</span>' +
+    R.map(([p, n, why]) => '<div class="rule' + (p === false ? ' broke' : '') + '"><span class="st' + (p === false ? ' bad' : '') + '">' + (p === true ? 'PASS' : p === 'skip' ? 'SKIP' : 'FAIL') + '</span>' +
       '<div class="txt">' + esc(n) + (why ? ' <span style="color:var(--bad)">— ' + esc(why) + '</span>' : '') + '</div></div>').join('') +
     '</div>'
   );
@@ -4738,7 +4954,76 @@ Rec.on(adoptRows);
      plan     →  today's blocks, published for the home screen to show and tick
    Blocks are matched across apps by slugged NAME: two blocks called the same
    thing are the same thing, which is exactly what makes the ticks agree.  */
-const actIdOf = it => it.actId || (it.actId = LifeOS.slug(it.name));
+/* ── a block's tick identity is its NAME, worked out fresh every time ──
+   This used to be cached: the first time a block was asked for its identity it
+   was stamped with the slug of whatever it was called AT THAT MOMENT, and the
+   stamp was never revisited. Every block starts life called "New block", so a
+   board built the ordinary way — click "+ New block", type the real name over
+   it — left every one of them stamped `new-block`, and the shared log then
+   believed eight different things were one thing. Ticking Check Ins also
+   ticked Bed, Daily Pic and both Meds.
+
+   The guard against exactly that (pullDone's `seen[it.name] > 1`) asks whether
+   two blocks share a NAME. It waved these through, because they don't. The
+   stamp and the guard were using two different ideas of what makes two blocks
+   the same block. Deriving it from the current name every time leaves one
+   idea, which is the one the rest of this file already uses: twins are found
+   by name, the day log is keyed by name, the vocabulary is slugged by name.
+
+   The cost of not caching is that renaming a block moves its shared streak to
+   a new name. That is the right answer anyway — BLOCK's own day log is keyed
+   by name and lane, so a rename already starts a fresh page there. */
+const actIdOf = it => LifeOS.slug(it.name);
+
+/* ── one-off: unstick the blocks that were stamped with a placeholder name ──
+   A board built before the fix above carries a frozen `actId` on every block.
+   Where that stamp disagrees with the block's name, its ticks were filed under
+   something else — usually `new-block`, shared with every other block made by
+   clicking "+ New block" and typing over it. This puts each one's history back
+   under its own name, reading it out of BLOCK's own day log, which was never
+   confused because it is keyed by name and routine rather than by the stamp.
+   Runs once per board. */
+function repairActIds() {
+  if (S.actIdFixed) return 0;
+  S.actIdFixed = 1;
+  const filed = {};                        /* stored id → the names filed under it */
+  const stale = [];                        /* blocks whose stamp outlived their name */
+  const eachBlock = fn => S.variants.forEach(v => S.lanes.forEach(l => (v.items[l.id] || []).forEach(fn)));
+  eachBlock(it => {
+    if (!it.actId) return;
+    const f = filed[it.actId] || (filed[it.actId] = []);
+    if (f.indexOf(it.name) < 0) f.push(it.name);
+    if (it.actId !== LifeOS.slug(it.name)) stale.push(it);
+    delete it.actId;                       /* identity comes from the name now */
+  });
+  if (!stale.length) { saveQuiet(); return 0; }
+
+  const want = {};
+  stale.forEach(it => want[it.name] = 1);
+  let moved = 0;
+  Object.keys(S.log || {}).forEach(date => ((S.log[date] || {}).d || []).forEach(k => {
+    const nm = keyName(k);
+    if (!want[nm]) return;
+    LifeOS.done(LifeOS.slug(nm), date, true, { src: 'block' });
+    moved++;
+  }));
+  /* today has not been closed into the log yet, so it is still in the boxes */
+  stale.forEach(it => { if (it.done) { LifeOS.done(actIdOf(it), todayKey(), true, { src: 'block' }); moved++; } });
+
+  /* then drop the rows that claimed all of them at once. Only where no block
+     answers to that id any more, so one genuinely called "New block" keeps its
+     ticks. */
+  const live = {};
+  eachBlock(it => live[LifeOS.slug(it.name)] = 1);
+  Object.keys(filed).forEach(id => {
+    if (filed[id].length < 2 || live[id]) return;
+    Object.keys(S.log || {}).forEach(date => LifeOS.done(id, date, false, { src: 'block' }));
+    LifeOS.done(id, todayKey(), false, { src: 'block' });
+  });
+  saveQuiet();
+  console.info('[block] ' + stale.length + ' blocks were filed under a name they no longer have; moved ' + moved + ' ticks');
+  return moved;
+}
 
 function pushLib() {
   const seen = {}, out = [];
@@ -4776,6 +5061,12 @@ function publishFor(key, quiet) {
     schedule(l.id).filter(r => effDays(lane(l.id), r.it)[d]).map(r => ({
       id: r.it.id, actId: actIdOf(r.it), name: r.it.name, s: r.s, dur: r.it.dur,
       color: r.it.color, lane: lane(l.id).name,
+      /* Where it goes, if it goes anywhere. "Todoist Run Through" is only
+         useful as a link on the screen he is actually following, which is the
+         phone. The note comes too, because a link written in a note before
+         there was a link field should not stop working. */
+      link: r.it.link || '',
+      note: r.it.note || '',
     })))).sort((a, b) => a.s - b.s);
   const plan = { date: key, vid: vid, name: (variant(vid) || {}).name || 'routine', blocks: blocks };
   if (quiet) Rec.set('plan', key, 'routine', plan);
@@ -4823,7 +5114,7 @@ LifeOS.on(() => {
      laptop used to overwrite the phone. */
   if (pullDone()) { saveQuiet(); render(); }
 });
-LifeOS.ready(() => { pullDone(); render(); });
+LifeOS.ready(() => { repairActIds(); pullDone(); render(); });
 
 render();
 /* keep the now line honest without redrawing the world */

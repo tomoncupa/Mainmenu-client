@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-built="90a8fdfb">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -15,14 +15,15 @@
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=4af52223"></script>
-<script src="shared/day.js?v=4af52223"></script>
-<script src="shared/records.js?v=4af52223"></script>
-<script src="shared/mobile.js?v=4af52223"></script>
-<script src="shared/sound.js?v=4af52223"></script>
-<script src="shared/ui.js?v=4af52223"></script>
-<script src="shared/io.js?v=4af52223"></script>
-<script src="shared/icons.js?v=4af52223"></script>
+<script src="shared/skins.js?v=90a8fdfb"></script>
+<script src="shared/day.js?v=90a8fdfb"></script>
+<script src="shared/records.js?v=90a8fdfb"></script>
+<script src="shared/chart.js?v=90a8fdfb"></script>
+<script src="shared/mobile.js?v=90a8fdfb"></script>
+<script src="shared/sound.js?v=90a8fdfb"></script>
+<script src="shared/ui.js?v=90a8fdfb"></script>
+<script src="shared/io.js?v=90a8fdfb"></script>
+<script src="shared/icons.js?v=90a8fdfb"></script>
 <style>
 :root{
   /* ── the bridge ──
@@ -185,7 +186,19 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
    finger, and the inner one always wins by accident. On a phone the card is
    as tall as its contents instead, so there is only ever one thing to scroll.
    With a mouse and a fixed-height card the inner scroll is fine. */
-.w-body{flex:1;padding:0 13px 13px;min-height:0;overflow:visible}
+/* ── why a widget was scrolling ──
+   Tom, 2026-09-06: "why does it have scrolling?" and "why is the 199.9 almost
+   out of border?" One cause. A chart keeps its shape, so its height follows
+   its WIDTH - and a widget's height does not. Wide enough, and the chart grew
+   until it pushed the numbers under it out of the box, which is what he saw:
+   a scrollbar and a figure half off the bottom edge.
+
+   A column that shares its height out. Anything that must be a fixed size says
+   so, and the chart takes what is left rather than taking what it likes. */
+.w-body{flex:1;padding:0 13px 13px;min-height:0;overflow:visible;
+  display:flex;flex-direction:column;gap:8px}
+.w-body > .fits{flex:1 1 auto;min-height:0}
+.w-body > .fits > svg{width:100%;height:100%;display:block}
 @media (hover:hover) and (pointer:fine){ .w-body{overflow:auto} }
 /* Resize is a mouse affordance and nothing else — a phone card is as wide as
    the screen and as tall as its contents, so there is nothing to resize. */
@@ -236,6 +249,10 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
 /* Where you are in the list, and what you have slipped past. `late` is a mark,
    not a colour change - being behind should be visible, not loud. */
 .row.here{border-color:var(--acc)}
+/* A link on a row is underlined rather than coloured: colour on these rows
+   already means which lane a block belongs to. */
+.rlink{color:inherit;text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:var(--acc)}
 .tidy{display:block;width:100%;margin-top:8px;padding:8px;background:transparent;
   border:0;border-top:1px solid var(--line);color:var(--dim);font:inherit;
   font-size:12px;letter-spacing:.06em;text-align:center;cursor:pointer;
@@ -891,7 +908,7 @@ function todayItems() {
     (plan.blocks || []).forEach(b => {
       const on = LifeOS.isDone(b.actId, today);
       out.push({
-        kind: 'block', name: b.name, at: b.s == null ? null : b.s,
+        kind: 'block', name: b.name, link: b.link || '', note: b.note || '', at: b.s == null ? null : b.s,
         dur: b.dur || 0, tag: b.lane || '', colour: b.color || '', done: on,
         tick: () => LifeOS.done(b.actId, today, !on, { src: 'home' }),
       });
@@ -928,7 +945,10 @@ function todayItems() {
         const stamp = String(now.getHours()).padStart(2, '0') + ':' +
                       String(now.getMinutes()).padStart(2, '0');
         Rec.set('note', r.date, r.key, Object.assign({}, n, {
+          /* `by` is STATUS's Done field and the tick fills it, so the home
+             screen has to write the same thing or the two disagree. */
           done: n.done ? 0 : 1, doneAt: n.done ? null : stamp,
+          by: n.done ? null : stamp,
           /* the day you ticked it, so STATUS can show it on that day */
           doneOn: n.done ? null : today,
         }));
@@ -979,6 +999,20 @@ const ageNow = born => {
    Each widget is a pure function of the shared doc: given a body element, fill
    it. The grid owns size and position; the widget owns nothing but its content,
    which is what lets you drag and resize them without touching this table. */
+/* A block's note is where a link lives, written in BLOCK either as a plain
+   address or as [label](address). Only http and https: a note is text a person
+   typed, and text a person typed is not a reason to follow any scheme a
+   browser happens to understand. */
+const LINK_OK = /^https?:\/\//i;
+const LINK_RE = /\[[^\]]{1,120}\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)/i;
+function linkIn(x) {
+  /* The block's own link first. Falling back to one written into a note keeps
+     anything set up before the link field existed working. */
+  if (x && x.link && LINK_OK.test(x.link)) return x.link;
+  const m = LINK_RE.exec(String((x && x.note) || ''));
+  return m ? (m[1] || m[2]) : null;
+}
+
 /* ── what you are meant to be doing, right now ──
    Tom, 2026-09-05: "make the Today widget good enough to follow without
    thinking. If BLOCK and STATUS are properly set up then it should be able to
@@ -989,11 +1023,23 @@ const ageNow = born => {
    the question before the list does: what is running, or what is next, and how
    long you have.
 
-   Three states, in the order they are checked:
+   Four states, in the order they are checked:
      RUNNING   something started, has not finished, and is not ticked
-     NEXT      nothing running, so the soonest thing still ahead
+     BEHIND    its slot has been and gone and it is still not ticked
+     NEXT      nothing running or owed, so the soonest thing still ahead
      LOOSE     nothing timed left, so the first thing still undone
-   and when there is nothing in any of them, the day is done and it says so. */
+   and when there is nothing in any of them, the day is done and it says so.
+
+   BEHIND used to sit at the bottom as a fallback, reached only once there was
+   nothing ahead at all. So with four morning blocks unticked at 2pm it stepped
+   over all four and announced Dishes, three hours away. One future block was
+   enough to hide everything owed. The widget is meant to be followable without
+   thinking, and a widget that skips your unfinished work is worse than a list,
+   because a list at least shows you the gap.
+
+   It is checked second now, under RUNNING, so something actually happening
+   still wins. That also bounds how long it can nag: the moment the next block's
+   slot opens, RUNNING takes the band back. */
 function nowNext(items) {
   const d = new Date(), now = d.getHours() * 60 + d.getMinutes();
   const open = items.filter(x => !x.done);
@@ -1003,14 +1049,17 @@ function nowNext(items) {
   const running = timed.filter(x => x.at <= now && now < x.at + (x.dur || 0))[0];
   if (running) return { state: 'running', it: running, mins: running.at + running.dur - now };
 
+  /* Its whole slot has passed and it is still open. Earliest first: the one
+     you dropped soonest is the one to pick back up. */
+  const behind = timed.filter(x => x.at + (x.dur || 0) <= now).sort((a, b) => a.at - b.at);
+  if (behind.length) return { state: 'loose', it: behind[0], missed: behind.length };
+
   const next = timed.filter(x => x.at > now)[0];
   if (next) return { state: 'next', it: next, mins: next.at - now };
 
-  /* Past everything with a time on it. Anything still open and timed is
-     behind you; say so, because "you are behind" is the useful fact. */
-  const missed = timed.length;
-  const loose = open.filter(x => x.at == null)[0] || timed[0];
-  return { state: 'loose', it: loose, missed: missed };
+  /* Nothing timed is running, owed or ahead, so what is left has no clock. */
+  const loose = open.filter(x => x.at == null)[0] || open[0];
+  return { state: 'loose', it: loose, missed: 0 };
 }
 
 /* "in 25m", "in 1h 10m", "for 40m" — short enough to read at a glance. */
@@ -1069,10 +1118,12 @@ const WIDGETS = {
           const when = nn.state === 'running' ? inWords(nn.mins) + ' left'
             : nn.state === 'next' ? 'in ' + inWords(nn.mins)
             : (nn.missed ? nn.missed + ' behind' : '');
+          const bhref = linkIn(nn.it);
           band.innerHTML =
             '<div class="nlab">' + lab + (when ? '<i>' + esc(when) + '</i>' : '') + '</div>' +
             '<div class="nname">' + (nn.it.at != null ? '<b>' + MIN2(nn.it.at) + '</b> ' : '') +
-            esc(nn.it.name) + '</div>';
+            (bhref ? '<a class="rlink" href="' + esc(bhref) + '" target="_blank" rel="noopener noreferrer">' +
+              esc(nn.it.name) + '</a>' : esc(nn.it.name)) + '</div>';
           /* The band is the tick target too, so following the day never means
              hunting for the right row in the list under it. */
           if (nn.it.tick) {
@@ -1137,7 +1188,13 @@ const WIDGETS = {
         if (x === mark) here = r;
         if (x.colour) { const bar = el('div', 'bar'); bar.style.background = x.colour; r.appendChild(bar); }
         r.appendChild(el('div', 't', x.at == null ? '' : MIN2(x.at)));
-        r.appendChild(el('div', 'n', esc(x.name)));
+        /* Two targets, two meanings, the same split as everywhere else: the
+           box ticks it, the words take you to the thing. */
+        const href = linkIn(x);
+        r.appendChild(href
+          ? el('div', 'n', '<a class="rlink" href="' + esc(href) +
+              '" target="_blank" rel="noopener noreferrer">' + esc(x.name) + '</a>')
+          : el('div', 'n', esc(x.name)));
         if (x.tag) r.appendChild(el('div', 'tag', esc(x.tag)));
         if (x.dur) r.appendChild(el('div', 'd', DUR(x.dur)));
         if (x.tick) {
@@ -1320,14 +1377,25 @@ const WIDGETS = {
 
   weight: {
     nm: 'WEIGHT', w: 5, h: 3,
-    sub: () => {
-      const r = weightSeries(90);
+    /* ── the range is a property of THIS widget ──
+       Tom, 2026-09-05: "I'd rather have different charts if we're in Main
+       Menu and different tabs if we're in STATUS." Right, and it follows from
+       what each screen is. The main menu is a board you arrange, so the
+       choice is which chart you put on it - two weight widgets at 30 and 365
+       days is a comparison you can see at once. STATUS is one screen you
+       scroll, so the choice has to be tabs.
+       Set it from the widget's own menu: right-click, or hold on a phone. */
+    days: [[30, '30 days'], [90, '90 days'], [365, 'a year'], [3650, 'all of it']],
+    nmFor: cfg => 'WEIGHT · ' + (WIDGETS.weight.days.filter(d => d[0] === (cfg.days || 90))[0] || [0, ''])[1],
+    sub: cfg => {
+      const r = weightSeries((cfg && cfg.days) || 90);
       if (!r.length) return 'nothing logged yet';
       const last = r[r.length - 1];
       return last.v.toFixed(1) + ' on ' + (last.d === LifeOS.day() ? 'today' : esc(last.d));
     },
-    draw(body) {
-      const pts = weightSeries(90);
+    draw(body, cfg) {
+      cfg = cfg || {};
+      const pts = weightSeries(cfg.days || 90);
       if (pts.length < 2) {
         body.appendChild(el('div', 'empty',
           'Log a weight in <span class="link" onclick="go(\'status\')">STATUS</span> twice and the line starts.'));
@@ -1337,35 +1405,53 @@ const WIDGETS = {
          is a seven day average. The dots are the point: a daily weight jumps
          around for reasons that have nothing to do with fat, and hiding that
          behind a smooth line is its own kind of lie. */
-      const W = 320, H = 96, PAD = 6;
-      const vals = pts.map(p => p.v);
-      const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-      const span = (hi - lo) || 1;
-      const X = i => PAD + (i / (pts.length - 1)) * (W - PAD * 2);
-      const Y = v => PAD + (1 - (v - lo) / span) * (H - PAD * 2);
+      /* ── on shared/chart.js ──
+         This used to work out its own scale, draw its own gridlines, and put
+         the first and last date at the two ends and call that an x-axis. Tom,
+         2026-09-06: "It doesnt even have a proper X axis, don't just fix this
+         widget, review the foundation."
 
+         The foundation is chart.js now, and this is what a chart in this suite
+         should look like: say what the axes are, hand over the points, and
+         stop. The dots are every time you stood on the scale and the line
+         through them is the seven-day average - the dots are kept because a
+         daily weight jumps around for reasons that are not fat, and hiding
+         that behind a smooth line is its own kind of lie. */
       const avg = pts.map((p, i) => {
-        let s = 0, n = 0;
-        for (let j = Math.max(0, i - 6); j <= i; j++) { s += pts[j].v; n++; }
-        return s / n;
+        let a = 0, n = 0;
+        for (let j = Math.max(0, i - 6); j <= i; j++) { a += pts[j].v; n++; }
+        return a / n;
       });
-      const line = avg.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
-      const dots = pts.map((p, i) =>
-        '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) +
-        '" r="2" fill="var(--dim2)"><title>' + esc(p.d) + ' · ' + p.v.toFixed(1) + '</title></circle>').join('');
 
-      const svg = el('div');
-      svg.innerHTML =
-        '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" preserveAspectRatio="none">' +
-        dots + '<path d="' + line + '" fill="none" stroke="var(--acc)" stroke-width="2" ' +
-        'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
+      const c = Chart.make({ w: 320, h: 132 });
+      c.xTime(pts[0].d, pts[pts.length - 1].d);
+      c.yFit(pts.map(p => p.v));
+      c.grid();
+      c.timeAxis();
+      c.dots(pts.map(p => [p.d, p.v, p.d + ' \u00b7 ' + p.v.toFixed(1)]), 'mb-dot', 1.8);
+      c.line(avg.map((v, i) => [pts[i].d, v]));
+
+      const svg = el('div', 'fits');
+      svg.appendChild(c.el);
       body.appendChild(svg);
 
+      /* ── what the two numbers are for ──
+         The dots are every time you stood on the scale and they jump around
+         for reasons that are not fat. The LINE is the seven-day average, which
+         is the only one of the two you can act on, so the big number is that
+         and not today's reading.
+
+         Beside it, how far the average has actually moved. It used to say
+         "over 91 readings", which is not a length of time anybody thinks in -
+         it is the count of times he weighed himself. Days, and the days are
+         the ones on the chart. */
       const st = el('div', 'stats');
       const first = avg[0], last = avg[avg.length - 1], move = last - first;
+      /* `span` is taken in this scope by the chart's y-range. */
+      const overDays = Day.diff(pts[pts.length - 1].d, pts[0].d) + 1;
       st.appendChild(el('div', 'stat acc', '<b>' + last.toFixed(1) + '</b><span>7 DAY AVG</span>'));
       st.appendChild(el('div', 'stat', '<b>' + (move >= 0 ? '+' : '') + move.toFixed(1) +
-        '</b><span>OVER ' + pts.length + ' READINGS</span>'));
+        '</b><span>IN ' + overDays + ' DAYS</span>'));
       body.appendChild(st);
     },
   },
@@ -1793,6 +1879,12 @@ function widgetMenu(i, x, y) {
     cfg.w > 2 ? { label: 'Narrower', icon: '\u2190', fn: () => set('w', -1) } : null,
     cfg.h < 8 ? { label: 'Taller', fn: () => set('h', 1) } : null,
     cfg.h > 2 ? { label: 'Shorter', fn: () => set('h', -1) } : null,
+    /* A widget that says what ranges it understands gets them offered here,
+       so a second copy of it can show a different stretch of time. */
+    W.days ? '-' : null,
+    W.days ? { label: 'Show', sub: W.days.map(d => ({
+        label: d[1], check: (cfg.days || 90) === d[0],
+        fn: () => { cfg.days = d[0]; saveLayout(); drawHome(); } })) } : null,
     '-',
     { label: 'Add another widget', icon: '+', fn: widgetPicker },
     { label: 'Remove', icon: '\u2715', kind: 'bad', fn: () => {
@@ -1815,8 +1907,11 @@ function drawHome() {
 
     const head = el('div', 'w-head');
     const title = W.title ? W.title() : '';
-    head.innerHTML = W.nm + (title ? ' <span class="c">' + esc(title) + '</span>' : '') +
-      '<span class="sub">' + esc(W.sub ? W.sub() : '') + '</span>';
+    /* Two copies of the same widget showing different things have to be
+       tellable apart, so a widget that varies by config names itself. */
+    const name = W.nmFor ? W.nmFor(cfg) : W.nm;
+    head.innerHTML = esc(name) + (title ? ' <span class="c">' + esc(title) + '</span>' : '') +
+      '<span class="sub">' + esc(W.sub ? W.sub(cfg) : '') + '</span>';
     /* In REARRANGE mode every card carries its own up, down and remove. That
        is three unmistakable targets instead of one long-press gesture that
        competes with the page scroll for the same finger. */

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-built="90a8fdfb">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
@@ -14,15 +14,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=4af52223"></script>
-<script src="../shared/day.js?v=4af52223"></script>
-<script src="../shared/records.js?v=4af52223"></script>
-<script src="../shared/mobile.js?v=4af52223"></script>
-<script src="../shared/sound.js?v=4af52223"></script>
-<script src="../shared/ui.js?v=4af52223"></script>
-<script src="../shared/io.js?v=4af52223"></script>
-<script src="../shared/icons.js?v=4af52223"></script>
-<script src="../shared/health.js?v=4af52223"></script>
+<script src="../shared/skins.js?v=90a8fdfb"></script>
+<script src="../shared/day.js?v=90a8fdfb"></script>
+<script src="../shared/records.js?v=90a8fdfb"></script>
+<script src="../shared/mobile.js?v=90a8fdfb"></script>
+<script src="../shared/sound.js?v=90a8fdfb"></script>
+<script src="../shared/ui.js?v=90a8fdfb"></script>
+<script src="../shared/io.js?v=90a8fdfb"></script>
+<script src="../shared/icons.js?v=90a8fdfb"></script>
+<script src="../shared/health.js?v=90a8fdfb"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -125,6 +125,12 @@ h2 .sub{margin-left:auto;letter-spacing:0;font-family:var(--font-mono);font-size
 /* the day card's top line: calories on the left, rank on the right */
 .islerow{display:flex;align-items:flex-start;gap:var(--s-3)}
 .islehero{flex:1;min-width:0}
+/* The big number is a button on the live screen, because whatever you made the
+   main number is the thing you log most - and it used to be the one thing on
+   Today you could not open. Reset to nothing so it draws exactly as the plain
+   read-out does; the photographed copy is still a div. */
+button.islehero{background:none;border:0;padding:0;margin:0;color:inherit;
+  font:inherit;text-align:left;cursor:pointer;min-height:var(--tap);display:block}
 /* "609 / 2,220 left" is one reading and it breaks in half if it is allowed to
    wrap: the number on one line and the word under it, which looks like two
    facts. It stays on one line and steps down the type scale instead, because
@@ -340,6 +346,68 @@ label.fl:first-child{margin-top:0}
 .setpane > .seg{margin-bottom:var(--s-2)}
 .seg.wrapseg{flex-wrap:wrap}
 
+/* ── the day behind the letter ── */
+.dayhead{display:flex;align-items:center;gap:var(--s-4);margin-bottom:var(--s-4)}
+.dayhead .rk{flex:none;display:grid;place-items:center;width:56px;height:56px;
+  border:2px solid;border-radius:var(--radius-md);font-family:var(--font-mono);
+  font-size:var(--f-6);font-weight:700}
+.dayhead .dhs{font-family:var(--font-mono);font-size:var(--f-4)}
+.dayhead .dhs i{display:block;font-style:normal;font-family:var(--font-ui);
+  font-size:var(--f-1);color:var(--text-muted);margin-top:2px}
+/* `.pillar` was already taken: a tile on Today wears it to say it is scored.
+   An unscoped rule here restyled every one of them. Named and scoped now. */
+.dayrows{display:flex;flex-direction:column;gap:var(--s-2)}
+.dayrows .dayrow{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-3);
+  background:var(--surface-2);border-radius:var(--radius-sm);min-height:var(--tap)}
+.dayrows .pl{flex:1;min-width:0}
+.dayrows .pv{font-family:var(--font-mono);color:var(--text-2);text-align:right}
+.dayrows .pv i{display:block;font-style:normal;font-size:var(--f-1);color:var(--text-muted)}
+.dayrows .pk{flex:none;width:1.6em;text-align:center;font-family:var(--font-mono);
+  font-size:var(--f-4);font-weight:700}
+
+/* One letter per day. A row you can read the shape of a week from. */
+.lrun{display:flex;flex-wrap:wrap;gap:var(--s-1);margin-bottom:var(--s-3)}
+.lrun .ld{flex:1 0 auto;min-width:30px;min-height:36px;padding:0;
+  background:var(--surface-2);border:1px solid transparent;border-radius:var(--radius-sm);
+  font-family:var(--font-mono);font-size:var(--f-3);font-weight:700;
+  color:var(--text-muted);cursor:pointer}
+.lrun .ld.now{border-color:var(--accent)}
+/* The two ways out of the food search. Stacked, full width, and below the list
+   so they never compete with a result you could have just tapped. */
+/* The brand, beside the name rather than buried in the small print. A tint
+   rather than a size, so a long name still wins the line. */
+.nm .brand{font-weight:400;font-size:var(--f-1);color:var(--accent);
+  margin-left:var(--s-2);letter-spacing:.04em;white-space:nowrap}
+.foodroutes{display:flex;flex-direction:column;gap:var(--s-2);margin-top:var(--s-3)}
+.foodroutes .btn{min-height:var(--tap)}
+
+/* ── the card, on a photograph ──
+   Tom, 2026-09-05: "This card could not be opaque." He is right. An overlay
+   that blocks the picture it is sitting on is a sticker, and the whole reason
+   the PNG has a transparent surround is so the photo is part of it.
+
+   The colours stay the theme's — color-mix cuts their ALPHA and nothing else,
+   so a themed card is still that theme's card, just see-through. A browser
+   that does not know color-mix drops the line and gets the solid card, which
+   is the old behaviour rather than a broken one.
+
+   Only ever added by the export. Nothing on screen wears this.
+
+   THE ARITHMETIC, because the first attempt looked solid and was not obviously
+   wrong: a tile sits ON the card, so their alphas COMPOUND. Card at 74% with
+   tiles at 62% composites to 90% behind every number, which is where the eye
+   actually goes - nearly solid, and the photo only showed in the gaps. The
+   card is mostly a container now and the tiles carry the wash. */
+.card.seethru{background:color-mix(in srgb, var(--surface-1) 32%, transparent);
+  border-color:color-mix(in srgb, var(--border) 55%, transparent)}
+.card.seethru .tile{background:color-mix(in srgb, var(--surface-2) 55%, transparent)}
+/* One soft shadow, and deliberately nothing like the 3px stroke he rejected in
+   August - that one filled the glyphs and turned his yellow calories black.
+   This is a single 2px blur that does nothing on a dark photo and keeps the
+   numbers off a bright one. Text over a picture needs something; it does not
+   need much. */
+.card.seethru, .card.seethru *{text-shadow:0 1px 2px rgba(0,0,0,.45)}
+
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-2)}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s-2)}
 .field{margin-bottom:var(--s-4)}          /* more space around a group than inside it */
@@ -392,6 +460,8 @@ label.fl:first-child{margin-top:0}
 .lgi i.avg{border-color:var(--accent)}
 .lgi i.reality{border-color:var(--data-5);border-top-style:dashed}
 .lgi i.predict{border-color:var(--data-2);border-top-style:dotted}
+.lgi i.actual{border-color:var(--data-4)}
+.lgi i.cone{border-color:var(--data-4);border-top-width:8px;opacity:.3}
 
 /* ── the wheel ── */
 .wheel{display:flex;flex-direction:column;gap:var(--s-2)}
@@ -476,7 +546,17 @@ textarea:focus{outline:2px solid var(--focus);outline-offset:-1px}
 /* the prediction: where you are actually heading. Thinner and dotted, because
    it is derived from an estimate and should not read as a promise. */
 .chart .predict{stroke:var(--data-2);stroke-width:1.5;stroke-dasharray:1 3;fill:none;opacity:.75}
+/* Where you land on what you have actually been eating. Solid, because unlike
+   the target it is built on something that happened. */
+.chart .actual{stroke:var(--data-4);stroke-width:1.75;fill:none;opacity:.95}
+/* The same projection at both ends of the TDEE error band. It opens with time
+   because the uncertainty does, and no stroke at all: an edge would read as
+   two more predictions rather than the width of one. */
+.chart .cone{fill:var(--data-4);opacity:.14;stroke:none}
 .chart .now{stroke:var(--border-strong);stroke-width:1;stroke-dasharray:2 3}
+/* What is still in you, over the day it was taken. Its own scale on the right:
+   milligrams and calories share nothing but an axis. */
+.chart .decay{fill:none;stroke:var(--data-6);stroke-width:1.75;opacity:.85}
 .chart .lab{fill:var(--text-muted);font-family:var(--font-mono);font-size:var(--f-1)}
 
 .grid28{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin-top:var(--s-2)}
@@ -564,7 +644,7 @@ IO.register({
       ['name', 'Name'], ['brand', 'Brand'], ['cat', 'Group'],
       ['base.amt', 'Serving'], ['base.unit', 'Unit'],
       ['base.kcal', 'Calories'], ['base.p', 'Protein'], ['base.c', 'Carbs'], ['base.f', 'Fat'],
-      ['base.na', 'Sodium'], ['base.k', 'Potassium'], ['base.caff', 'Caffeine'],
+      ['base.na', 'Sodium'], ['base.k', 'Potassium'], ['base.ca', 'Calcium'], ['base.caff', 'Caffeine'],
       ['base.price', 'Price'],
     ] },
     { name: 'Meals', type: 'meal', cols: [
@@ -583,7 +663,7 @@ IO.register({
     { name: 'Tracked', type: 'field', cols: [
       /* "Measured as" rather than a second column called Kind meaning something
          else entirely one tab over */
-      ['label', 'Name'], ['unit', 'Unit'], ['measure', 'Measured as', () => MEASURE_LABELS], ['target', 'Target'],
+      ['label', 'Name'], ['unit', 'Unit'], ['measure', 'Measured as', () => MEASURE_LABELS, ['Kind']], ['target', 'Target'],
       ['min', 'At least'], ['max', 'At most'], ['half', 'Half-life'], ['on', 'On'],
     ] },
   ],
@@ -640,6 +720,19 @@ const SEED = [
      trainedOn() already looks for a field whose id starts with "train"; this
      is that field, and it ships on. */
   { id: 'trained', label: 'Trained', unit: '', measure: 'check', once: 1, agg: 'last', order: 6, on: 1 },
+
+  /* Sun and Main quest were shipped here on 2026-09-05 and taken out the same
+     day. Tom: "I don't want dedicated fields just for me. I want the systems
+     in place that would allow me to manually create these trackers."
+
+     He is right twice over. A field called Main quest is his private
+     vocabulary, and this file goes to clients. And a suite where the answer to
+     "I want to track X" is "ask Claude" is a worse suite than one where you
+     can build X yourself in forty seconds.
+
+     Both are now buildable in Settings > Track > new field, which is where the
+     work went instead. Anyone who already has them keeps them - taking a field
+     out of SEED never deletes a field somebody has. */
 ];
 
 /* Things worth tracking that most people want eventually. An empty setup
@@ -652,7 +745,18 @@ const LIBRARY = [
   { id: 'creatine',  label: 'Creatine',   unit: 'g',   measure: 'amount', step: 5,   dec: 0, chips: [5, 10, 20] },
   { id: 'potassium', label: 'Potassium',  unit: 'g',   measure: 'amount', step: .5,  dec: 1, chips: [1, 2, 3, 4], from: 'k',    per: .001 },
   { id: 'sodium',    label: 'Sodium',     unit: 'g',   measure: 'amount', step: .5,  dec: 1, chips: [1, 2, 3, 4, 5], from: 'na', per: .001 },
-  { id: 'caffeine',  label: 'Caffeine',   unit: 'mg',  measure: 'amount', step: 50,  dec: 0, chips: [100, 150, 200, 300], from: 'caff', per: 1 },
+  /* ── caffeine wears off, and nobody had told the app ──
+     Found 2026-09-06 while drawing the day's shape: not one field shipped with
+     a half-life, so the whole decay mechanism - the "still in you" line on the
+     tile, the curve over the day - had never once fired for anybody.
+
+     Six hours, set by Tom on 2026-09-06 over the five I shipped the day
+     before. Both are inside the evidence - healthy adults run four to five,
+     one trial's mean is 5.4, and the range reaches 13.9 - and six is the more
+     cautious end for somebody deciding when to stop drinking coffee. It is his
+     number to pick; the field's own form has the box for anyone else. */
+  { id: 'caffeine',  label: 'Caffeine',   unit: 'mg',  measure: 'amount', step: 50,  dec: 0, half: 6, chips: [100, 150, 200, 300], from: 'caff', per: 1 },
+  { id: 'calcium',   label: 'Calcium',    unit: 'mg',  measure: 'amount', step: 100, dec: 0, chips: [500, 800, 1000, 1200], from: 'ca', per: 1 },
   { id: 'magnesium', label: 'Magnesium',  unit: 'mg',  measure: 'amount', step: 100, dec: 0, chips: [200, 400, 600] },
   { id: 'zinc',      label: 'Zinc',       unit: 'mg',  measure: 'amount', step: 5,   dec: 0, chips: [15, 30, 50] },
   { id: 'water',     label: 'Water',      unit: 'L',   measure: 'amount', step: .5,  dec: 1, chips: [.5, 1, 1.5, 2] },
@@ -713,7 +817,7 @@ function linkNutrients() {
    linkNutrients: a number rather than a flag, so a later change runs again
    instead of being locked out by a tick from the previous version. Only the
    library's own fields are touched, and only where nothing was set by hand. */
-const FIELDFIX = 3;
+const FIELDFIX = 7;   /* 7 moves caffeine to the six hours Tom asked for */
 /* Which kind of thing each library field is, so the form can narrow itself
    without him having to categorise five things by hand first. */
 const SEEDCAT = {
@@ -730,6 +834,23 @@ function fixSeedFields() {
      gets made here, which is how Trained arrives for an existing install. */
   const have = fields();
   SEED.forEach(f => { if (!have[f.id]) Rec.set('field', null, f.id, f); });
+  /* A shipped field that grew a half-life after somebody was already set up
+     would never get one, because the loop above only makes fields that are
+     MISSING. LIBRARY as well as SEED - caffeine is a library field, which is
+     exactly the case this was written for and exactly the one it missed on the
+     first try. Fills a blank and never overwrites: a number he chose is his. */
+  /* Fills a blank, and corrects a default I chose. `HALF_WAS` is what the app
+     used to ship; anything still sitting on that value was never chosen by
+     anybody, so moving it is a correction rather than an overwrite. A number
+     he typed is neither and is left alone. */
+  const HALF_WAS = { caffeine: 5 };
+  SEED.concat(LIBRARY).forEach(f => {
+    const mine = fields()[f.id];
+    if (!f.half || !mine) return;
+    if (!mine.half || mine.half === HALF_WAS[f.id]) {
+      Rec.set('field', null, f.id, Object.assign({}, mine, { half: f.half }));
+    }
+  });
   const want = {};
   SEED.concat(LIBRARY).forEach(l => { if (l.bump) want[l.id] = l; });
   Object.values(fields()).forEach(f => {
@@ -800,15 +921,15 @@ const whenRank = f => {
    listed is not drawn and not stored. */
 const CATS = [
   { id: 'body',     label: 'Body',     note: 'weight, resting heart rate',
-    has: ['target', 'edges', 'days', 'when'] },
+    has: ['target', 'chips', 'edges', 'days', 'when'] },
   { id: 'intake',   label: 'Intake',   note: 'anything you take or drink',
-    has: ['target', 'half', 'from', 'days', 'when'] },
+    has: ['target', 'chips', 'half', 'from', 'days', 'when'] },
   { id: 'activity', label: 'Activity', note: 'steps, minutes moved',
-    has: ['target', 'edges', 'days', 'when'] },
+    has: ['target', 'chips', 'edges', 'days', 'when'] },
   { id: 'feeling',  label: 'Feeling',  note: 'mood, energy, soreness',
     has: ['scale', 'days', 'when'] },
   { id: 'other',    label: 'Other',    note: 'everything else',
-    has: ['target', 'edges', 'half', 'from', 'days', 'when'] },
+    has: ['target', 'chips', 'edges', 'half', 'from', 'days', 'when'] },
 ];
 const catOf = id => CATS.filter(c => c.id === id)[0] || CATS[CATS.length - 1];
 const catLabel = id => (CATS.filter(c => c.id === id)[0] || {}).label || '';
@@ -872,7 +993,7 @@ function evDrop(date, fid, t) {
    edited the meal, and nothing would say which of the two was the real one. */
 const NUT_FROM = [
   ['kcal', 'Calories', 'kcal'], ['p', 'Protein', 'g'], ['c', 'Carbs', 'g'], ['f', 'Fat', 'g'],
-  ['na', 'Sodium', 'mg'], ['k', 'Potassium', 'mg'], ['caff', 'Caffeine', 'mg'],
+  ['na', 'Sodium', 'mg'], ['k', 'Potassium', 'mg'], ['ca', 'Calcium', 'mg'], ['caff', 'Caffeine', 'mg'],
 ];
 
 function fromFood(date, f) {
@@ -908,7 +1029,7 @@ const logged = (date, fid) => entries(date, fid).length > 0;
    A `meal` row is one logged serving with its numbers frozen in, so editing
    a food tomorrow never rewrites what you ate today.                       */
 
-const NUTS = ['p', 'c', 'f', 'kcal', 'na', 'k', 'caff'];
+const NUTS = ['p', 'c', 'f', 'kcal', 'na', 'k', 'ca', 'caff'];
 
 /* ══ how sure you are of a meal ══
    A weighed chicken breast and a plate of adobo somebody else cooked are not
@@ -990,7 +1111,7 @@ function mealSpend(date, key, row) {
 const meals = date => Rec.all('meal', { date: date }).map(r => Object.assign({ key: r.key }, r.payload)).sort((a, b) => a.t - b.t);
 
 function dayTotals(date) {
-  const t = { p: 0, c: 0, f: 0, kcal: 0, na: 0, k: 0, caff: 0, price: 0 };
+  const t = { p: 0, c: 0, f: 0, kcal: 0, na: 0, k: 0, ca: 0, caff: 0, price: 0 };
   meals(date).forEach(m => { Object.keys(t).forEach(n => { t[n] += num(m[n], 0) || 0; }); });
   /* how many of today's calories are guessed rather than read off a label */
   t.kerr = meals(date).reduce((a, m) => a + (num(m.kcal, 0) || 0) * (num(m.err, 0) || 0), 0);
@@ -1242,81 +1363,11 @@ function parseLine(raw) {
 
 /** "14:45" as "2:45pm", the way it is read back on screen. */
 /** a timestamp as the HH:MM the clock label wants */
-/* ══════════════ TYPING A TIME ══════════════
-   Tom, 2026-09-05: "I'd like to be able to only input 9 in the hours portion
-   then have it intelligently detect whether I mean AM or PM if it's past 9am."
-
-   The three-box control on a PC is the browser's own; a phone draws the same
-   tag as a wheel, which is why it is fine there and fiddly here. So on a
-   pointer device it becomes a box you type into, and the typing is forgiving:
-
-     9        the next 9 o'clock from now — 9am before nine, 9pm after
-     930      9:30, same rule
-     9:30 9.30 9 30   all the same
-     9pm 9:30pm       said outright, so no guessing
-     21 2130 21:30    past twelve, so it can only mean one thing
-
-   THE RULE, said once: a bare hour means the NEXT time that hour comes round.
-   At eight in the morning, 9 is this morning. At ten, the same 9 is tonight.
-   That is what you meant both times, and it is the only reading that never
-   needs correcting. If both have gone by, it takes the nearer of the two
-   rather than refusing. */
-function smartTime(raw, nowMin) {
-  let t = String(raw == null ? '' : raw).trim().toLowerCase();
-  if (!t) return null;
-  const ap = /am\b/.test(t) ? 'am' : /pm\b/.test(t) ? 'pm' : null;
-  t = t.replace(/[ap]m\b/g, '').trim();
-
-  let h = null, m = 0;
-  let mt = t.match(/^(\d{1,2})\s*[:.\s]\s*(\d{1,2})$/);
-  if (mt) { h = +mt[1]; m = +mt[2]; }
-  else if (/^\d{3,4}$/.test(t)) { h = +t.slice(0, t.length - 2); m = +t.slice(-2); }
-  else if (/^\d{1,2}$/.test(t)) { h = +t; m = 0; }
-  else return null;
-  if (!(h >= 0 && h <= 24) || !(m >= 0 && m <= 59)) return null;
-  if (h === 24) h = 0;
-
-  const two = n => String(n).padStart(2, '0');
-  const out = (hh) => two(hh % 24) + ':' + two(m);
-
-  if (ap === 'am') return out(h === 12 ? 0 : h);
-  if (ap === 'pm') return out(h === 12 ? 12 : h + 12);
-  /* Past twelve it can only be one time of day. */
-  if (h > 12 || h === 0) return out(h);
-
-  const now = nowMin == null ? (new Date().getHours() * 60 + new Date().getMinutes()) : nowMin;
-  const a = ((h === 12 ? 0 : h) * 60 + m);
-  const b = ((h === 12 ? 12 : h + 12) * 60 + m);
-  const fwd = x => (x - now + 1440) % 1440;
-  /* the next one round; if today has run out of both, the nearer behind */
-  const pick = fwd(a) <= fwd(b) ? a : b;
-  return two(Math.floor(pick / 60)) + ':' + two(pick % 60);
-}
-
-/* A time field. The wheel on a phone, a box you can type into on a PC. */
-function timeInput(val, onset) {
-  const fine = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches;
-  const i = document.createElement('input');
-  if (!fine) {
-    i.type = 'time'; i.value = val || '';
-    i.onchange = () => onset(i.value);
-    return i;
-  }
-  i.type = 'text';
-  i.inputMode = 'numeric';
-  i.autocomplete = 'off';
-  i.placeholder = '9, 930, 9pm';
-  i.value = val ? clockLabel(val) : '';
-  const settle = () => {
-    const v = smartTime(i.value);
-    if (v) { onset(v); i.value = clockLabel(v); }
-    else if (!i.value.trim()) { onset(''); }
-    else { i.value = val ? clockLabel(val) : ''; }
-  };
-  i.onblur = settle;
-  i.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); settle(); i.blur(); } };
-  return i;
-}
+/* Typing a time lives in shared/ui.js now, because BLOCK wanted the same
+   thing and two copies of a parser is two parsers to fix. UI.timeField gives
+   the phone its wheel and a PC a box you type into with an AM/PM button. */
+const smartTime = (raw, nowMin) => UI.smartTime(raw, nowMin);
+const timeInput = (val, onset) => UI.timeField(val, onset);
 
 function hhmm(ms) {
   const d = new Date(ms);
@@ -2096,6 +2147,7 @@ function parseLabel(text) {
   o.f    = grab(text, ['total fat', 'fat'], 'g?');
   o.na   = grab(text, ['sodium'], 'mg?');
   o.k    = grab(text, ['potassium'], 'mg?');
+  o.ca   = grab(text, ['calcium'], 'mg?');
   o.caff = grab(text, ['caffeine'], 'mg?');
   const sz = text.match(/serving size[^0-9\n]{0,20}([0-9]+(?:\.[0-9]+)?)\s*(g|ml|mL|G|ML)/i);
   if (sz) { o.amt = parseFloat(sz[1]); o.unit = sz[2].toLowerCase(); }
@@ -2313,7 +2365,7 @@ function oneOffSheet() {
        still means zero; the difference is that now there is somewhere to type
        it. */
     const g3 = el('div', 'grid3');
-    [['na', 'Sodium mg'], ['k', 'Potassium mg'], ['caff', 'Caffeine mg']].forEach(k => {
+    [['na', 'Sodium mg'], ['k', 'Potassium mg'], ['ca', 'Calcium mg'], ['caff', 'Caffeine mg']].forEach(k => {
       const w = el('div'); w.appendChild(el('label', 'fl', k[1]));
       const i = document.createElement('input');
       i.type = 'text'; i.inputMode = 'decimal'; i.setAttribute('pattern', '[0-9.]*');
@@ -2354,7 +2406,8 @@ function oneOffSheet() {
       const kcal = num(f.kcal.value) == null ? derived() : num(f.kcal.value, 0);
       const row = { fid: null, name: name, serve: 'one-off', unit: '', amt: 1, mult: 1, t: Date.now(),
         kcal: kcal, p: num(f.p.value, 0) || 0, c: num(f.c.value, 0) || 0, f: num(f.f.value, 0) || 0,
-        na: num(f.na.value, 0) || 0, k: num(f.k.value, 0) || 0, caff: num(f.caff.value, 0) || 0,
+        na: num(f.na.value, 0) || 0, k: num(f.k.value, 0) || 0,
+        ca: num(f.ca.value, 0) || 0, caff: num(f.caff.value, 0) || 0,
         price: num(f.price.value, 0) || 0, err: err, acct: acct };
       const key = uid();
       Rec.set('meal', d, key, row);
@@ -2545,7 +2598,9 @@ function toggleCheck(f, date) {
    The library's list only stands in until you have logged three of your own,
    so a field added this morning still has something on it. After that it is
    entirely yours and it keeps following you as what you take changes.      */
-const DOSE_CHIPS = 3;
+/* Five, because he asked for five and three was a dose-shaped number: a dose
+   has two or three sizes and a measurement has as many as you have had. */
+const DOSE_CHIPS = 5;
 function recentDoses(f) {
   const seen = Object.create(null), out = [];
   const days = Day.last(60);
@@ -2618,9 +2673,24 @@ function numberSheet(f, date) {
       afterLog();
     };
 
-    /* A dose offers what you have actually been taking; everything else offers
-       the list its definition carries. */
-    const chips = dose ? recentDoses(f) : (f.chips || []);
+    /* ── where the quick picks come from ──
+       Tom, 2026-09-05: "Just have an option to enable selecting the last 5
+       entries as a quick pick." The machinery for that already existed and was
+       only ever wired to doses - recentDoses() reads back what you have
+       actually logged. It is the better default for almost everything, because
+       it needs no setting up and it follows you.
+
+       A fixed list still earns its place where the values you WANT offered are
+       not the ones you have been hitting: sleep should offer 7 and 7.5 on the
+       week you have been getting five.
+
+         recent   the last few you logged, newest first. The default.
+         list     exactly what the field says, in that order
+         none     no buttons at all - a step count is read off a watch */
+    const pickMode = f.picks || (dose ? 'recent' : (f.chips && f.chips.length ? 'list' : 'recent'));
+    const chips = pickMode === 'none' ? []
+      : pickMode === 'list' ? (f.chips || [])
+      : recentDoses(f);
     if (chips.length) {
       body.appendChild(chipRow(chips.map(v => ({ label: String(v), value: v })), commit));
     }
@@ -2778,45 +2848,221 @@ function spendSheet(existing) {
 <script>
 /* ══════════════ FOOD ══════════════ */
 
+/* ── things you logged once, and might log again ──
+   Tom, 2026-09-05: "Would it be possible to actually log one off meals, and
+   THEN if we're typing the same thing we create the option to turn it into a
+   permanent DB item?"
+
+   Yes, and it is the better shape. The old screen made you PREDICT: is this
+   worth saving? You cannot know that standing at an airport, and nobody can.
+   So it stops being a prediction and becomes an observation - eat it twice and
+   the app is the one that noticed, and it offers to keep it.
+
+   Nothing new is stored. A one-off is already a meal row with an empty food
+   and its own name and numbers, so the history is right there and this reads
+   it back. Grouped by name, most recent numbers win, because the second
+   airport sandwich is the one you remember. */
+function pastOneOffs() {
+  const by = Object.create(null);
+  Rec.all('meal').forEach(r => {
+    const m = r.payload;
+    if (!m || m.food || !m.name) return;          /* a real food is not a one-off */
+    const k = String(m.name).trim().toLowerCase();
+    if (!k) return;
+    const seen = by[k];
+    if (!seen || (m.t || 0) > (seen.t || 0)) {
+      by[k] = { key: k, name: m.name, kcal: num(m.kcal, 0) || 0, p: num(m.p, 0) || 0,
+                c: num(m.c, 0) || 0, f: num(m.f, 0) || 0, t: m.t || 0, n: seen ? seen.n : 0 };
+    }
+    by[k].n = (by[k].n || 0) + 1;
+  });
+  return Object.values(by).sort((a, b) => (b.n - a.n) || (b.t - a.t));
+}
+
 function foodPicker() {
+  /* ── the point of this screen ──
+     You are standing in a kitchen holding a plate. There are three things it
+     could be: something you eat all the time, something new you will eat
+     again, and something you will never eat again as long as you live.
+
+     The first is a search. The other two both start by typing its NAME, and
+     the old screen threw that name away: you typed "chicken adobo", pressed
+     New food, and got an empty form to type it into again. Tom, 2026-09-05:
+     "Would it be possible to start typing the food name, then when the buttons
+     appear, it continues off of what I already typed?"
+
+     So what you type is the one input, and both routes out of here carry it. */
+  let qRef = null;
   openSheet('Food', body => {
     const q = document.createElement('input');
-    q.type = 'search'; q.placeholder = 'Search foods';
+    q.type = 'search'; q.placeholder = 'What did you eat?';
+    q.autocomplete = 'off';
     body.appendChild(q);
+    qRef = q;
 
     const list = el('div');
     list.style.marginTop = '9px';
+    /* The two ways out. They live under the list and say the words you typed,
+       so it is obvious they are about THIS food and not a fresh start. */
+    const routes = el('div', 'foodroutes');
+
     const paint = () => {
-      const term = q.value.trim().toLowerCase();
+      const raw = q.value.trim();
+      const term = raw.toLowerCase();
       const all = Object.values(foods())
         .filter(f => !term || (f.name + ' ' + (f.brand || '')).toLowerCase().indexOf(term) > -1)
         .sort((a, b) => (b.uses || 0) - (a.uses || 0) || String(a.name).localeCompare(String(b.name)));
       list.innerHTML = '';
       if (!all.length) {
         list.appendChild(el('div', 'empty', Object.keys(foods()).length
-          ? 'Nothing matches, so try fewer letters or add it as a new food.'
+          ? (raw ? 'No match. Either button below keeps what you typed.'
+                 : 'Type a few letters, or photograph a nutrition panel.')
           : 'Photograph a nutrition panel or type one in'));
       }
       all.slice(0, 40).forEach(f => {
         const r = el('div', 'row tap');
+        /* ── the brand goes on the name line ──
+           Tom, 2026-09-05: "otherwise Mcdo and Jollibee Chicken show up the
+           same." They did: the brand sat in the grey second line among the
+           serving size and the calories, where it read as another number.
+           Two foods called Chicken have to be tellable apart in the half
+           second you spend scanning, and the brand is the only thing that
+           separates them. */
         r.innerHTML = '<span class="nm">' + esc(f.name) +
-          '<small>' + esc(f.brand || '') + (f.brand ? ' · ' : '') + r1(num(f.base.amt, 0)) + ' ' + esc(f.base.unit || '') + ' · ' +
-          Math.round(num(f.base.kcal, 0)) + ' kcal · ' + r1(num(f.base.p, 0)) + 'p</small></span>';
+          (f.brand ? '<b class="brand">' + esc(f.brand) + '</b>' : '') +
+          '<small>' + r1(num(f.base.amt, 0)) + ' ' + esc(f.base.unit || '') + ' · ' +
+          Math.round(num(f.base.kcal, 0)) + ' kcal \u00b7 ' + r1(num(f.base.p, 0)) + 'p</small></span>';
         r.onclick = () => amountSheet(f);
-        const e = el('button', 'x', '✎');
+        const e = el('button', 'x', '\u270e');
         e.onclick = ev => { ev.stopPropagation(); foodEditor(f); };
         r.appendChild(e);
         list.appendChild(r);
       });
+
+      /* Things you have eaten before and never saved. Under the real foods and
+         marked, because they are a weaker kind of answer: the numbers are
+         whatever you typed that day, not read off a label. */
+      const past = pastOneOffs()
+        .filter(o => !term || o.key.indexOf(term) > -1)
+        .filter(o => !all.some(f => String(f.name).trim().toLowerCase() === o.key));
+      past.slice(0, 12).forEach(o => {
+        const r = el('div', 'row tap');
+        r.innerHTML = '<span class="nm">' + esc(o.name) +
+          '<b class="brand oncebadge">' + o.n + '\u00d7 before</b>' +
+          '<small>' + Math.round(o.kcal) + ' kcal \u00b7 ' + r1(o.p) + 'p \u00b7 not saved</small></span>';
+        r.onclick = () => onceSheet(o.name, o);
+        list.appendChild(r);
+      });
+
+      routes.innerHTML = '';
+      const named = raw ? '\u201c' + esc(raw) + '\u201d' : 'it';
+      const once = el('button', 'btn wide mb-press mb-tap', 'Log ' + named + ' once');
+      once.dataset.tip = 'Numbers only, nothing saved to your foods';
+      once.onclick = () => onceSheet(raw);
+      routes.appendChild(once);
+
+      const add = el('button', 'btn go wide mb-press mb-tap',
+        raw ? 'Save ' + named + ' as a food' : 'New food');
+      add.dataset.tip = 'Keeps it, so next time it is one tap';
+      add.onclick = () => foodEditor(null, raw);
+      routes.appendChild(add);
     };
     q.oninput = paint; paint();
     body.appendChild(list);
-
-    const add = el('button', 'btn go wide', 'New food');
-    add.style.cssText = 'margin-top:var(--s-2);min-height:var(--tap)';
-    add.onclick = () => foodEditor(null);
-    body.appendChild(add);
+    body.appendChild(routes);
   });
+  /* After the sheet is up and still inside the tap — see UI.focusSoon. */
+  UI.focusSoon(qRef);
+}
+
+/* ── a meal with no food behind it ──
+   Restaurant food, a friend's cooking, the thing at the airport. Saving it to
+   your foods would be filing something you will never look up again, and a
+   food list full of those is a food list you stop searching.
+
+   A meal row already carries its own name, calories and protein, so this needs
+   nothing new in the store: it is a meal with an empty `food`. Everything that
+   reads meals already reads the name off the meal. */
+function onceSheet(name, past) {
+  /* `past` is the same thing eaten before, if there is one: its numbers come
+     with it, so the second time is a confirm rather than a retype. */
+  let kRef = null, nameRef = null;
+  const before = past || pastOneOffs().filter(o => o.key === String(name || '').trim().toLowerCase())[0];
+  openSheet(before ? before.name : 'Log once', body => {
+    body.appendChild(el('div', 'note', before
+      ? 'You have logged this ' + before.n + (before.n === 1 ? ' time' : ' times') + ' before. The numbers are from last time.'
+      : 'Logged today and nothing else. It will not be added to your foods.'));
+
+    const nm = document.createElement('input');
+    nm.type = 'text'; nm.placeholder = 'What was it?';
+    nm.value = (before ? before.name : name) || '';
+    body.appendChild(el('label', 'fl', 'Name'));
+    body.appendChild(nm);
+    nameRef = nm;
+
+    const g = el('div', 'grid2');
+    const mk = (lbl, ph, val) => {
+      const w = el('div', 'field');
+      w.appendChild(el('label', 'fl', lbl));
+      const i = document.createElement('input');
+      i.type = 'number'; i.inputMode = 'decimal'; i.min = '0'; i.placeholder = ph;
+      if (val != null && val !== '') i.value = String(val);
+      w.appendChild(i); g.appendChild(w); return i;
+    };
+    const kc = mk('Calories', '0', before ? Math.round(before.kcal) : '');
+    const pr = mk('Protein (g)', '0', before ? r1(before.p) : '');
+    body.appendChild(g);
+    kRef = kc;
+
+    const readIt = () => ({
+      label: nm.value.trim(),
+      k: num(kc.value, 0) || 0,
+      p: num(pr.value, 0) || 0,
+    });
+
+    body.appendChild(saveBar('Log it', () => {
+      const v = readIt();
+      if (!v.label) return UI.toast('What was it?', { bad: true });
+      if (!v.k && !v.p) return UI.toast('Calories or protein, at least one', { bad: true });
+      Rec.set('meal', vd(), uid(), {
+        food: '', name: v.label, amt: 1, unit: 'serving', serve: 'one off',
+        kcal: v.k, p: v.p, c: 0, f: 0, t: Date.now(),
+      });
+      Mobile.feedback('tick');
+      closeSheet(); draw();
+      UI.toast('<b>' + esc(v.label) + '</b> logged');
+    }));
+
+    /* ── the offer, and only once it has earned itself ──
+       Twice is the line. Once is a thing that happened; twice is a habit
+       forming, and that is the first moment saving it is obviously worth the
+       tap. Offering on the first log would be the old question - is this worth
+       keeping? - asked again in a new place. */
+    if (before && before.n >= 2) {
+      const keep = el('button', 'btn wide mb-press mb-tap', 'Keep it as a food');
+      keep.style.marginTop = 'var(--s-2)';
+      keep.dataset.tip = 'Adds it to your foods so it is one tap next time. Your logged meals do not change.';
+      keep.onclick = () => {
+        const v = readIt();
+        if (!v.label) return UI.toast('Give it a name first', { bad: true });
+        const id = uid();
+        Rec.set('food', null, id, {
+          id: id, name: v.label, brand: '',
+          base: { amt: 1, unit: 'serving', kcal: v.k, p: v.p, c: 0, f: 0 },
+          serves: [], uses: before.n,
+        });
+        /* `uses` carries over, so something eaten five times sorts where it
+           belongs in the list rather than starting at the bottom. */
+        Mobile.feedback('tick');
+        closeSheet(); draw();
+        UI.toast('<b>' + esc(v.label) + '</b> saved to your foods');
+      };
+      body.appendChild(keep);
+    }
+  });
+  /* The name is already right in both cases, so the cursor goes to the first
+     thing that might need changing. */
+  UI.focusSoon((before || name) ? kRef : nameRef, true);
 }
 
 /* Which account it came out of. Blank is a real answer and the default: most
@@ -2935,9 +3181,12 @@ function amountSheet(fd) {
 }
 
 /* the food itself: the label as printed, then your own servings on top */
-function foodEditor(fd) {
+function foodEditor(fd, prefillName) {
   const isNew = !fd;
-  const f = fd ? JSON.parse(JSON.stringify(fd)) : { id: uid(), name: '', brand: '', base: { amt: 100, unit: 'g' }, serves: [], uses: 0 };
+  /* Whatever was typed into the search comes with you. Nobody should have to
+     type a food's name twice in the same ten seconds. */
+  const f = fd ? JSON.parse(JSON.stringify(fd))
+    : { id: uid(), name: prefillName || '', brand: '', base: { amt: 100, unit: 'g' }, serves: [], uses: 0 };
   openSheet(isNew ? 'New food' : 'Edit food', body => {
     const inputs = {};
     let shotId = f.shot || null;
@@ -2989,6 +3238,7 @@ function foodEditor(fd) {
     g3.appendChild(mk('f', 'Fat g', f.base.f));
     g3.appendChild(mk('na', 'Sodium mg', f.base.na));
     g3.appendChild(mk('k', 'Potassium mg', f.base.k));
+    g3.appendChild(mk('ca', 'Calcium mg', f.base.ca));
     g3.appendChild(mk('caff', 'Caffeine mg', f.base.caff));
     g3.appendChild(mk('price', 'Price ₱', f.base.price));
     body.appendChild(g3);
@@ -3089,7 +3339,12 @@ function dateBar() {
   w.appendChild(back); w.appendChild(mid); w.appendChild(fwd);
   return w;
 }
-const NAV = [['now', '◐', 'Today'], ['food', '◍', 'Food'], ['money', '₱', 'Money'], ['trends', '◭', 'Trends']];
+/* REPORT, not Trends. Tom, 2026-09-06. The screen holds the grade, the working
+   behind it, a letter for every day and the export; only about half of it is a
+   trend, and the name was promising the wrong half. The id stays `trends` -
+   it is in his settings and in saved state, and renaming a stored key to
+   improve a label is how a screen forgets which tab it was on. */
+const NAV = [['now', '◐', 'Today'], ['food', '◍', 'Food'], ['money', '₱', 'Money'], ['trends', '◭', 'Report']];
 
 function drawNav() {
   const n = document.getElementById('nav');
@@ -3338,6 +3593,7 @@ function islandCard(d, opts) {
      asks for the date and gets it in the shape every other card in here uses
      for a heading. Nothing else about the card changes. */
   const c = card(opts.title || null);
+  if (opts.seethru) c.classList.add('seethru');
 
   const h = heroReading(d);
   const hero = el('div', 'hero',
@@ -3350,7 +3606,38 @@ function islandCard(d, opts) {
      opens and the rank is the one-glance answer to how it is going. The big
      letter is the LAST SEVEN COMPLETED DAYS and does not move during the day. */
   const top = el('div', 'islerow');
-  const heroBox = el('div', 'islehero'); heroBox.appendChild(hero);
+  /* ── the big number opens the thing it is measuring ──
+
+     Tom, 2026-09-09: "If a client makes steps the main number, they're now
+     unable to track steps."
+
+     The tile loop below skips whatever is the hero, on the sound reasoning
+     that the big number should not also be a small one. But the TILE is the
+     only way into a field's logging sheet, and the hero was a plain div with
+     nothing wired to it - so choosing a field as your main number deleted the
+     only way to log it. The + sheet was not a way out either: it lists what is
+     still unlogged, so it carried Steps until the first reading of the day and
+     then dropped it too, leaving no way to correct a number or add to it.
+
+     This was never only about steps. Any field chosen as the hero went the
+     same way: sleep, weight, mood, energy. Calories and protein survived only
+     because the Food tab is a second door.
+
+     So the hero opens what it is showing. The photographed copy stays a plain
+     div, because nothing in a picture is ever going to be pressed. */
+  const heroLive = opts.sortable;
+  const heroBox = el(heroLive ? 'button' : 'div', 'islehero' + (heroLive ? ' mb-press mb-tap' : ''));
+  heroBox.appendChild(hero);
+  if (heroLive) {
+    const hf = liveFields().filter(x => x.id === h.id)[0];
+    heroBox.onclick = () => {
+      Mobile.feedback('open');
+      /* a field opens its own sheet; the two computed ones go where they are
+         actually logged, which is the same place their tiles go */
+      if (hf) fieldSheet(hf, d); else { TAB = 'food'; draw(); }
+    };
+    heroBox.setAttribute('aria-label', h.label + ', log a reading');
+  }
   top.appendChild(heroBox);
   top.appendChild(rankBadge(d));
   top.style.marginBottom = 'var(--s-4)';
@@ -3506,8 +3793,16 @@ function drawJournal(m) {
          2026-09-03: "Bullet time can be beside entry when checked." */
       (x.at ? '<i class="at">' + esc(clockLabel(x.at)) + (x.dur ? ' \u00b7 ' + durLabel(x.dur) : '') + '</i>'
             : (x.dur ? '<i class="at">' + durLabel(x.dur) + '</i>' : '')) +
-      (x.by ? '<i class="at by">by ' + esc(clockLabel(x.by)) + '</i>' : '') +
-      (x.done && x.doneAt ? '<i class="at did">' + esc(clockLabel(x.doneAt)) + '</i>' : '') +
+      /* ── one Done time, not two ──
+         Tom, 2026-09-05: "Todos with a done time should not have a visible
+         seperate ticked time." Right: the row was carrying "by 4:44" AND the
+         moment it was ticked, which is the same question answered twice and
+         made a finished line the busiest thing on the screen.
+
+         `by` is the Done time now and the tick writes into it, so this is the
+         only clock a finished task shows. Still open, it reads "by" because
+         that is what a time in the future means. */
+      (x.by ? '<i class="at by">' + (x.done ? '' : 'by ') + esc(clockLabel(x.by)) + '</i>' : '') +
       /* An entry has no time of its own, so the useful clock is when it was
          written. Only where nothing else is showing, or the row starts
          carrying three times and says nothing. */
@@ -3539,6 +3834,21 @@ function drawJournal(m) {
                       String(now.getMinutes()).padStart(2, '0');
         Rec.set('note', own, x.key, Object.assign(bare(x), {
           done: x.done ? 0 : 1,
+          /* ── the Done time, and whose it is ──
+             The field IS the tick time: ticking writes the real one over
+             whatever you were aiming at, because a field called Done showing a
+             time you did not finish at would be a lie on the row.
+
+             But a time you typed is yours. Tom, 2026-09-05: "unticking keeps
+             manually put done time." So the tick puts yours aside rather than
+             over the side, and un-ticking hands it back. Tick, untick, and the
+             4:44 you meant to finish by is still 4:44.
+
+             `byAuto` is how it knows whose the current one is. The sheet
+             clears it whenever you set the field yourself. */
+          by: x.done ? (x.byWas || null) : stamp,
+          byWas: x.done ? null : (x.byAuto ? (x.byWas || null) : (x.by || null)),
+          byAuto: x.done ? 0 : 1,
           doneAt: x.done ? null : stamp,
           /* WHICH DAY you ticked it, so a task written on Monday and finished
              on Thursday shows up on Thursday. Cleared on un-ticking, like the
@@ -3572,7 +3882,21 @@ function noteSheet(x, d) {
      dialog second, so a focus() inside the builder lands on an element that
      is not in the page yet and does nothing at all. */
   let taRef = null;
-  openSheet(noteKind(x.kind).label, body => {
+  /* ── when it was written, in the title ──
+     Tom, 2026-09-05: "'written 9:18' should just be '9:18' beside todo." It
+     was a whole row at the bottom of the sheet for a fact you glance at, and
+     the word "Written" was doing no work that its position does not already
+     do. A date only appears when it is not today, because on today it says
+     nothing. */
+  let stamp = '';
+  if (!isNew && x.t) {
+    const w = new Date(x.t);
+    stamp = clockLabel(String(w.getHours()).padStart(2, '0') + ':' + String(w.getMinutes()).padStart(2, '0'));
+    if (x.date !== Day.today()) {
+      stamp += ' \u00b7 ' + w.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    }
+  }
+  openSheet(noteKind(x.kind).label + (stamp ? '  ' + stamp : ''), body => {
     const seg = el('div', 'seg');
     let kind = x.kind;
     NOTE_KINDS.forEach(k => {
@@ -3598,7 +3922,16 @@ function noteSheet(x, d) {
     let atVal = x.at || '', byVal = x.by || '';
     const times = el('div', 'grid2');
     times.style.display = kind === 'todo' ? '' : 'none';
-    [['Start', 'at', atVal], ['By', 'by', byVal]].forEach(([lbl, key, val]) => {
+    /* ── Start and Done ──
+       "By" was the time you meant to finish. Calling it Done makes it the time
+       you DID, which is the fact worth keeping once the day has happened - and
+       it is the same box, so setting one ahead is still how you say when you
+       mean to be finished.
+
+       Ticking writes the real time over it. That loses the time you were
+       aiming at, and that is the trade: a field called Done that shows a time
+       you did not finish at would be a lie on the row. */
+    [['Start', 'at', atVal], ['Done', 'by', byVal]].forEach(([lbl, key, val]) => {
       const w = el('div', 'field');
       w.appendChild(el('label', 'fl', lbl));
       const i = timeInput(val, v => { if (key === 'at') atVal = v; else byVal = v; });
@@ -3608,18 +3941,6 @@ function noteSheet(x, d) {
     body.appendChild(times);
     /* The picker above can change the kind after this is built. */
     seg.addEventListener('click', () => { times.style.display = kind === 'todo' ? '' : 'none'; });
-
-    /* When you wrote it. Not the time you typed into the line - that is `at`
-       and it already shows on the row - but the moment the line was made.
-       Tom, 2026-08-28: "when I click on a bullet in status should show the
-       time I wrote it." */
-    if (!isNew && x.t) {
-      const w = new Date(x.t);
-      const same = x.date === Day.today();
-      body.appendChild(el('div', 'note', 'Written ' +
-        clockLabel(String(w.getHours()).padStart(2, '0') + ':' + String(w.getMinutes()).padStart(2, '0')) +
-        (same ? '' : ' on ' + w.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }))));
-    }
 
     /* `again` reopens an empty line of the same kind instead of closing, which
        is what makes a list a list. */
@@ -3644,6 +3965,9 @@ function noteSheet(x, d) {
           at: pz.at || (kind === 'todo' ? (atVal || null) : null),
           dur: pz.dur,
           by: kind === 'todo' ? (byVal || null) : null,
+          /* You set it, so it is yours: a later tick puts this aside rather
+             than over the side, and un-ticking hands it back. */
+          byAuto: 0,
         }));
       }
       publishNotes(d);
@@ -3701,10 +4025,9 @@ function noteSheet(x, d) {
      for it. The old code focused on a 380ms timer, so the caret appeared and
      the keyboard did not - which is what Tom kept seeing. This line is still
      inside the same click, and the sheet is in the document by now. */
-  if (taRef) {
-    taRef.focus();
-    try { taRef.setSelectionRange(taRef.value.length, taRef.value.length); } catch (e) {}
-  }
+  /* One way to do this, in shared/ui.js, so the next app does not have to
+     rediscover that iOS only honours a focus inside the gesture. */
+  UI.focusSoon(taRef, reopening);
 }
 
 function noteMenu(x, d, i, n) {
@@ -4099,14 +4422,15 @@ function closeness(v, target, both) {
   return 1 - (d - FULL) / (ZERO - FULL);
 }
 
-/* ── which five, and when each one settles ──
-   The times are the user's. A pillar that has not settled is not counted
-   against today, which is the whole reason today can be scored at all. */
+/* ── which five ──
+   The settle hours went with the model that needed them. A pillar used to be
+   held out of today's average until its hour of the day, so that an unlogged
+   evening meal did not read as a failure at noon. Every pillar is now in from
+   midnight as an F and graded up, so there is no hour to wait for and nothing
+   left to hold back. The `settle` setting is no longer read; a stored one is
+   harmless and is left where it is rather than deleted out from under a
+   backup. */
 const PILLARS = () => S.get('pillars', ['protein', 'sleep', 'steps', 'kcal', 'training']);
-const SETTLE = () => S.get('settle', { sleep: 10, steps: 20, kcal: 21, protein: 21, training: 20 });
-const settledYet = id => {
-  const h = num(SETTLE()[id], 21); return new Date().getHours() >= (h == null ? 21 : h);
-};
 
 /* Training comes from TRAIN if it is there, and from a tracked yes/no in here
    if it is not. Naming a body part is itself a yes. */
@@ -4134,21 +4458,43 @@ function dayScore(date) {
      as wrong as 400 under. */
   const asScore = k => 1 - rankIndex(k) / (RANKS.length - 1);
 
-  const add = (id, label, letter, monotonic) => {
+  /* ── every pillar keeps its working ──
+     A letter with no number behind it is a verdict you cannot argue with,
+     which is the opposite of useful. Tom, 2026-09-05: "When I click the
+     letter, I wanna see the data for the day." So each part carries what it
+     was measured on, and for calories and protein the accuracy the ladder
+     actually read. */
+  /* ── the day starts at F and is graded up ──
+     Tom, 2026-09-09: "Let each day begin at F then be graded up appropriately
+     but always out of the full expectations."
+
+     Every live pillar is in the average from midnight. One with no reading yet
+     is an F, because that is what it is: not done. So the letter opens at F
+     and climbs as the day is actually lived, and it is always out of the whole
+     day rather than out of the bit that has happened so far.
+
+     This replaces holding a pillar back until its hour and averaging only the
+     rest, which sounds fairer and is not. A denominator that grows through the
+     day means the same morning is an S at 9am and a C by teatime with nothing
+     having changed, and it let one good reading stand as the whole grade —
+     nine hours of sleep and nothing else read as an A. `pending` is now only
+     a list to name on the day sheet; it no longer excludes anything. */
+  const add = (id, label, letter, val, target, unit) => {
     if (letter == null) return;
-    /* A pillar that can only go up counts as soon as it is at A or better.
-       Hitting your steps at 2pm is done, and waiting until 8pm to admit it is
-       what made the grade look broken. One still short of an A can improve,
-       and one that can get worse by eating more, both wait for their hour. */
-    const banked = monotonic && rankIndex(letter) <= rankIndex('A');
-    if (today && !banked && !settledYet(id)) { pending.push(label); return; }
-    parts.push({ id: id, label: label, letter: letter, score: asScore(letter) });
+    const acc = (id === 'kcal' || id === 'protein')
+      ? accuracy(val, target, id === 'protein' ? 'over' : kcalDir()) : null;
+    if (val == null) pending.push(label);
+    parts.push({ id: id, label: label, letter: letter, score: asScore(letter),
+                 val: val, target: target, unit: unit || '', acc: acc,
+                 waiting: val == null });
   };
 
   if (live.indexOf('protein') > -1)
-    add('protein', 'Protein', pillarLetter('protein', ate ? num(tot.p, 0) : null, num(T.p, 0)), false);
+    add('protein', 'Protein', pillarLetter('protein', ate ? num(tot.p, 0) : null, num(T.p, 0)),
+        ate ? Math.round(num(tot.p, 0)) : null, Math.round(num(T.p, 0)), 'g');
   if (live.indexOf('kcal') > -1)
-    add('kcal', 'Calories', pillarLetter('kcal', ate ? num(tot.kcal, 0) : null, num(T.kcal, 0)), false);
+    add('kcal', 'Calories', pillarLetter('kcal', ate ? num(tot.kcal, 0) : null, num(T.kcal, 0)),
+        ate ? Math.round(num(tot.kcal, 0)) : null, Math.round(num(T.kcal, 0)), '');
 
   /* The ladders for sleep and steps are absolute, so a field with no target
      of its own is still graded - eight hours is an S whatever you aimed at. */
@@ -4156,7 +4502,8 @@ function dayScore(date) {
     if (!f.on || !dueToday(f, date)) return;
     const id = /sleep/i.test(f.id) ? 'sleep' : /step/i.test(f.id) ? 'steps' : f.id;
     if (live.indexOf(id) === -1) return;
-    add(id, f.label, pillarLetter(id, value(date, f.id), num(f.target, 0)), true);
+    add(id, f.label, pillarLetter(id, value(date, f.id), num(f.target, 0)),
+        value(date, f.id), num(f.target, 0) || null, f.unit || '');
   });
 
   const scored = parts;
@@ -4175,7 +4522,10 @@ function dayScore(date) {
      app, and CLAUDE.md is explicit that progress starts above zero and that
      earned progress is never taken away. So a day with nothing on it at all is
      left out of the average rather than counted as a nought, and the card says
-     how many days the number is actually built from. */
+     how many days the number is actually built from.
+
+     This is about the PAST. Today starts at F on purpose, because today is a
+     day you are in the middle of rather than one you were absent for. */
   const used = ate || trainedOn(date) ||
     !!(Rec.get('day', date, '') || {}).note ||
     !!(Rec.get('day', date, '') || {}).rest ||
@@ -4183,7 +4533,7 @@ function dayScore(date) {
 
   return {
     date: date, pct: pct, letter: letter, parts: scored, pending: pending,
-    used: used,
+    used: used, today: today,
     trained: trainedOn(date),
     rest: !!(Rec.get('day', date, '') || {}).rest,
     partial: pending.length > 0,
@@ -4237,7 +4587,7 @@ function adherence(days) {
            worst: worst, scoredDays: scored.length, loggedDays: touched.length };
 }
 
-/* One day on its own, capped at A while it is unfinished or was a rest day.
+/* One day on its own. Today opens at F and is graded up; a rest day tops at A.
 
    Takes a date, because the badge sits on a screen you can step backwards
    through. It used to be today and only today, so stepping back a day left the
@@ -4247,19 +4597,153 @@ function adherence(days) {
 function scoreFor(date) {
   const d = dayScore(date || Day.today());
   if (d.pct == null) return d;
-  /* Same rule as the days behind it: a morning you have not touched yet is not
-     a morning you are failing. It gets a number once it gets a reading. */
-  if (!d.used) { d.pct = null; return d; }
-  /* The letter now comes off the pillars' own letters rather than being read
-     back out of a percentage, so the two can never disagree. */
+  /* A day in the PAST that was never opened is left out rather than failed -
+     not being there is not the same as not doing it. Today is different: you
+     are in the middle of it, so it starts at F and climbs. */
+  if (!d.used && !d.today) { d.pct = null; return d; }
+  /* The letter comes off the pillars' own letters rather than being read back
+     out of a percentage, so the two can never disagree. */
   let k = d.letter || rankFor(d.pct).k;
   if (d.trained) k = rankFloor(rankUp(k, 1), 'E');
-  if (d.partial) k = rankCap(k, 'A');
+  /* The not-over-yet cap at A is gone. It existed because the average only
+     held the pillars that had settled, so an unfinished day could show an S
+     off one reading and needed holding down. Now every pillar is in from
+     midnight, so the letter is already honest about the whole day - and a day
+     genuinely finished by six in the evening should be allowed to say so. */
   if (d.rest) k = rankCap(k, 'A');
   d.rank = RANKS.find(r => r.k === k);
   return d;
 }
 const todayScore = () => scoreFor(Day.today());
+
+/* ══════════════ THE DAY BEHIND THE LETTER ══════════════
+   Tom, 2026-09-05: "When I click the letter, I wanna see the data for the
+   day." The badge used to jump to Trends, which answers a different question -
+   how is the WEEK going - and left today's letter unexplained.
+
+   A grade you cannot see the working of is a grade you argue with. Every
+   pillar shows what it was measured on, what it was measured against, and the
+   letter that came out. Calories and protein also show the accuracy the
+   ladder actually read, because "2,155 against 2,220" and "97%" are the same
+   fact and only one of them explains an S.
+
+   And the things that moved the letter afterwards - the training bump, the
+   rest-day cap, the not-over-yet cap - are named. Those are the parts that
+   surprise you. */
+function daySheet(date) {
+  const sc = date === Day.today() ? todayScore() : scoreFor(date);
+  const k = sc && sc.rank ? sc.rank.k : (sc && sc.letter) || null;
+  openSheet(Day.label(date), body => {
+    const head = el('div', 'dayhead');
+    const col = k ? rankColour(k) : tok('--text-muted');
+    head.innerHTML = '<span class="rk" style="color:' + col + ';border-color:' + col + '">' +
+      (k || '\u2013') + '</span>' +
+      '<span class="dhs">' + (sc && sc.pct != null ? sc.pct + '%' : 'nothing graded') +
+      '<i>' + esc(sc && sc.rank ? sc.rank.say : 'nothing logged on this day') + '</i></span>';
+    body.appendChild(head);
+
+    const parts = (sc && sc.parts) || [];
+    if (parts.length) {
+      const list = el('div', 'dayrows');
+      /* Training is not in the average - it is a lever on the letter, and
+         averaging it would let a rest day drag the number down. But it IS
+         part of the day, and a day sheet that cannot tell you whether you
+         trained is not a day sheet. So it reads as a fact, with no letter
+         beside it and nothing said about what it did to the grade. */
+      if (sc && sc.trained) {
+        list.appendChild(el('div', 'dayrow',
+          '<span class="pl">Trained</span><span class="pv">yes</span>' +
+          '<span class="pk" style="color:' + tok('--good') + '">\u2713</span>'));
+      }
+      parts.forEach(pt => {
+        const c = rankColour(pt.letter);
+        const shown = pt.val == null ? '\u2013'
+          : (pt.val % 1 ? r1(pt.val) : Math.round(pt.val)).toLocaleString();
+        const against = pt.target ? ' / ' + pt.target.toLocaleString() : '';
+        list.appendChild(el('div', 'dayrow',
+          '<span class="pl">' + esc(pt.label) + '</span>' +
+          '<span class="pv">' + shown + against + (pt.unit ? ' ' + esc(pt.unit) : '') +
+          (pt.acc != null ? '<i>' + Math.round(pt.acc) + '% accurate</i>' : '') + '</span>' +
+          '<span class="pk" style="color:' + c + '">' + pt.letter + '</span>'));
+      });
+      body.appendChild(list);
+    }
+
+    /* Still to come, and named. They ARE in the letter, as Fs, which is the
+       whole point: the grade says what the day is worth so far out of the
+       whole day, and this says which parts are still worth nothing. */
+    if (sc && sc.pending && sc.pending.length) {
+      body.appendChild(el('div', 'note', 'No reading yet: <b>' +
+        sc.pending.map(esc).join('</b>, <b>') +
+        '</b>. Each counts as an F until it has one, so the letter climbs as they come in.'));
+    }
+    /* ── what NOT to say ──
+       "Trained, so the letter went up one" is gone. Tom, 2026-09-05:
+       "Absolutely remove it." He is right, and the reason is worth keeping:
+       it announced a bonus. Framing a thing you did for its own sake as the
+       lever that moved a score is the fastest way to make it feel like
+       working for the score - and once training is something you do for the
+       letter, the letter is what you protect on a bad week.
+
+       Training still shows, as a row in the list above, which is a fact about
+       the day rather than a prize.
+
+       The rest-day CAP stays, because it answers a different question: not
+       "what did you earn" but "why can this letter not be higher", and a
+       ceiling you cannot see is the kind of thing you argue with.
+
+       The not-over-yet cap is gone with the machinery that needed it. */
+    const capped = [];
+    if (sc && sc.rest) capped.push('Rest day, so it tops out at A.');
+    if (capped.length) body.appendChild(el('div', 'note', capped.join(' ')));
+
+    if (!parts.length) {
+      body.appendChild(el('div', 'empty', 'Log a measurement and this fills in.'));
+    }
+
+    /* ── sharing the day, from the day ──
+       Tom, 2026-09-06: "i lost access to export the day report." My fault:
+       the letter used to jump to Trends, where the share buttons live, and I
+       changed it to open this without moving them.
+
+       They belong here anyway. The picture IS this day's island, and from
+       here it can be ANY day - the buttons on Trends could only ever share
+       today. Tap back through the week and share the day you actually had. */
+    body.appendChild(el('label', 'fl', 'Share it'));
+    const bar = el('div', 'btns');
+    ['story', 'feed'].forEach(kind => {
+      const b = el('button', 'btn mb-press mb-tap', kind === 'story' ? 'STORY' : 'POST');
+      b.onclick = () => shareCard(sc, kind, date);
+      bar.appendChild(b);
+    });
+    body.appendChild(bar);
+    body.appendChild(el('div', 'note', 'Style and size are on ' +
+      (TAB === 'trends' ? 'this screen' : 'Report') + ', under the rank.'));
+  });
+}
+
+/* ── a letter for every day ──
+   "Week trends I wanna see the letter grade for each day, same with month."
+   One letter per day, in its own colour, so a bad patch has a shape. Days you
+   never logged are a dash and not an F - the difference between not doing it
+   and not being there is the difference between a plan failing and a person
+   being on holiday. */
+function letterRun(days) {
+  const wrap = el('div', 'lrun');
+  const today = Day.today();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = Day.shift(today, -i);
+    const sc = d === today ? todayScore() : scoreFor(d);
+    const k = sc && sc.rank ? sc.rank.k : (sc && sc.letter) || null;
+    const b = el('button', 'ld' + (d === today ? ' now' : ''), k || '\u00b7');
+    if (k) b.style.color = rankColour(k);
+    b.dataset.tip = Day.label(d) + (k ? ' \u2014 ' + k + (sc.pct != null ? ' \u00b7 ' + sc.pct + '%' : '') : ' \u2014 nothing logged');
+    b.setAttribute('aria-label', b.dataset.tip);
+    b.onclick = () => daySheet(d);
+    wrap.appendChild(b);
+  }
+  return wrap;
+}
 
 /* ── the badge ── */
 function rankBadge(date) {
@@ -4289,13 +4773,16 @@ function rankBadge(date) {
      want the working rather than the answer. */
   w.innerHTML =
     '<span class="rk" style="color:' + col + ';border-color:' + col + '">' + mark + '</span>';
-  w.onclick = () => { TAB = 'trends'; Mobile.feedback('nav'); draw(); };
+  /* The day it is showing, not the week. Trends is one tap further on and
+     answers a different question. */
+  w.onclick = () => { Mobile.feedback('open'); daySheet(d); };
   return w;
 }
 
 /* ── the full working, on Trends ── */
 function rankCard() {
   const days = num(S.get('rankDays', 7), 7) || 7;
+  /* Set below; the letter runs read it so the row matches the window. */
   const a = adherence(days);
   const c = card('RANK', a.loggedDays + ' of ' + days + ' days logged');
 
@@ -4315,6 +4802,13 @@ function rankCard() {
     '<div class="rankside"><div class="hero">' + (a.pct == null ? '–' : a.pct + '<span class="u">%</span>') + '</div>' +
     '<div class="lb">' + esc(a.rank ? a.rank.say : 'Nothing to grade yet') + '</div></div>';
   c.appendChild(head);
+
+  /* ── the days themselves ──
+     The big letter is an average and an average hides the shape: four Ss and
+     three Fs average to the same place as seven Cs, and they are not the same
+     week. Tap any day for its working. */
+  c.appendChild(el('label', 'fl', days === 7 ? 'Each day this week' : 'Each day'));
+  c.appendChild(letterRun(days));
 
   /* training, said plainly, because it is the only thing that moves a letter */
   c.appendChild(el('div', 'note',
@@ -4346,7 +4840,7 @@ function rankCard() {
   } else {
     c.appendChild(el('div', 'note',
       '<b>' + t.pct + '%</b>' + (t.rank ? ' &middot; ' + t.rank.k : '') +
-      (t.partial ? ' &middot; still going. Waiting on '
+      (t.partial ? ' &middot; still going. No reading yet on '
         + t.pending.map(esc).join(', ') : '') +
       (t.rest ? ' &middot; rest day, tops out at A' : '')));
   }
@@ -4362,13 +4856,39 @@ function rankCard() {
   /* The picture is the Today card, so if the Spent tile is on your Today it is
      in the picture too. It starts hidden: what you spend is nobody's business
      and a default that leaks it is the wrong default. */
-  const hide = el('label', 'shopt');
-  const hb = document.createElement('input');
-  hb.type = 'checkbox'; hb.checked = !!S.get('hideSpend', 1);
-  hb.onchange = () => S.set('hideSpend', hb.checked ? 1 : 0);
-  hide.appendChild(hb);
-  hide.appendChild(el('span', null, 'Leave spending out'));
-  c.appendChild(hide);
+  /* ── one choice, not three switches ──
+     Tom, 2026-09-05: "strava leads you to a swipe menu of setting styles, so
+     it can be transparent or a solid block." Right, and three checkboxes was
+     me exposing the machinery instead of the choice. See-through and darken
+     are not two decisions, they are one look, and nobody wants a transparent
+     card with no scrim - that is the unreadable combination. */
+  const nowStyle = shareStyle();
+  c.appendChild(el('label', 'fl', 'Style'));
+  const sseg = el('div', 'seg');
+  SHARE_STYLES.forEach(st => {
+    const sb = el('button', st[0] === nowStyle ? 'on' : '', esc(st[1]));
+    sb.onclick = () => { S.set('shareStyle', st[0]); Mobile.feedback('select'); draw(); };
+    sseg.appendChild(sb);
+  });
+  c.appendChild(sseg);
+  c.appendChild(el('div', 'note', esc(styleDef()[4])));
+
+  const nowSize = shareSize()[0];
+  c.appendChild(el('label', 'fl', 'Island size'));
+  const zseg = el('div', 'seg');
+  SHARE_SIZES.forEach(z => {
+    const zb = el('button', z[0] === nowSize ? 'on' : '', esc(z[1]));
+    zb.onclick = () => { S.set('shareSize', z[0]); Mobile.feedback('select'); draw(); };
+    zseg.appendChild(zb);
+  });
+  c.appendChild(zseg);
+
+  const w = el('label', 'shopt');
+  const b = document.createElement('input');
+  b.type = 'checkbox'; b.checked = !!S.get('hideSpend', 1);
+  b.onchange = () => S.set('hideSpend', b.checked ? 1 : 0);
+  w.appendChild(b); w.appendChild(el('span', null, 'Leave spending out'));
+  c.appendChild(w);
   return c;
 }
 
@@ -4388,8 +4908,37 @@ function rankCard() {
    What is left here is the three decisions that are STATUS's own: which card,
    how wide, and the date on top of it. */
 
-async function shareCard(a, kind) {
-  const d = vd();
+/* Three, his names. I cut Transparent as "a mistake you can pick" and he put
+   it back, which is his call to make: on a dark plain photo it is the best of
+   the three and the gradient is the thing in the way.
+   id, label, see-through, gradient behind it, what it is for */
+const SHARE_STYLES = [
+  ['clear', 'Transparent', 1, 0, 'Just the card, nothing behind it. Best on a dark, plain photo.'],
+  ['glass', 'Translucent', 1, 1, 'The photo shows through, on a soft gradient so it reads on anything.'],
+  ['solid', 'Opaque',      0, 0, 'A solid card. Nothing shows through, so nothing can fight the numbers.'],
+];
+const shareStyle = () => S.get('shareStyle', 'glass');
+
+/* ── how big the island sits in the frame ──
+   Tom, 2026-09-05: "We might want the gradient to be bigger than the island,
+   allowing us to have the island be smaller on the actual story post."
+
+   The gradient always covers the whole frame; what changes is the card. At
+   88% the card IS the post and the photo is a border. Smaller, the photo is
+   the post and the numbers are an overlay on it, which is what a story
+   usually wants. */
+const SHARE_SIZES = [['big', 'Big', 0.88], ['mid', 'Medium', 0.68], ['small', 'Small', 0.52]];
+const shareSize = () => {
+  const id = S.get('shareSize', 'mid');
+  return SHARE_SIZES.filter(x => x[0] === id)[0] || SHARE_SIZES[1];
+};
+const styleDef = () => SHARE_STYLES.filter(x => x[0] === shareStyle())[0] || SHARE_STYLES[0];
+
+async function shareCard(a, kind, date) {
+  /* Which day is being pictured. It used to be whatever day the app was
+     showing, which was fine while the only way in was from the Today screen.
+     The day sheet can be opened on any day, so it has to say. */
+  const d = date || vd();
 
   /* The width matters more than it looks. The tile grid is auto-fit at a 92px
      minimum, so a wide stage gives four tiles across where his phone gives
@@ -4400,6 +4949,10 @@ async function shareCard(a, kind) {
   const cardW = onScreen ? Math.round(onScreen.getBoundingClientRect().width) : 0;
 
   const shot = islandCard(d, {
+    /* On by default: the point of a transparent PNG is that the photo is part
+       of the picture, and a solid panel over your own body is a sticker. Off
+       is there for a busy photo, where see-through costs you the numbers. */
+    seethru: !!styleDef()[2],
     /* The picture is the card, so if the Spent tile is on your Today it is in
        the picture. hideSpend keeps it out, and starts on. */
     money: !S.get('hideSpend', 1),
@@ -4413,6 +4966,11 @@ async function shareCard(a, kind) {
   try {
     await IO.saveShot(shot, 'status-' + (a && a.rank ? a.rank.k : 'day') + '-' + kind, {
       w: 1080, h: kind === 'story' ? 1920 : 1350,
+      /* The gradient still fills the frame; only the card shrinks. */
+      fill: shareSize()[2],
+      /* On by default. It is the thing that makes one picture work on a dark
+         photo and a bright one without asking him which he has. */
+      scrim: !!styleDef()[3],
       width: Math.max(340, Math.min(440, cardW || 390)),
       /* The reading is sized by measuring, and this copy has never been
          measured - without this a long one clips in the picture while looking
@@ -4422,7 +4980,172 @@ async function shareCard(a, kind) {
   } catch (e) { /* saveShot has already said so */ }
 }
 
+/* ── the report has two halves ──
+   Tom, 2026-09-06: "Add the day tab, so we can get intra day data
+   visualization."
+
+   THE DAY is one day, laid out along its own clock. Nothing else in the suite
+   draws time within a day: everything is a total by bedtime, which hides that
+   you ate two thirds of your calories after eight, or that the coffee was at
+   four. A day has a shape and this is the only place it can be seen.
+
+   THE STRETCH is what the screen was already: the grade, its working, the
+   weight chart, the letters. Weeks and months.
+
+   They are different questions and the tabs say so. */
+let REPTAB = 'stretch';
+
+/* ══════════════ THE SHAPE OF ONE DAY ══════════════
+   Everything else in here is a total by bedtime, and a total hides the two
+   things that decide whether the day worked: WHEN you ate and WHEN you took
+   what keeps you awake.
+
+   Calories run along the clock as bars, and anything with a half-life runs
+   over them as a curve of what is still in you. That pairing is the point.
+   Nobody needs a chart to know they had coffee; they need to see the coffee
+   still at 400mg when they were trying to sleep.
+
+   The bars are cumulative, so the line is the day filling up rather than a
+   row of unrelated meals. A flat morning and a wall after eight is a shape
+   you recognise instantly and cannot see anywhere else in this app. */
+function dayShapeChart(d) {
+  const W = 320, H = 150, PL = 30, PR = 26, PT = 12, PB = 18;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('class', 'chart');
+  svg.style.cssText = 'width:100%;height:auto;display:block';
+  const add = (tag, attrs, cls) => {
+    const n = document.createElementNS(svg.namespaceURI, tag);
+    Object.keys(attrs).forEach(k => n.setAttribute(k, attrs[k]));
+    if (cls) n.setAttribute('class', cls);
+    svg.appendChild(n); return n;
+  };
+
+  const X = mins => PL + (Math.max(0, Math.min(1440, mins)) / 1440) * (W - PL - PR);
+
+  /* the hours, every six, because twenty-four labels is hatching */
+  [0, 360, 720, 1080, 1440].forEach(mn => {
+    add('line', { x1: X(mn), y1: PT, x2: X(mn), y2: H - PB }, 'gl');
+    const t = add('text', { x: X(mn), y: H - 5, 'text-anchor': 'middle' }, 'lab');
+    t.textContent = mn === 1440 ? '12am' : clockLabel(String(Math.floor(mn / 60)).padStart(2, '0') + ':00').replace(':00', '');
+  });
+
+  /* ── calories, as the day filling up ── */
+  const ms = meals(d).slice().sort((a, b) => (a.t || 0) - (b.t || 0));
+  const target = calTarget().v || 0;
+  const total = ms.reduce((a, x) => a + (num(x.kcal, 0) || 0), 0);
+  const top = Math.max(target, total) || 1;
+  const Y = v => PT + (1 - v / top) * (H - PT - PB);
+
+  if (target) {
+    add('line', { x1: PL, y1: Y(target), x2: W - PR, y2: Y(target) }, 'goal');
+    const g = add('text', { x: PL + 2, y: Y(target) - 3 }, 'lab');
+    g.textContent = 'target';
+  }
+
+  let run = 0;
+  const steps = [];
+  ms.forEach(x => {
+    const dt = new Date(x.t || 0);
+    const mn = dt.getHours() * 60 + dt.getMinutes();
+    run += num(x.kcal, 0) || 0;
+    steps.push({ mn: mn, v: run, name: x.name, kcal: num(x.kcal, 0) || 0 });
+  });
+  if (steps.length) {
+    let dstr = 'M' + X(0) + ' ' + Y(0);
+    steps.forEach(p => { dstr += ' L' + X(p.mn) + ' ' + Y(p.v - p.kcal) + ' L' + X(p.mn) + ' ' + Y(p.v); });
+    dstr += ' L' + X(1440) + ' ' + Y(run);
+    add('path', { d: dstr }, 'avg');
+    steps.forEach(p => {
+      const c = add('circle', { cx: X(p.mn), cy: Y(p.v), r: 2.5 }, 'raw');
+      const ttl = document.createElementNS(svg.namespaceURI, 'title');
+      ttl.textContent = clockLabel(String(Math.floor(p.mn / 60)).padStart(2, '0') + ':' +
+        String(p.mn % 60).padStart(2, '0')) + ' \u00b7 ' + p.name + ' \u00b7 ' + Math.round(p.kcal) + ' kcal';
+      c.appendChild(ttl);
+    });
+  }
+
+  /* ── anything that wears off, drawn over the top ──
+     Its own scale, on the right, because milligrams and calories share
+     nothing but an axis. */
+  const decay = liveFields().filter(f => f.half && dueToday(f, d) && entries(d, f.id).length);
+  decay.slice(0, 1).forEach(f => {
+    const es = entries(d, f.id);
+    const peak = es.reduce((a, e) => a + (num(e.v, 0) || 0), 0) || 1;
+    const Y2 = v => PT + (1 - v / peak) * (H - PT - PB);
+    const pts = [];
+    for (let mn = 0; mn <= 1440; mn += 15) {
+      let left = 0;
+      es.forEach(e => {
+        const t = new Date(e.t || 0);
+        const at = t.getHours() * 60 + t.getMinutes();
+        if (mn < at) return;
+        left += (num(e.v, 0) || 0) * Math.pow(0.5, (mn - at) / 60 / f.half);
+      });
+      pts.push([mn, left]);
+    }
+    add('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ' ' + Y2(p[1])).join(' ') }, 'decay');
+    /* Anchored to the right edge, not started at it: "Caffeine" ran off the
+       side, which is a label that has stopped being one. It also says the
+       peak, because the curve's own scale is not the calorie scale beside it
+       and a line with no number is a shape. */
+    const lab = add('text', { x: W - 2, y: PT + 8, 'text-anchor': 'end' }, 'lab');
+    lab.textContent = f.label + ' · ' + Math.round(peak) + (f.unit || '');
+  });
+
+  return svg;
+}
+
+function drawDayShape(m) {
+  const d = vd();
+  const c = card(Day.label(d), 'how the day ran');
+  const ms = meals(d);
+  if (!ms.length) {
+    c.appendChild(el('div', 'empty', 'Log something with a time on it and the day gets a shape.'));
+    m.appendChild(c);
+    return;
+  }
+  c.appendChild(dayShapeChart(d));
+
+  /* The two facts the chart is drawn to expose, said in words underneath,
+     because a shape you have to interpret is a shape you stop looking at. */
+  const total = ms.reduce((a, x) => a + (num(x.kcal, 0) || 0), 0);
+  const late = ms.filter(x => new Date(x.t || 0).getHours() >= 20)
+    .reduce((a, x) => a + (num(x.kcal, 0) || 0), 0);
+  const first = ms.slice().sort((a, b) => a.t - b.t)[0];
+  const bits = [];
+  if (first) bits.push('First food at <b>' + clockLabel(hhmm(first.t)) + '</b>');
+  if (total && late) bits.push('<b>' + Math.round(late / total * 100) + '%</b> of it after 8pm');
+  if (bits.length) c.appendChild(el('div', 'note', bits.join(' \u00b7 ')));
+  m.appendChild(c);
+
+  /* Where the day was spent, if BLOCK published one. Same clock, so the two
+     read together. */
+  const plan = Rec.get('plan', d, 'routine');
+  if (plan && (plan.blocks || []).length) {
+    const c2 = card('Planned', plan.name || '');
+    const list = el('div', 'list');
+    plan.blocks.slice(0, 12).forEach(b => {
+      list.appendChild(el('div', 'note',
+        '<b>' + (b.s == null ? '' : clockLabel(String(Math.floor(b.s / 60)).padStart(2, '0') + ':' +
+          String(b.s % 60).padStart(2, '0'))) + '</b> ' + esc(b.name)));
+    });
+    c2.appendChild(list);
+    m.appendChild(c2);
+  }
+}
+
 function drawTrends(m) {
+  const seg = el('div', 'seg');
+  [['day', 'Day'], ['stretch', 'Stretch']].forEach(t => {
+    const b = el('button', REPTAB === t[0] ? 'on' : '', t[1]);
+    b.onclick = () => { REPTAB = t[0]; Mobile.feedback('nav'); draw(); };
+    seg.appendChild(b);
+  });
+  m.appendChild(seg);
+  if (REPTAB === 'day') return drawDayShape(m);
+
   /* The rank goes first: it is the answer to "how am I doing", and everything
      under it is the working. */
   m.appendChild(rankCard());
@@ -4470,6 +5193,25 @@ function drawTrends(m) {
      numbers and the label was quoting the wrong one */
   const plotted = (e.series || e.rows).length;
   const c2 = card('Weight', plotted + ' days');
+
+  /* ── the range, on the chart ──
+     Tom, 2026-09-05: "different tabs if we're in STATUS." It was a setting
+     called "History read" three screens away, which is a strange place for
+     the answer to "show me the last month".
+
+     It is the SAME setting, moved rather than copied. It decides how far back
+     everything is read, the estimate included, so a chart-only version would
+     draw ninety days beside a TDEE worked out from three years and the two
+     would quietly disagree. One control, where it is used. */
+  const lbNow = num(S.get('lookback', 0), 0) || 0;
+  const lbSeg2 = el('div', 'seg');
+  [[30, '30d'], [90, '90d'], [365, '1y'], [0, 'All']].forEach(([n, lbl]) => {
+    const b = el('button', lbNow === n ? 'on' : '', lbl);
+    b.onclick = () => { S.set('lookback', n); TD._dirty = true; Mobile.feedback('select'); draw(); };
+    lbSeg2.appendChild(b);
+  });
+  c2.appendChild(lbSeg2);
+
   c2.appendChild(weightChart(e));
   const w = TD.lastWeight(e.rows), goal = num(S.get('goalWeight', null));
 
@@ -4480,7 +5222,13 @@ function drawTrends(m) {
   const keys = [['avg', '7-day average']];
   if (ahead) keys.push(['reality', 'to hit ' + r1(goal) + ' by ' + Day.short(goalOn2)]);
   const showPredict = ahead && !!(e.predicted || e.tdee);
-  if (showPredict) keys.push(['predict', 'where you are heading']);
+  /* Three futures, named for the question each answers. "Where you are
+     heading" was doing for one line what now needs three, and the difference
+     between eating your target and eating what you actually eat is the whole
+     point of drawing both. */
+  if (showPredict) keys.push(['predict', 'if you eat your target']);
+  if (ahead && e.intake != null) keys.push(['actual', 'if you keep eating as you have']);
+  if (ahead && e.intake != null && e.err) keys.push(['cone', 'the give-or-take on that']);
   if (keys.length > 1) {
     const lg = el('div', 'legend');
     keys.forEach(k => {
@@ -4626,9 +5374,9 @@ function intakeToReach(w0, goalW, days) {
   return Math.round((lo + hi) / 2);
 }
 
-function predictWeight(w0, days, intakeOver) {
+function predictWeight(w0, days, intakeOver, tdeeOver) {
   const e = TD.estimate();
-  const tdee = e.predicted != null ? e.predicted : e.tdee;
+  const tdee = tdeeOver != null ? tdeeOver : (e.predicted != null ? e.predicted : e.tdee);
   const intake = intakeOver != null ? intakeOver : calTarget().v;
   if (!tdee || !intake || !w0) return null;
 
@@ -4717,17 +5465,39 @@ function weightChart(e) {
       lo = Math.min(lo, goal); hi = Math.max(hi, goal);
     }
     const pad = Math.max(1, (hi - lo) * .12); lo -= pad; hi += pad;
+    /* ── round numbers up the side ──
+       Tom, 2026-09-05: "I can't even tell what the dots mean numerically."
+       The range was the data plus a 12% pad, sliced into quarters, so the
+       labels came out 197, 203, 209 — true, and unreadable. A scale you have
+       to do arithmetic against is not a scale. Snapped to a round step, the
+       same chart reads 190, 200, 210 and a dot has a value you can see.
+
+       Only on auto. A range he set by hand is his and is left alone. */
+    const STEPS = [0.5, 1, 2, 5, 10, 20, 25, 50, 100];
+    const step = STEPS.filter(x => (hi - lo) / x <= 5)[0] || 100;
+    lo = Math.floor(lo / step) * step;
+    hi = Math.ceil(hi / step) * step;
   }
   const Y = v => PT + (1 - (v - lo) / Math.max(.001, hi - lo)) * (H - PT - PB);
   const clamp = v => Math.max(PT, Math.min(H - PB, Y(v)));
   const inView = v => v >= lo && v <= hi;
 
-  /* gridlines and their labels */
-  [0, .25, .5, .75, 1].forEach(t => {
+  /* ── gridlines and their labels ──
+     One line per round step where the scale is automatic, so every label is a
+     number you recognise. A hand-set range keeps the old five slices, because
+     his numbers are his and quartering them is the only honest thing to do
+     with a range somebody chose. */
+  const fixed = (fixLo != null && fixHi != null && fixHi > fixLo);
+  const GSTEPS = [0.5, 1, 2, 5, 10, 20, 25, 50, 100];
+  const gstep = GSTEPS.filter(x => (hi - lo) / x <= 6)[0] || 100;
+  const ticks = fixed ? [0, .25, .5, .75, 1]
+    : (() => { const out = []; for (let v = hi; v >= lo - 0.0001; v -= gstep) out.push((hi - v) / (hi - lo)); return out; })();
+  ticks.forEach(t => {
     const y = PT + t * (H - PT - PB);
     add('line', { x1: PL, y1: y, x2: W - PR, y2: y }, 'gl');
     const lab = add('text', { x: PL - 4, y: y + 3, 'text-anchor': 'end' }, 'lab');
-    lab.textContent = Math.round(hi - t * (hi - lo));
+    const val = hi - t * (hi - lo);
+    lab.textContent = gstep < 1 ? val.toFixed(1) : Math.round(val);
   });
 
   /* today, when the chart runs past it */
@@ -4753,20 +5523,64 @@ function weightChart(e) {
     add('line', { x1: X(today), y1: clamp(nowW), x2: X(goalOn), y2: clamp(goal) }, 'reality');
   }
 
-  /* ── the prediction ──
-     Drawn as soon as there is a weight to start from. Bodyweight × 13 is a
+  /* ══════════════ THE THREE LINES AHEAD ══════════════
+     Tom, 2026-09-05, asked for three projections and he is right that they are
+     three different questions:
+
+       REALITY   where you have to travel to arrive on time. A straight line
+                 from today to the goal weight on the goal date. It is not a
+                 prediction, it is the deadline.
+       TARGET    where you land if you eat the calorie target you set. This is
+                 the plan working.
+       ACTUAL    where you land if you keep eating what you have ACTUALLY been
+                 eating. This is the plan as lived, and the gap between it and
+                 TARGET is the whole coaching conversation.
+
+     ACTUAL comes with a cone, because it is the only one built on measurement
+     and measurement has a give-or-take. The cone is the same projection run at
+     the top and bottom of the TDEE error band, so it opens with time exactly
+     as the uncertainty does. A single confident line off an estimate that is
+     itself ±200 kcal is a lie with a nice slope.
+
+     Drawn as soon as there is a weight to start from. Bodyweight x 13 is a
      serviceable opening guess and the estimator moves off it within days of
-     real logging, so withholding the line until it says "measured" hid a
-     useful answer for two months to avoid overstating it by a few per cent.
-     Better to draw it and say what it is standing on. */
+     real logging, so withholding these hid a useful answer for two months to
+     avoid overstating it by a few per cent. */
+  const pathOf = pr => pr && pr.pts.length > 1
+    ? pr.pts.map((q, i) => (i ? 'L' : 'M') + X(Day.shift(today, q.i)) + ' ' + clamp(q.w)).join(' ')
+    : null;
+
+  const shown = { reality: false, target: false, actual: false, cone: false };
   if (aheadDays > 0 && nowW != null) {
-    const pr = predictWeight(nowW, aheadDays);
-    if (pr && pr.pts.length > 1) {
-      const dstr = pr.pts.map((q, i) =>
-        (i ? 'L' : 'M') + X(Day.shift(today, q.i)) + ' ' + clamp(q.w)).join(' ');
-      add('path', { d: dstr }, 'predict');
+    const est = TD.estimate();
+    const baseT = est.predicted != null ? est.predicted : est.tdee;
+    const eaten = est.intake;
+    const err = est.err;
+
+    /* the cone first, so both lines sit on top of it */
+    if (eaten != null && baseT && err) {
+      const hiP = predictWeight(nowW, aheadDays, eaten, baseT - err);   /* burning less -> heavier */
+      const loP = predictWeight(nowW, aheadDays, eaten, baseT + err);
+      if (hiP && loP && hiP.pts.length > 1 && loP.pts.length === hiP.pts.length) {
+        const top = hiP.pts.map((q, i) => (i ? 'L' : 'M') + X(Day.shift(today, q.i)) + ' ' + clamp(q.w));
+        const bot = loP.pts.slice().reverse().map(q => 'L' + X(Day.shift(today, q.i)) + ' ' + clamp(q.w));
+        add('path', { d: top.concat(bot).join(' ') + ' Z' }, 'cone');
+        shown.cone = true;
+      }
     }
+
+    /* what you have actually been eating */
+    if (eaten != null) {
+      const d = pathOf(predictWeight(nowW, aheadDays, eaten));
+      if (d) { add('path', { d: d }, 'actual'); shown.actual = true; }
+    }
+
+    /* what you said you would eat */
+    const dt = pathOf(predictWeight(nowW, aheadDays));
+    if (dt) { add('path', { d: dt }, 'predict'); shown.target = true; }
   }
+  shown.reality = !!(goal != null && aheadDays > 0 && nowW != null);
+  svg.dataset.shown = JSON.stringify(shown);
 
   /* raw weigh-ins. Thinned once they would overlap, or they smear into a grey
      band that hides the average line the chart exists to show. */
@@ -5215,6 +6029,42 @@ function newFieldForm(pane, existing) {
      you should not be outside — different question, and both can be true at
      once. Sodium has a ceiling and no target; sleep has a floor and a target;
      blood pressure has both edges and no target at all. */
+  /* ── the quick amounts ──
+     The buttons on the logging sheet. They were code-only, which is the one
+     thing that made a shipped field better than one you built: Sleep offers
+     6.5, 7, 7.5 and a field you made yourself made you type every time.
+
+     Spaces or commas, because nobody should have to guess which. Blank means
+     no buttons, which is right for a step count - a number you read off a
+     watch is not one you pick off a list. */
+  const sChips = section('chips');
+  sChips.appendChild(el('label', 'fl', 'Quick buttons when you log it'));
+  let picks = f.picks || (f.chips && f.chips.length ? 'list' : 'recent');
+  const pkSeg = el('div', 'seg');
+  const chp = document.createElement('input');
+  chp.type = 'text'; chp.inputMode = 'decimal';
+  chp.placeholder = '10 20 30';
+  chp.value = (f.chips || []).join(' ');
+  const pkNote = el('div', 'note');
+  const paintPicks = () => {
+    pkSeg.innerHTML = '';
+    [['recent', 'Your last few'], ['list', 'A fixed list'], ['none', 'None']].forEach(o => {
+      const b = el('button', picks === o[0] ? 'on' : '', o[1]);
+      b.onclick = () => { picks = o[0]; paintPicks(); };
+      pkSeg.appendChild(b);
+    });
+    chp.style.display = picks === 'list' ? '' : 'none';
+    pkNote.textContent = picks === 'recent'
+      ? 'The last five you logged, newest first. Nothing to keep up to date.'
+      : picks === 'list' ? 'Exactly these, in this order. Spaces or commas.'
+      : 'No buttons. Right for anything you read off a watch.';
+  };
+  paintPicks();
+  sChips.appendChild(pkSeg);
+  sChips.appendChild(chp);
+  sChips.appendChild(pkNote);
+  pane.appendChild(sChips);
+
   const sEdges = section('edges');
   sEdges.appendChild(el('label', 'fl', 'Edges, if it has them'));
   const lim = el('div', 'grid2');
@@ -5364,6 +6214,15 @@ function newFieldForm(pane, existing) {
        same as clearing it. `on` is that test. */
     const on = k => !cat || catOf(cat).has.indexOf(k) > -1;
 
+    /* Quick amounts ride with the target: both are about a number you are
+       aiming at, and a check field has neither. */
+    if (on('chips')) {
+      spec.picks = picks;
+      const list = String(chp.value || '').split(/[\s,]+/)
+        .map(x => num(x)).filter(x => x != null && isFinite(x));
+      if (picks === 'list' && list.length) spec.chips = list.slice(0, 12);
+      else if (picks !== 'list') delete spec.chips;
+    }
     if (on('target')) {
       const t = num(tg.value);
       if (t != null) { spec.target = t; if (!spec.dir) spec.dir = 'gte'; } else { delete spec.target; }
@@ -5721,18 +6580,9 @@ function drawGoalsTab(pane) {
   fieldRow(pane, 'Adaptation rate', 'alpha', TD.alpha(), 'How far the estimate moves toward each new reading');
   fieldRow(pane, 'Trend window (days)', 'win', TD.win(), 'How far back the weight trend line looks');
 
-  /* A box wanting a number of days made you invent one. These are the four
-     anybody would have typed. */
-  pane.appendChild(el('label', 'fl', 'History read'));
-  const lbSeg = el('div', 'seg');
-  [[0, 'All'], [365, '1 year'], [180, '6 months'], [90, '90 days']].forEach(([n, lbl]) => {
-    const on = (num(S.get('lookback', 0), 0) || 0) === n;
-    const b = el('button', on ? 'on' : '', lbl);
-    b.onclick = () => { S.set('lookback', n); TD._dirty = true; draw(); };
-    lbSeg.appendChild(b);
-  });
-  pane.appendChild(lbSeg);
-  pane.appendChild(el('div', 'note', 'How far back anything is read'));
+  /* "History read" used to be here. It is on the weight chart on Trends now,
+     which is the only place anybody wants it, and it is the same setting
+     rather than a second one. */
 
   /* Still stated per pound, because that is what the number IS and changing
      its meaning per user would make one saved setting mean two things. What it
@@ -5788,8 +6638,43 @@ function runBacktest() {
   }, 60);
 }
 
+/* ── which copy of the app am I looking at ──
+   Added 2026-09-05 after a real half hour was lost to it. Tom reported the
+   share picture coming out in a shape that had been deleted from the code the
+   day before, and then that it was no longer transparent. Both were true of
+   his phone and neither was true of the app: a browser had cached the page
+   and kept serving it, and there was nothing on screen that could have told
+   him so. The next best thing to never caching is being able to see it.
+
+   BUILT is stamped by tools/build-client.py where it can be; where it cannot
+   — opening the folder straight off disk — it says so rather than lying. */
+function drawFreshness(pane) {
+  pane.appendChild(el('label', 'fl', 'THIS COPY'));
+  const stamp = document.documentElement.getAttribute('data-built') || '';
+  pane.appendChild(el('div', 'note',
+    'Script <b>v' + IO.SCRIPT_V + '</b>' +
+    (stamp ? ' · built <b>' + esc(stamp) + '</b>' : '') +
+    '. If something here does not match what you were told changed, ' +
+    'this is the first thing to check.'));
+
+  const b = el('button', 'btn wide mb-press mb-tap', 'Get the newest version');
+  b.onclick = () => {
+    UI.toast('fetching…');
+    /* Refetch every shared script past the cache, THEN reload the page with a
+       query it has never seen. Either half alone leaves the other stale, which
+       is exactly the state his phone was in. */
+    const srcs = [].map.call(document.querySelectorAll('script[src]'), n => n.src);
+    Promise.all(srcs.map(u => fetch(u, { cache: 'reload' }).catch(() => null)))
+      .then(() => location.replace(location.pathname + '?v=' + Date.now()));
+  };
+  pane.appendChild(b);
+  pane.appendChild(el('div', 'note',
+    'Loads the app again from scratch. Your data is not touched — it lives in this browser, not in the file.'));
+}
+
 function drawSyncTab(pane) {
   settingsPane = pane; pane.classList.add('setpane');
+  drawFreshness(pane);
   pane.appendChild(el('div', 'note', 'Backup creates a file you can restore from. Export creates a spreadsheet you can read, and it restores too. Both are in the DATA tab.'));
   const cfg = Mirror.settings;
 
@@ -5809,7 +6694,6 @@ function drawSyncTab(pane) {
       : 'The sheet is running <b>v' + theirs + '</b>, which is older. Copy the script again and re-deploy.');
   if (theirs && theirs < mine) vrow.className = 'warnbox';
   pane.appendChild(vrow);
-  pane.appendChild(el('div', 'warnbox', '<b>Untested.</b> A failed push never blocks anything and goes again next time.'));
   pane.appendChild(el('div', 'note', 'Setup, once: blank Google Sheet → Extensions → Apps Script → paste the script below → Deploy → New deployment → Web app → Execute as <b>me</b>, access <b>anyone</b> → copy the URL → paste it here.'));
 
   const u = document.createElement('input');
@@ -5867,6 +6751,47 @@ function drawSyncTab(pane) {
     } else done(false);
   };
   pane.appendChild(show);
+
+  /* ── the sync log ──
+     Tom, 2026-09-09: the error messages "don't actually mean anything or help
+     at all, they just worry the users. Configure them to be useful to you
+     since you're the one actually debugging."
+
+     So the toasts got plain and this got everything. One button, because the
+     only thing he should ever have to do with a sync problem is hand the
+     record over rather than describe it - "it says it could not reach the
+     sheet" is a symptom, and every cause produces it. */
+  const diag = el('button', 'btn wide mb-press mb-tap', 'Copy the sync log');
+  diag.style.marginTop = 'var(--s-2)';
+  diag.style.minHeight = 'var(--tap)';
+  diag.onclick = () => {
+    const text = Mirror.logText();
+    const t = document.createElement('textarea');
+    t.rows = 12; t.value = text;
+    t.style.fontFamily = 'var(--font-mono)'; t.style.fontSize = 'var(--f-1)';
+    t.setAttribute('readonly', '');
+    const show2 = ok2 => {
+      UI.dialog({
+        title: 'SYNC LOG', width: 560,
+        body: b => {
+          b.appendChild(el('div', 'note', ok2
+            ? 'Copied. Paste it to Claude — it says what tried to sync, when, and how each attempt ended.'
+            : 'Copy this and paste it to Claude.'));
+          b.appendChild(t);
+          if (!ok2) setTimeout(() => { t.select(); }, 50);
+        },
+        actions: [{ label: 'DONE', kind: 'go' }],
+      });
+      if (ok2) Mobile.feedback('success');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => show2(true)).catch(() => show2(false));
+    } else show2(false);
+  };
+  pane.appendChild(diag);
+  pane.appendChild(el('div', 'note',
+    'The last ' + (Mirror.log().length || 'few') + ' sync attempts, the quiet automatic ones included. ' +
+    'It holds no food, weights or journal lines — only times, and whether each attempt worked.'));
 }
 
 /* Repaint one settings pane in place. The pane element is handed to each tab
@@ -5891,33 +6816,167 @@ const Mirror = IO.mirror;
 
 /* ══════════════ EXPORT ══════════════ */
 
+/* ══════════════ THE SUMMARY ══════════════
+
+   The tab the sheet opens on, and the order of it is the whole argument.
+
+   WHAT YOU HAVE DONE goes at the top. Every other read-out in this file
+   describes the current week, which is exactly the wrong thing to hand
+   somebody having a bad one. The strongest reason to believe you can do a
+   thing is having already done it, and nothing in this suite could show that
+   on demand until now. Days trained, sets lifted, meals logged: evidence of
+   getting somewhere, rather than evidence of complying.
+
+   WHERE YOU ARE NOW is the working half underneath. Numbers, and no verdict
+   attached to any of them. Nothing here says a behaviour moved a figure. It
+   states the behaviour, states the figure, and lets him join them up.
+
+   TRAIN's rows are read here and never written. An app may read any type,
+   and both apps share one store on one device, so a set logged this morning
+   is countable from this page the moment it is saved. */
+
+/* A1 notation from a column number, so a sparkline can point at a column
+   whose position depends on how many fields are switched on. */
+function colLetter(n) {
+  let out = '';
+  for (n = n + 1; n > 0; n = Math.floor((n - 1) / 26)) out = String.fromCharCode(65 + (n - 1) % 26) + out;
+  return out;
+}
+
+function summaryRows() {
+  const out = [];
+  const row = (a, b, c) => out.push([a == null ? '' : a, b == null ? '' : b, c == null ? '' : c]);
+  const gap = () => row('', '', '');
+  const int = n => Math.round(n || 0).toLocaleString();
+
+  /* ── what is in the store, counted once ── */
+  const sets = Rec.all('set');
+  const trainDays = {};
+  sets.forEach(r => { if (r.date) trainDays[r.date] = 1; });
+  let lifted = 0, reps = 0;
+  sets.forEach(r => {
+    const p = r.payload || {};
+    const kg = num(p.kg, 0) || 0, rp = num(p.r, 0) || 0;
+    lifted += kg * rp; reps += rp;
+  });
+
+  const allMeals = Rec.all('meal');
+  const evs = Rec.all('ev');
+  const notes = Rec.all('note');
+
+  /* A day counts as logged if anything at all was written against it. The bar
+     is deliberately low, for the same reason the streak rule in the brief is:
+     a day you touched is a day you did not disappear. */
+  const seenDays = {};
+  [evs, allMeals, Rec.all('spend'), Rec.all('day'), sets].forEach(list =>
+    list.forEach(r => { if (r.date) seenDays[r.date] = 1; }));
+  const days = Object.keys(seenDays).sort();
+  const weighDays = {};
+  evs.forEach(r => { if (r.key === 'weight' && r.date) weighDays[r.date] = 1; });
+
+  row('WHAT YOU HAVE DONE', '', '');
+  row('First day recorded', days.length ? days[0] : '',
+    days.length ? new Date(days[0] + 'T12:00:00').toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '');
+  row('Days logged', days.length, days.length ? 'anything written at all counts' : '');
+  row('Days trained', Object.keys(trainDays).length, '');
+  row('Sets lifted', int(sets.length), '');
+  row('Reps', int(reps), '');
+  row('Weight moved, all of it', int(lifted) + ' kg', 'every set, weight times reps');
+  row('Meals logged', int(allMeals.length), '');
+  row('Foods in your library', Object.keys(foods()).length, '');
+  row('Weigh-ins', Object.keys(weighDays).length, '');
+  row('Journal lines', int(notes.length), '');
+  gap();
+
+  /* ── where you are now ── */
+  const e = TD.estimate();
+  /* The latest weigh-in out of the rows already in hand, rather than asking
+     each of the last four hundred days in turn whether it had one. Same
+     answer, and it does not get slower the longer you go without standing on
+     the scales — which is exactly when the old version was slowest, and the
+     only time this line has to work hard. */
+  let wNow = null, wDate = null;
+  evs.forEach(r => {
+    if (r.key !== 'weight' || !r.date) return;
+    if (wDate && r.date <= wDate) return;
+    const list = (r.payload || {}).e || [];
+    if (!list.length) return;
+    wNow = list[list.length - 1].v; wDate = r.date;
+  });
+  const wf = field('weight') || {};
+  const unit = wf.unit || 'lb';
+
+  const wk = Day.last(7);
+  const fed = wk.filter(d => dayTotals(d).kcal > 0);
+  const avg = k => fed.length ? fed.reduce((a, d) => a + (dayTotals(d)[k] || 0), 0) / fed.length : null;
+  const t = TARGETS();
+
+  const month = Day.today().slice(0, 7);
+  const thisMonth = Day.last(400).filter(d => d.slice(0, 7) === month);
+  const spentMonth = thisMonth.reduce((a, d) => a + spendTotal(d), 0);
+  const foodMonth = thisMonth.reduce((a, d) => a + (dayTotals(d).price || 0), 0);
+
+  row('WHERE YOU ARE NOW', '', '');
+  row('Weight', wNow == null ? '' : r1(wNow) + ' ' + unit, wDate ? 'read on ' + wDate : 'no weigh-in yet');
+  row('Trend', e.rate == null ? '' : r1(e.rate) + ' ' + unit + '/week', 'over ' + TD.win() + ' days');
+  row('What you burn', e.tdee == null ? '' : int(e.tdee) + ' kcal',
+    e.tdee == null ? e.basis : 'give or take ' + int(e.err) + ', ' + e.conf + '% confident');
+  row('Eaten, 7-day average', avg('kcal') == null ? '' : int(avg('kcal')) + ' kcal',
+    'target ' + int(t.kcal) + ', on ' + fed.length + ' of 7 days');
+  row('Protein, 7-day average', avg('p') == null ? '' : Math.round(avg('p')) + ' g', 'target ' + int(t.p) + ' g');
+  row('Food this month', '₱' + int(foodMonth), 'what you ate, at label prices');
+  row('Spent this month', '₱' + int(spentMonth), 'money that actually left an account');
+  gap();
+
+  /* ── the shape of it ──
+     Written as formulas, not as pictures. The sheet redraws them itself the
+     moment the Daily tab changes, so they cannot go stale between syncs, and
+     they cost two cells rather than an image. The column is worked out here
+     because which one holds a weight depends on how many fields are on. */
+  const live = Object.values(fields()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  let wIdx = -1;
+  live.forEach((f, i) => { if (f.id === 'weight') wIdx = i; });
+  row('THE SHAPE OF IT', '', '');
+  if (wIdx > -1) {
+    const c = colLetter(2 + wIdx);
+    row('Weight, all of it', '=SPARKLINE(Daily!' + c + '2:' + c + '400)', 'every weigh-in on the Daily tab');
+  }
+  const kc = colLetter(2 + live.length);   /* Calories sits straight after the fields */
+  row('Calories, all of it', '=SPARKLINE(Daily!' + kc + '2:' + kc + '400,{"charttype","column"})',
+    'every day you logged food');
+  gap();
+  row('Worked out by STATUS and rewritten on each full sync. Typing on this tab will not last.', '', '');
+  row('Type into Food, Meals, Spending, Journal and Tracked. Put your own charts on a tab of your own.', '', '');
+  return out;
+}
+
 function exportSheets() {
   const days = Day.last(370);
   const live = Object.values(fields()).sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const daily = [['Date', 'Day'].concat(live.map(f => f.label + (f.unit ? ' (' + f.unit + ')' : '')))
-    .concat(['Calories', 'Calories ±', 'Protein g', 'Carbs g', 'Fat g', 'Sodium mg', 'Potassium mg', 'Caffeine mg', 'Food eaten ₱', 'Spent ₱'])];
+    .concat(['Calories', 'Calories ±', 'Protein g', 'Carbs g', 'Fat g', 'Sodium mg', 'Potassium mg', 'Calcium mg', 'Caffeine mg', 'Food eaten ₱', 'Spent ₱'])];
   days.forEach(d => {
     const t = dayTotals(d), sp = spendTotal(d);
     const any = live.some(f => value(d, f.id) != null) || t.kcal || sp;
     if (!any) return;
     daily.push([d, new Date(d + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' })].concat(live.map(f => { const v = value(d, f.id); return v == null ? '' : r1(v); }))
-      .concat([Math.round(t.kcal), Math.round(t.kerr), r1(t.p), r1(t.c), r1(t.f), Math.round(t.na), Math.round(t.k), Math.round(t.caff),
+      .concat([Math.round(t.kcal), Math.round(t.kerr), r1(t.p), r1(t.c), r1(t.f), Math.round(t.na), Math.round(t.k), Math.round(t.ca), Math.round(t.caff),
         Math.round(t.price), Math.round(sp)]));
   });
 
-  const mealRows = [['Date', 'Time', 'Food', 'Serving', 'Amount', 'Unit', 'Calories', 'Protein', 'Carbs', 'Fat', 'Sodium', 'Potassium', 'Caffeine', 'Price', 'Margin', 'Paid from']];
+  const mealRows = [['Date', 'Time', 'Food', 'Serving', 'Amount', 'Unit', 'Calories', 'Protein', 'Carbs', 'Fat', 'Sodium', 'Potassium', 'Calcium', 'Caffeine', 'Price', 'Margin', 'Paid from']];
   days.forEach(d => meals(d).forEach(x => mealRows.push([d, new Date(x.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    x.name, x.serve || '', r1(x.amt), x.unit || '', Math.round(x.kcal), r1(x.p), r1(x.c), r1(x.f), Math.round(x.na), Math.round(x.k), Math.round(x.caff), Math.round(x.price),
+    x.name, x.serve || '', r1(x.amt), x.unit || '', Math.round(x.kcal), r1(x.p), r1(x.c), r1(x.f), Math.round(x.na), Math.round(x.k), Math.round(x.ca), Math.round(x.caff), Math.round(x.price),
     errTag(x.err), x.acct || ''])));
 
   const spendRows = [['Date', 'Time', 'Amount', 'Account', 'Details']];
   days.forEach(d => spends(d).forEach(s => spendRows.push([d, new Date(s.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     r1(s.amt), s.acct || '', s.note || ''])));
 
-  const foodRows = [['Food', 'Brand', 'Group', 'Serving', 'Unit', 'Calories', 'Protein', 'Carbs', 'Fat', 'Sodium', 'Potassium', 'Caffeine', 'Price', 'Your servings', 'Times logged']];
+  const foodRows = [['Food', 'Brand', 'Group', 'Serving', 'Unit', 'Calories', 'Protein', 'Carbs', 'Fat', 'Sodium', 'Potassium', 'Calcium', 'Caffeine', 'Price', 'Your servings', 'Times logged']];
   Object.values(foods()).forEach(f => foodRows.push([f.name, f.brand || '', f.cat || '', r1(num(f.base.amt, 0)), f.base.unit || '',
-    num(f.base.kcal, ''), num(f.base.p, ''), num(f.base.c, ''), num(f.base.f, ''), num(f.base.na, ''), num(f.base.k, ''), num(f.base.caff, ''), num(f.base.price, ''),
+    num(f.base.kcal, ''), num(f.base.p, ''), num(f.base.c, ''), num(f.base.f, ''), num(f.base.na, ''), num(f.base.k, ''), num(f.base.ca, ''), num(f.base.caff, ''), num(f.base.price, ''),
     (f.serves || []).map(s => s.label + ' = ' + r1(s.mult) + '×').join('; '), f.uses || 0]));
 
   const e = TD.estimate();
@@ -5932,6 +6991,8 @@ function exportSheets() {
     ['Target intake', TD.targetIntake() == null ? '' : TD.targetIntake()]];
 
   return [
+    /* order 0 puts it leftmost. The sheet script does the moving. */
+    { name: 'Summary', rows: summaryRows(), widths: [34, 20, 44], order: 0 },
     { name: 'Daily', rows: daily, widths: daily[0].map(() => 12) },
     { name: 'Meals', rows: mealRows, widths: mealRows[0].map(() => 12) },
     { name: 'Spending', rows: spendRows, widths: [11, 8, 10, 12, 30] },
