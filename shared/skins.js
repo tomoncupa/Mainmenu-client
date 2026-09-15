@@ -24,7 +24,7 @@
    GENERATED — do not hand-edit between the markers. Edit shared/skins.json and
    run `py -3 tools/embed-skins.py`. It is not a build step: nothing has to run
    for the suite to work, and _smoke.html fails if the two ever drift. */
-/*SKINS-START*/const FALLBACK={"fields":[["bg","Canvas background"],["panel","Card fill"],["line","Card border"],["ink","Text"],["mut","Secondary text"],["acc","Accent — buttons, selection"]],"note":"Every app reads this file. A skin is the THEME layer: structure, fonts, corners, border weight, depth, motion, texture, its own CSS, and the default colours. The COLOUR layer sits on top and is edited in the app (Settings > Look > Colours), saved per skin in localStorage 'suite_palettes' - it never touches this file. Apps add no theme CSS of their own; a theme brings its own in `css` and the app never knows.","ranks":{"A":"#5FE39B","B":"#4FD8E8","C":"#6C8CFF","D":"#C79BF0","E":"#FF9F6B","F":"#FF6B6B","S":"#F2C14E"},"rev":13,"schema":1,"skins":[{"base":{"accent":"#7EE8FA","bg":"#080B10","panel":"#0E141D","text":"#DBE7F0"},"css":"/* BLOCK - lifted straight out of block/index.html, which was never wearing a\n   theme at all: it loads day.js and records.js and nothing else, and every\n   colour in it is its own.\n\n   Its structure was already right. Fifteen variables, borders doing all the\n   separating, almost no shadow anywhere, six-pixel corners, and two fonts - a\n   squared one for labels and a plain one for reading. That is a theme, it was\n   just written inside one app where nothing else could reach it.\n\n   Measured rather than eyeballed: 6px is the corner in 37 places, borders are\n   1px #1e2a38, and exactly three elements in the whole app carry a shadow. */\n\nbody { letter-spacing: var(--track-body) }\n\n/* Flat depth removes the shadow, so the edge has to come from a line. That is\n   how BLOCK does it too: a hairline round everything and no lift at all. */\n.card, .mb-sheet, .mb-menu, .mb-toast {\n  background: var(--surface-1);\n  border: var(--border-width) solid var(--border);\n}\nheader {\n  background: var(--surface-1);\n  border-bottom: var(--border-width) solid var(--border);\n}\nheader .logo { font-family: var(--font-display); letter-spacing: var(--track-cap) }\n\nh2 {\n  font-family: var(--font-display);\n  color: var(--text-muted);\n  letter-spacing: var(--track-cap);\n}\n\n.item, .mb-input, .mb-sel {\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n}\n.item .nm { font-family: var(--font-body) }\n\n.chk { border-color: var(--border-strong) }\n.chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg) }\n\n.stat { background: var(--surface-2); border: var(--border-width) solid var(--border) }\n.stat b { font-family: var(--font-display) }\n\nbutton.mb-btn, .mb-act, .mb-chip, .mb-x, .mb-opt {\n  font-family: var(--font-display);\n  letter-spacing: var(--track-cap);\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n  color: var(--text-2);\n}\nbutton.mb-btn:hover, .mb-chip:hover { border-color: var(--border-strong); color: var(--text-1) }\n.mb-btn.go { border-color: var(--accent); color: var(--accent); background: var(--surface-2) }\n#fab { background: var(--accent); color: var(--accent-fg) }","depth":"flat","font":["Chakra+Petch:wght@500;600;700","IBM+Plex+Sans:wght@400;500;600"],"icon":{"cap":"round","join":"round","weight":1.6},"id":"block","mode":"dark","motion":{"ease":"cubic-bezier(.2,0,0,1)","fast":"120ms","med":"200ms","sheet":"320ms","slow":"300ms","tap":"0ms"},"name":"Default","overrides":{"--border":"#1E2A38","--border-strong":"#2B3A4D","--danger":"#FF6B81","--success":"#6EE7A8","--surface-2":"#131B26","--surface-3":"#1B2634","--text-2":"#B8C9D8","--text-muted":"#7F93A8","--warn":"#FFB347"},"ramp":["#7EE8FA","#6EE7A8","#FFB347","#FF6B81","#A78BFA","#7F93A8"],"texture":{"body":"'IBM Plex Sans',system-ui,sans-serif","cut":"6px","display":"'Chakra Petch',system-ui,sans-serif","image":"none","size":"auto"},"track":{"body":"0","cap":".08em","tight":"0"},"weight":1},{"base":{"accent":"#6EE7FF","bg":"#0B0E14","panel":"#121826","text":"#FFFFFF"},"icon":{"cap":"round","join":"round","weight":1.75},"id":"ice","mode":"dark","name":"System","overrides":{"--border":"#22304A","--surface-2":"#0E1420","--text-2":"#E2E2E3","--text-muted":"#ACADAF"},"ramp":["#6EE7FF","#A78BFA","#FBBF24","#FB7185","#34D399","#94A3B8"],"texture":{"image":"radial-gradient(ellipse at 50% 40%,rgba(110,231,255,.05),transparent 60%)","size":"100% 100%"}},{"base":{"accent":"#F7F3E8","bg":"#1B2B23","panel":"#22352C","text":"#F2EFE4"},"font":"Gloria+Hallelujah","icon":{"cap":"round","join":"round","weight":2.2,"wobble":true},"id":"chalkboard","mode":"dark","name":"Chalkboard","overrides":{"--border":"#3A5245","--surface-2":"#16261F","--text-2":"#D8D7CD","--text-muted":"#A9ACA2"},"ramp":["#F7F3E8","#FFD9A0","#A8D8F0","#F0A8B8","#B8E0A8","#D0C8F0"],"texture":{"body":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","dots":"rgba(255,255,255,.02)","image":"radial-gradient(rgba(255,255,255,.02) 1px,transparent 1.5px)","size":"7px 7px"}},{"base":{"accent":"#3A4A9F","bg":"#F5F1E8","panel":"#FFFFFF","text":"#2B2A26"},"font":"Architects+Daughter","icon":{"cap":"round","join":"round","weight":1.9,"wobble":true},"id":"sketch","mode":"light","name":"Sketch","overrides":{"--border":"#C9C0B0","--surface-2":"#EFEAE0","--text-2":"#43423D","--text-muted":"#706E68"},"ramp":["#3A4A9F","#8F3B3B","#3F7A4E","#8A6D2F","#5B4A8A","#66655F"],"texture":{"body":"'Architects Daughter',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Architects Daughter',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}},{"base":{"accent":"#F4F1EA","bg":"#12151B","panel":"#181C24","text":"#F4F1EA"},"font":"Patrick+Hand","icon":{"cap":"round","join":"round","weight":2.3,"wobble":true},"id":"doodle","mode":"dark","name":"Doodle","overrides":{"--border":"#39414F","--surface-2":"#12151B","--text-2":"#D9D7D1","--text-muted":"#A7A6A4"},"ramp":["#F4F1EA","#FFD9A0","#9FD8F2","#F5A8B8","#B4E4A6","#CBC2F0"],"texture":{"body":"'Patrick Hand',system-ui,-apple-system,sans-serif","cut":"14px","display":"'Patrick Hand',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}}],"source":"ARC mindmapper"};/*SKINS-END*/
+/*SKINS-START*/const FALLBACK={"fields":[["bg","Canvas background"],["panel","Card fill"],["line","Card border"],["ink","Text"],["mut","Secondary text"],["acc","Accent — buttons, selection"]],"note":"Every app reads this file. A skin is the THEME layer: structure, fonts, corners, border weight, depth, motion, texture, its own CSS, and the default colours. The COLOUR layer sits on top and is edited in the app (Settings > Look > Colours), saved per skin in localStorage 'suite_palettes' - it never touches this file. Apps add no theme CSS of their own; a theme brings its own in `css` and the app never knows.","ranks":{"A":"#5FE39B","B":"#4FD8E8","C":"#6C8CFF","D":"#C79BF0","E":"#FF9F6B","F":"#FF6B6B","S":"#F2C14E"},"rev":14,"schema":1,"skins":[{"base":{"accent":"#F0B323","bg":"#080B10","panel":"#0E141D","text":"#DBE7F0"},"css":"/* BLOCK - lifted straight out of block/index.html, which was never wearing a\n   theme at all: it loads day.js and records.js and nothing else, and every\n   colour in it is its own.\n\n   Its structure was already right. Fifteen variables, borders doing all the\n   separating, almost no shadow anywhere, six-pixel corners, and two fonts - a\n   squared one for labels and a plain one for reading. That is a theme, it was\n   just written inside one app where nothing else could reach it.\n\n   Measured rather than eyeballed: 6px is the corner in 37 places, borders are\n   1px #1e2a38, and exactly three elements in the whole app carry a shadow. */\n\nbody { letter-spacing: var(--track-body) }\n\n/* Flat depth removes the shadow, so the edge has to come from a line. That is\n   how BLOCK does it too: a hairline round everything and no lift at all. */\n.card, .mb-sheet, .mb-menu, .mb-toast {\n  background: var(--surface-1);\n  border: var(--border-width) solid var(--border);\n}\nheader {\n  background: var(--surface-1);\n  border-bottom: var(--border-width) solid var(--border);\n}\nheader .logo { font-family: var(--font-display); letter-spacing: var(--track-cap) }\n\nh2 {\n  font-family: var(--font-display);\n  color: var(--text-muted);\n  letter-spacing: var(--track-cap);\n}\n\n.item, .mb-input, .mb-sel {\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n}\n.item .nm { font-family: var(--font-body) }\n\n.chk { border-color: var(--border-strong) }\n.chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg) }\n\n.stat { background: var(--surface-2); border: var(--border-width) solid var(--border) }\n.stat b { font-family: var(--font-display) }\n\nbutton.mb-btn, .mb-act, .mb-chip, .mb-x, .mb-opt {\n  font-family: var(--font-display);\n  letter-spacing: var(--track-cap);\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n  color: var(--text-2);\n}\nbutton.mb-btn:hover, .mb-chip:hover { border-color: var(--border-strong); color: var(--text-1) }\n.mb-btn.go { border-color: var(--accent); color: var(--accent); background: var(--surface-2) }\n#fab { background: var(--accent); color: var(--accent-fg) }","depth":"flat","font":["Chakra+Petch:wght@500;600;700","IBM+Plex+Sans:wght@400;500;600"],"icon":{"cap":"round","join":"round","weight":1.6},"id":"block","material":"plate","mode":"dark","motion":{"ease":"cubic-bezier(.2,0,0,1)","fast":"120ms","med":"200ms","sheet":"320ms","slow":"300ms","tap":"0ms"},"name":"Default","overrides":{"--border":"#1E2A38","--border-strong":"#2B3A4D","--danger":"#FF6B81","--success":"#6EE7A8","--surface-2":"#131B26","--surface-3":"#1B2634","--text-2":"#B8C9D8","--text-muted":"#7F93A8","--warn":"#FFB347"},"ramp":["#7EE8FA","#6EE7A8","#FFB347","#FF6B81","#A78BFA","#7F93A8"],"texture":{"body":"'IBM Plex Sans',system-ui,sans-serif","cut":"6px","display":"'Chakra Petch',system-ui,sans-serif","image":"none","size":"auto"},"track":{"body":"0","cap":".08em","tight":"0"},"weight":1},{"base":{"accent":"#6EE7FF","bg":"#0B0E14","panel":"#121826","text":"#FFFFFF"},"icon":{"cap":"round","join":"round","weight":1.75},"id":"ice","mode":"dark","name":"System","overrides":{"--border":"#22304A","--surface-2":"#0E1420","--text-2":"#E2E2E3","--text-muted":"#ACADAF"},"ramp":["#6EE7FF","#A78BFA","#FBBF24","#FB7185","#34D399","#94A3B8"],"texture":{"image":"radial-gradient(ellipse at 50% 40%,rgba(110,231,255,.05),transparent 60%)","size":"100% 100%"}},{"base":{"accent":"#F7F3E8","bg":"#1B2B23","panel":"#22352C","text":"#F2EFE4"},"font":"Gloria+Hallelujah","icon":{"cap":"round","join":"round","weight":2.2,"wobble":true},"id":"chalkboard","mode":"dark","name":"Chalkboard","overrides":{"--border":"#3A5245","--surface-2":"#16261F","--text-2":"#D8D7CD","--text-muted":"#A9ACA2"},"ramp":["#F7F3E8","#FFD9A0","#A8D8F0","#F0A8B8","#B8E0A8","#D0C8F0"],"texture":{"body":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","dots":"rgba(255,255,255,.02)","image":"radial-gradient(rgba(255,255,255,.02) 1px,transparent 1.5px)","size":"7px 7px"}},{"base":{"accent":"#3A4A9F","bg":"#F5F1E8","panel":"#FFFFFF","text":"#2B2A26"},"font":"Architects+Daughter","icon":{"cap":"round","join":"round","weight":1.9,"wobble":true},"id":"sketch","mode":"light","name":"Sketch","overrides":{"--border":"#C9C0B0","--surface-2":"#EFEAE0","--text-2":"#43423D","--text-muted":"#706E68"},"ramp":["#3A4A9F","#8F3B3B","#3F7A4E","#8A6D2F","#5B4A8A","#66655F"],"texture":{"body":"'Architects Daughter',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Architects Daughter',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}},{"base":{"accent":"#F4F1EA","bg":"#12151B","panel":"#181C24","text":"#F4F1EA"},"font":"Patrick+Hand","icon":{"cap":"round","join":"round","weight":2.3,"wobble":true},"id":"doodle","mode":"dark","name":"Doodle","overrides":{"--border":"#39414F","--surface-2":"#12151B","--text-2":"#D9D7D1","--text-muted":"#A7A6A4"},"ramp":["#F4F1EA","#FFD9A0","#9FD8F2","#F5A8B8","#B4E4A6","#CBC2F0"],"texture":{"body":"'Patrick Hand',system-ui,-apple-system,sans-serif","cut":"14px","display":"'Patrick Hand',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}}],"source":"ARC mindmapper"};/*SKINS-END*/
 /* The skin is chosen PER APP on purpose — ARC can be Monarch while BLOCK is
    Ice. `Skins.for('block')` before restore()/apply() scopes it; without it
    everything shares the old single key, exactly as before. */
@@ -306,6 +306,55 @@ function tokens(base,cut,ranks,skin){
   }
   if (!t['--bevel-in']) t['--bevel-in'] = 'none';
 
+  /* ══════════════ material ══════════════
+     Tom, 2026-09-15, holding BLOCK's tinted rows up against the home screen:
+     "contrast that to the flatness of everywhere else." BLOCK drew each block
+     as a plate in its own colour: a gradient from the tint down to the card,
+     a lit top edge, a border mixed from the tint, and a shadow under it. That
+     was BLOCK's own CSS, so nothing else could wear it. It is a theme lever
+     now, and every app gets it by drawing a card with these three:
+
+       background: var(--plate);
+       border: var(--border-width) solid var(--plate-edge);
+       box-shadow: var(--plate-lift);
+
+     The tint is `--c`, set on the element by the app (BLOCK's rows already
+     carry one; a home widget carries its app's colour), and the accent when
+     it carries none. Three materials: `flat` resolves to exactly what a card
+     was before this existed, so a theme that says nothing changes nothing;
+     `plate` is BLOCK's recipe; `glass` is a thinner tint with a lit rim, the
+     look System paints by hand. Measured from BLOCK, not eyeballed: 26% and
+     13% for the gradient, 40% for the edge, 62% for the top line, 22% for
+     the contact shadow. */
+  /* The tokens are the AMOUNTS, and the drawing is the `.mb-plate` rule in
+     materialCSS below. They cannot be one thing: a token holding
+     `var(--c)` is resolved where the token is declared, on the root, where
+     there is no --c, so every plate came out in the accent whatever colour
+     the element carried. That was watched on the home screen on 2026-09-15.
+     A rule resolves --c on the element it lands on, which is the point. */
+  /* Two surfaces, and which is which matters. Tom, 2026-09-15, on the first
+     try: "the new material looks worse, still not the same as native BLOCK."
+     It had tinted the whole card. BLOCK does the opposite: the card (its
+     lane) is a dark translucent GLASS over the page's wash, solid at 75% at
+     the top and 55% at the bottom, with a hairline; only the ROWS inside it
+     are tinted PLATES. A plate is a small thing in its own colour. A card is
+     the quiet glass it sits on. */
+  const material = (skin && skin.material) || 'flat';
+  /* The depth family's own shadow and rim, as one value that is never the
+     word `none`: a shadow list holding `none` is thrown out whole by the
+     browser, and on a flat-depth theme both tokens are `none`. */
+  const soft = [t['--e-2'], t['--rim']].filter(v => v && v !== 'none').join(', ') || '0 0 0 transparent';
+  const M = material === 'plate' ? { tint: 26, tint2: 13, edge: 40, rim: 62, under: 22, shadow: '0 4px 12px ' + sh(.18), solid1: 75, solid2: 55 }
+    : material === 'glass' ? { tint: 12, tint2: 3, edge: 30, rim: 35, under: 0, shadow: '0 8px 24px ' + sh(.15), solid1: 60, solid2: 40 }
+    /* flat: no tint anywhere and a solid card, so both are exactly as they
+       were, with the depth family's own shadow and rim */
+    : { tint: 0, tint2: 0, edge: 0, rim: 0, under: 0, shadow: soft, solid1: 100, solid2: 100 };
+  t['--plate-tint'] = M.tint + '%'; t['--plate-tint-2'] = M.tint2 + '%';
+  t['--plate-edge'] = M.edge + '%'; t['--plate-rim'] = M.rim + '%';
+  t['--plate-under'] = M.under + '%'; t['--plate-shadow'] = M.shadow;
+  t['--card-solid'] = M.solid1 + '%'; t['--card-solid-2'] = M.solid2 + '%'; t['--card-shadow'] = soft;
+  t['--material'] = material;
+
   /* Letter spacing. On a short leash on purpose. This is the one lever that
      can quietly wreck a line of text at a width nobody happened to test, so a
      theme gets the two tokens it already had plus body, and no more.         */
@@ -577,10 +626,38 @@ const Skins={
     el.textContent=(s&&s.css)||'';
   },
 
+  /* The material: how a card is drawn. One rule, `.mb-plate`, put in once
+     and ahead of the theme's own CSS so a theme can still restyle a card.
+     The amounts are tokens (see the material block in tokens()), so a
+     theme picks flat, plate or glass and this one rule draws all three.
+     `--c` is the tint, read on the element itself, and the accent when the
+     element carries none. An app puts `mb-plate` on a card and writes no
+     background, border or shadow of its own. */
+  materialCSS(){
+    if(document.getElementById('skin-material-css'))return;
+    const el=document.createElement('style');el.id='skin-material-css';
+    const c='var(--c,var(--accent))';
+    el.textContent='.mb-plate{'+
+      'background:linear-gradient(180deg,color-mix(in srgb,'+c+' var(--plate-tint,0%),var(--surface-1)),'+
+        'color-mix(in srgb,'+c+' var(--plate-tint-2,0%),var(--surface-1)));'+
+      'border:var(--border-width,1px) solid color-mix(in srgb,'+c+' var(--plate-edge,0%),var(--border));'+
+      'box-shadow:inset 0 1px 0 color-mix(in srgb,'+c+' var(--plate-rim,0%),transparent),'+
+        '0 2px 0 color-mix(in srgb,'+c+' var(--plate-under,0%),var(--bg)),var(--plate-shadow,var(--e-2))}'+
+      /* the card: BLOCK's lane, a dark glass over the page's wash. Not
+         called glass: `.mb-glass` is already IO.share's see-through card */
+      '.mb-card{'+
+      'background:linear-gradient(180deg,color-mix(in srgb,var(--surface-1) var(--card-solid,100%),transparent),'+
+        'color-mix(in srgb,var(--surface-1) var(--card-solid-2,100%),transparent));'+
+      'border:var(--border-width,1px) solid var(--border);box-shadow:var(--card-shadow,var(--e-2))}';
+    const theme=document.getElementById('skin-theme-css');
+    if(theme)document.head.insertBefore(el,theme);else document.head.appendChild(el);
+  },
+
   /* `pal` paints without saving — that is what makes live preview possible */
   apply(idOrSkin,pal){
     const s=typeof idOrSkin==='string'?this.get(idOrSkin):idOrSkin;
     this.font(s);
+    this.materialCSS();
     this.themeCSS(s);
     const use=pal||(this.isCustomised(s.id)?this.paletteFor(s.id):null);
     const t=use?Object.assign(this.tokensFor(s),this.palTokens(use)):this.tokensFor(s),
@@ -593,6 +670,13 @@ const Skins={
        cannot simply be recoloured like everything else. Done here rather than
        in each app, because every app would otherwise have to remember. */
     if(g.Icons&&g.Icons.paint)try{g.Icons.paint(null,{force:true})}catch(e){}
+    /* The iPhone home-screen icon follows the theme. mobile.js makes the link
+       and says which app it is; shared/icons/<theme>/ holds a picture per
+       factory theme (tools/make-icons.html draws them), and a theme of your
+       own keeps the default one. iOS reads the link when Add to Home Screen
+       is pressed, so it is the theme in force at that moment. */
+    try{const l=document.querySelector('link[rel="apple-touch-icon"][data-mb-app]');
+      if(l)l.setAttribute('href',(l.getAttribute('data-mb-dir')||'')+'icons/'+(this.factory(s.id)?s.id+'/':'')+l.getAttribute('data-mb-app')+'.png')}catch(e){}
     this.current=s;
     try{localStorage.setItem(skinKey(),s.id);if(s.custom)this.saveCustom(s)}catch(e){}
     return s;
@@ -645,7 +729,7 @@ const Skins={
         return `<button class="skin-chip${this.current&&this.current.id===s.id?' on':''}" data-skin-id="${s.id}"
           style="--sw-bg:${t['--bg']};--sw-panel:${t['--surface-1']};--sw-acc:${t['--accent']}">
           <span class="skin-dots"><i style="background:${t['--bg']}"></i><i style="background:${t['--surface-1']}"></i><i style="background:${t['--accent']}"></i></span>
-          <span class="skin-name" style="font-family:${t['--font-display']}">${s.name}</span></button>`}).join('')
+          <span class="skin-name" style="font-family:${t['--font-display']}">${String(s.name==null?'':s.name).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}</span></button>`}).join('')
         +(o.custom===false?'':`<button class="skin-chip" data-skin-id="__custom"><span class="skin-dots">
           <i style="background:var(--surface-2)"></i><i style="background:var(--surface-3)"></i><i style="background:var(--accent)"></i></span>
           <span class="skin-name">Custom</span></button>`);

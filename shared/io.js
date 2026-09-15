@@ -31,7 +31,7 @@
    Bumped by hand, and only when something changed that a person would notice
    or that changes the shape of stored data. VERSIONS.md says what each one
    did. */
-const VERSION = '0.1.9';
+const VERSION = '0.1.14';
 
 const CDN = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const apps = Object.create(null);
@@ -219,6 +219,8 @@ const IO = {
   /** an app describes itself once: which types it owns, and any sheets of its
       own it wants in the spreadsheet */
   VERSION: VERSION,
+  /** SheetJS, fetched once, or null offline. For shared/import.js. */
+  loadXLSX: loadXLSX,
 
   /* Which version of the Apps Script this build writes. The sheet reports its
      own back as `sheetV` when it answers, so the two can be compared and a
@@ -270,6 +272,9 @@ const IO = {
          w, h    the picture, default 1080 x 1920
          fill    how much of the width the component takes, default .88
          anchor  where its middle sits, top to bottom, default .46
+         box     {x, y, w, h}: keep it inside this part of the picture instead.
+                 It takes `fill` of the box's width, less if that would run
+                 past the box's bottom, and sits in the box's middle
          width   CSS width to lay a loose node out at, default 390
          scrim   paint a soft dark gradient behind it, so the picture reads on
                  a bright photograph as well as a dark one
@@ -315,6 +320,9 @@ const IO = {
          leaving it on would shift the drawing off the size just measured. */
       const flat = n => {
         const c = n.cloneNode(true);
+        /* A chart draws its line in on its first paint. Pictured, it is
+           caught at the start of that, with the line not drawn yet. */
+        c.querySelectorAll('.mb-anim').forEach(x => x.classList.remove('mb-anim'));
         c.style.position = 'static';
         c.style.inset = 'auto';
         c.style.left = c.style.top = c.style.right = c.style.bottom = 'auto';
@@ -324,10 +332,11 @@ const IO = {
       };
       /* Scaled up whole rather than blown up afterwards: everything inside
          renders at the final size, so the type stays sharp. */
-      const scale = (W * fill) / cw;
+      const B = opts.box;
+      const scale = B ? Math.min(B.w * fill / cw, B.h / ch) : (W * fill) / cw;
       const sw = cw * scale, sh = ch * scale;
-      const ox = (W - sw) / 2;
-      const oy = Math.max(0, H * anchor - sh / 2);
+      const ox = B ? B.x + (B.w - sw) / 2 : (W - sw) / 2;
+      const oy = B ? B.y + (B.h - sh) / 2 : Math.max(0, H * anchor - sh / 2);
 
       /* ── the page, stood in for ── */
       const bcs = getComputedStyle(document.body);
@@ -466,6 +475,115 @@ const IO = {
     return Promise.resolve();
   },
 
+  /* ══════════════ SHARE PICTURE ══════════════
+     One panel for every app that makes a picture to lay over a story.
+     Tom, 2026-09-14: "Mostly the sharing is to produce social media ready PNG
+     Overlays. Itll be used in Train and STATUS." Then: one shape only, "no one
+     is posting generated images as posts anymore", so every picture is a
+     1080 x 1920 story; no small branding; and it must not be "a whole process
+     whenever they want to export something".
+
+     So: press Share, see the picture, press SHARE. Style and size sit on the
+     same panel, already set to what that app used last, and never need
+     touching.
+
+       IO.share({
+         app      the app id the choices are remembered under
+         name     the file name, .png added
+         build    (o) -> a fresh element to picture. o.glass is true for the
+                  two see-through styles, o[id] for each of `options`
+         width    CSS width to lay it out at, default 390
+         before   as IO.shot
+         options  [{id, label, def}], extra switches, like STATUS's
+                  "Leave spending out"
+       })
+
+     The picture is drawn when the panel opens, so SHARE hands over a file
+     that already exists. iOS only lets a page share inside the tap that
+     asked, and a picture still being drawn can miss that window. */
+  SHARE_STYLES: [
+    /* his three names, from STATUS, 2026-09-05 */
+    { id: 'clear', name: 'Transparent', glass: 1, scrim: 0 },
+    { id: 'glass', name: 'Translucent', glass: 1, scrim: 1 },
+    { id: 'solid', name: 'Opaque', glass: 0, scrim: 0 },
+  ],
+  SHARE_SIZES: [
+    { id: 'big', name: 'Big', fill: 1 },
+    { id: 'mid', name: 'Medium', fill: 0.78 },
+    { id: 'small', name: 'Small', fill: 0.6 },
+  ],
+  /* The part of a story nothing is drawn over. Instagram lays the name and
+     the progress bars across the top 250 pixels and the reply box across the
+     bottom 340, and a card under either cannot be read. 90 either side keeps
+     even a Big card off the edges. The card sits in the middle of what is
+     left, and a tall one shrinks to fit it rather than running under. */
+  STORY: { w: 1080, h: 1920, safe: { x: 90, y: 250, w: 900, h: 1330 } },
+
+  share(o) {
+    o = o || {};
+    const R = g.Rec, U = g.UI;
+    if (!U || !U.dialog) return null;
+    const app = o.app || '';
+    const get = (k, d) => { const v = R && R.setting ? R.setting(app, k) : null; return v == null ? d : v; };
+    const put = (k, v) => { if (R && R.setting) R.setting(app, k, v); };
+    const on = v => v === true || +v === 1;
+    const pick = (list, id) => list.filter(x => x.id === id)[0] || list[0];
+    const file = String(o.name || 'picture').replace(/\.png$/i, '') + '.png';
+    let img = null, gen = 0, ready = null;
+
+    const draw = () => {
+      const my = ++gen;
+      const st = pick(IO.SHARE_STYLES, get('shareStyle', 'glass'));
+      const sz = pick(IO.SHARE_SIZES, get('shareSize', 'mid'));
+      const opt = { glass: !!st.glass };
+      (o.options || []).forEach(x => { opt[x.id] = on(get(x.id, x.def ? 1 : 0)); });
+      if (img) img.classList.add('wait');
+      ready = new Promise((res, rej) => {
+        const node = o.build(opt);
+        if (!node) return rej(new Error('There is nothing to share'));
+        if (opt.glass) node.classList.add('mb-glass');
+        const stage = el('div', 'mb-shotstage');
+        stage.style.width = (o.width || 390) + 'px';
+        stage.appendChild(node);
+        document.body.appendChild(stage);
+        /* a chart measures its box once the box is in the page, a tick later */
+        setTimeout(() => {
+          IO.shot(node, { w: IO.STORY.w, h: IO.STORY.h, box: IO.STORY.safe,
+            fill: sz.fill, scrim: !!st.scrim, before: o.before })
+            .then(png => { stage.remove(); res(png); }, err => { stage.remove(); rej(err); });
+        }, 60);
+      });
+      ready.then(png => { if (my === gen && img) { img.src = png; img.classList.remove('wait'); } }, () => {});
+      return ready;
+    };
+
+    return U.dialog({
+      title: o.title || 'SHARE PICTURE', width: 440,
+      body: b => {
+        const pv = el('div', 'mb-sharepv');
+        img = el('img', 'wait');
+        img.alt = 'The picture';
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        pv.appendChild(img);
+        b.appendChild(pv);
+        const seg = (label, key, list, def) => {
+          b.appendChild(el('div', 'mb-sharelbl', esc(label)));
+          b.appendChild(U.segmented(list, pick(list, get(key, def)).id, v => { put(key, v); draw(); }));
+        };
+        seg('Style', 'shareStyle', IO.SHARE_STYLES, 'glass');
+        seg('Size', 'shareSize', IO.SHARE_SIZES, 'mid');
+        (o.options || []).forEach(x => {
+          b.appendChild(U.row(x.label, null,
+            U.toggle(on(get(x.id, x.def ? 1 : 0)), v => { put(x.id, v ? 1 : 0); draw(); })));
+        });
+        draw().catch(err => toast(esc(err.message), { bad: true }));
+      },
+      actions: [{ label: 'SHARE', kind: 'go', fn: () => {
+        (ready || draw()).then(png => IO.handOver(png, file), err => toast(esc(err.message), { bad: true }));
+      } }],
+    });
+  },
+
   /* ══════════════ EDITABLE TABLES ══════════════
 
      Two kinds of tab, and the difference is not taste, it is arithmetic.
@@ -596,6 +714,21 @@ const IO = {
         line.push(new Date(r.updated_at).toISOString(), r.by || 'phone');
         rows.push(line);
       });
+      /* ── a delete goes up as an emptied line ──
+
+         A delta push updates lines in place and never takes one out, so a
+         row deleted here stayed on the sheet's tab until the next full push,
+         and a pull in between read it back as new (2026-09-15: "deleting
+         bullets not getting saved"). So each row deleted since the last push
+         goes up with its id, its date and its stamp and every other cell
+         blank, which is already what "deleted in the sheet" looks like to
+         readTable. A full push clears the tab and needs none of this. */
+      if (since && R.tombstones) R.tombstones(t.type, since).forEach(r => {
+        const line = [r.key, r.date || ''];
+        t.cols.forEach(() => line.push(''));
+        line.push(new Date(r.updated_at).toISOString(), r.by || 'phone');
+        rows.push(line);
+      });
       /* `key` is which column the sheet matches on to update a line in place.
          Column one is the id, so a changed set updates the line it is already
          on instead of the tab being rewritten around it. */
@@ -660,7 +793,7 @@ const IO = {
   readTable(appId, tableName, grid) {
     const S = IO.spec(appId), R = g.Rec;
     const t = (S.tables || []).filter(x => x.name === tableName)[0];
-    const out = { changed: [], added: [], removed: [], clashes: [], missing: [] };
+    const out = { changed: [], added: [], removed: [], clashes: [], missing: [], deleted: [] };
     if (!t || !grid || grid.length < 2) return out;
     const col = IO.columns(t, grid[0]);
     /* No header, no reading. Returning nothing leaves the store exactly as it
@@ -690,6 +823,22 @@ const IO = {
       if (blank) return;
 
       const prev = id ? R.row(t.type, date, id) : null;
+      /* ── a line for a row this device deleted ──
+
+         The sheet keeps a line until a full push rewrites the tab, so a line
+         whose row is a tombstone here is not new: it is what was deleted,
+         still standing on the sheet. Reading it as new wrote the row back
+         alive with a fresh stamp, and the next push sent it up again, which is
+         how a deleted bullet came back on the next sync (2026-09-15). The
+         tombstone wins unless somebody typed into the line AFTER the delete,
+         which is the same newest-wins rule every other line follows. */
+      if (!prev && id && R.tombstone) {
+        const dead = R.tombstone(t.type, date, id);
+        if (dead) {
+          const typedAt = col.edited < 0 ? 0 : (Date.parse(line[col.edited] || '') || 0);
+          if (!(typedAt > (Date.parse(dead.updated_at) || 0))) { out.deleted.push({ key: id, date: date }); return; }
+        }
+      }
       const payload = prev ? JSON.parse(JSON.stringify(prev.payload)) : {};
       let differs = false;
       t.cols.forEach((c, i) => {
@@ -810,9 +959,25 @@ const IO = {
        written line by line and the script has to know the first line is not
        one of them. */
     const data = [['Motherbase rows. Do not edit by hand, the readable tabs are the ones to look at.']];
+    /* ── a row bigger than a cell ──
+
+       Google Sheets refuses any cell over 50,000 characters, and a 360px photo
+       of a receipt is about 52,000 once it is text. The sheet then refuses the
+       whole batch, the push never confirms, the boundary never moves, and the
+       same batch — photo included — fails again on every sync. Nothing logged
+       on the phone after one photo ever reached the laptop, and the laptop,
+       which takes no photos, synced the other way without a hitch.
+
+       So a long row is cut into pieces: the first in column one where it has
+       always been, the id still in column two, the rest from column three on.
+       Thirty thousand, because a spreadsheet download has a lower limit still
+       (32,767) and this same tab goes into that file. `bagRows` joins them. */
     bag.rows.forEach(r => {
       if (since && !(r.updated_at > since)) return;
-      data.push([JSON.stringify(r), r.id]);
+      const json = JSON.stringify(r);
+      const line = [json.slice(0, CELL_MAX), r.id];
+      for (let i = CELL_MAX; i < json.length; i += CELL_MAX) line.push(json.slice(i, i + CELL_MAX));
+      data.push(line);
     });
 
     const set = [['Setting', 'Value']];
@@ -876,7 +1041,17 @@ const IO = {
     (grid || []).forEach(line => {
       const cell = line && line[0];
       if (typeof cell !== 'string' || cell.charAt(0) !== '{') return;
-      try { out.push(JSON.parse(cell)); } catch (e) {}
+      /* Joined a piece at a time, stopping at the first join that parses. A
+         line updated in place keeps whatever cells the old, longer version
+         left to its right, and those are stale — but a whole row parses
+         before it reaches them, so they are never read. */
+      let json = cell;
+      for (let i = 2; ; i++) {
+        try { out.push(JSON.parse(json)); return; } catch (e) {}
+        const more = line[i];
+        if (typeof more !== 'string' || !more) return;
+        json += more;
+      }
     });
     return out;
   },
@@ -1117,6 +1292,11 @@ const IO = {
        So the LINE is repainted, not the pane. It is one text node that owns no
        handlers, so rewriting it cannot pull the ground out from under the
        button that asked for it. */
+    /* Export, import, sync, and nothing else. Tom, 2026-09-15: "simply the
+       data screen. Export, import, Sync - Then Build from there when
+       relevant". Rewind and Delete this app's data came off the screen;
+       IO.restore(bag, 'replace') and Rec.clear are still there to put back. */
+    pane.appendChild(el('div', 'mb-group', 'EXPORT'));
     const fresh = el('p', null, IO.freshLine(appId));
     pane.appendChild(fresh);
     const repaint = () => { try { fresh.innerHTML = IO.freshLine(appId); } catch (e) {} };
@@ -1128,24 +1308,58 @@ const IO = {
     };
 
     opt('⭳', 'Back up', 'The file that can be restored.', () => IO.backup(appId).then(repaint));
+    opt('▦', 'Export a spreadsheet', 'Every tab, readable, and it restores too.', () => IO.export(appId));
+    opt('▤', 'Export one tab as CSV', 'Works with no internet. Pick which.', () => IO.exportCsv(appId));
+
+    pane.appendChild(el('div', 'mb-group', 'IMPORT'));
     opt('⭱', 'Restore', 'From a backup or an exported spreadsheet. Fills in what is missing, never overwrites newer.',
       () => IO.pick(f => IO.readAny(f).then(bag => {
         const c = IO.restore(bag, 'merge');
         toast(c ? '<b>' + c + '</b> rows restored' : 'nothing to restore — this device is already up to date');
         repaint();   /* the row count moved even when the backup date did not */
       }).catch(e => toast(esc(e.message), { bad: true }))));
-    opt('⟲', 'Rewind', 'Replaces everything with the file. Discards anything newer.',
-      () => IO.pick(f => IO.readAny(f).then(bag =>
-        (g.UI ? g.UI.confirm('Rewind to the backup from ' + (bag.at || '?') + '?', 'Anything newer than the file is discarded.', { yes: 'REWIND', danger: true }) : Promise.resolve(confirm('Rewind?')))
-          .then(ok => { if (!ok) return; const c = IO.restore(bag, 'replace'); toast('<b>' + c + '</b> rows restored'); repaint(); })
-      ).catch(e => toast(esc(e.message), { bad: true }))), 'bad');
+  },
 
-    opt('▦', 'Export a spreadsheet', 'Every tab, readable, and it restores too.', () => IO.export(appId));
-    opt('▤', 'Export one tab as CSV', 'Works with no internet. Pick which.', () => IO.exportCsv(appId));
-
-    opt('⌫', 'Delete this app’s data', 'Ticks and activities are shared and stay.',
-      () => (g.UI ? g.UI.confirm('Delete all of ' + IO.spec(appId).name + '’s data?', 'Back up first. This cannot be undone.', { yes: 'DELETE', danger: true }) : Promise.resolve(confirm('Delete?')))
-        .then(ok => { if (!ok) return; const c = g.Rec.clear(IO.spec(appId).types); toast('<b>' + c + '</b> rows deleted'); repaint(); }), 'bad');
+  /* ── the sheet, as one app sees it ──
+     Tom, 2026-09-14: setting the sheet up is the home screen's and STATUS's
+     job, and every other app needs "a manual sync button and a field to
+     manually paste the sync link". So this is that and nothing else: no
+     script, no switch. The link belongs to the suite, so pasting it here
+     pastes it for every app on this device. */
+  syncRow(pane, appId) {
+    const M = IO.mirror;
+    if (!M) return;
+    const cfg = M.adopt(appId);
+    pane.appendChild(el('div', 'mb-group', 'SYNC'));
+    const line = el('p');
+    const say = () => {
+      const c = M.settings;
+      line.innerHTML = !c.url ? 'No link on this device yet. Paste it once and every app has it.'
+        : c.at ? 'Linked on this device. Last synced <b>' + esc(c.at) + '</b>.' : 'Linked on this device, and not synced yet.';
+    };
+    say();
+    pane.appendChild(line);
+    /* The link is kept once per device and every app reads it, so the box
+       only shows on a device that has none. Tom, 2026-09-14: "No need to
+       paste per app." Changing a link already there is the home screen's. */
+    let u = null;
+    if (!cfg.url) {
+      u = el('input', 'mb-input');
+      u.type = 'text'; u.placeholder = 'Paste the sync link';
+      u.setAttribute('aria-label', 'Sync link');
+      /* on input, not change: pressing DONE straight after pasting would lose
+         a change event */
+      u.oninput = () => { M.set({ url: u.value.trim() }); say(); };
+      pane.appendChild(u);
+    }
+    const b = el('button', 'mb-btn go mb-press mb-tap', 'Sync now');
+    b.style.cssText = 'width:100%;margin-top:var(--s-2,8px)';
+    b.onclick = () => {
+      if (u) M.set({ url: u.value.trim() });
+      if (!M.ready()) return toast('Paste the link first', { bad: true });
+      M.sync(appId).then(say);
+    };
+    pane.appendChild(b);
   },
 };
 
@@ -1183,6 +1397,8 @@ const IO = {
      GET carries no data out, and the sheet is his own.                      */
 
 const MKEY = 'mb.mirror';
+/* the longest piece of a _Data row one cell is given; see bagTabs */
+const CELL_MAX = 30000;
 const watching = Object.create(null);
 
 /* ── one attempt at a time, and never a stuck one ──
@@ -1351,6 +1567,16 @@ function jsonp(url, params, ms) {
 /* An Apps Script that throws answers with something, just not with tabs. Worth
    telling apart from silence, because one is the script and one is the network
    and they need different people to fix them. */
+/* A read that downloaded fine and then crashed while taking the rows in used
+   to log as "read-failed:?", because the catch threw the error away. The PC
+   logged that fifteen times in a row on 2026-09-13 and it said nothing about
+   which line. The message and where it came from are the whole diagnosis. */
+function threwWhy(e) {
+  const msg = String((e && e.message) || e || 'unknown').replace(/\s+/g, ' ').slice(0, 120);
+  const at = /([\w-]+\.(?:js|html)):(\d+):\d+/.exec(String((e && e.stack) || ''));
+  return 'threw:' + msg + (at ? ' @' + at[1] + ':' + at[2] : '');
+}
+
 function readWhy(reply) {
   if (!reply) return 'no-reply';
   if (reply.error) return 'script-error:' + String(reply.error).slice(0, 80);
@@ -1459,13 +1685,75 @@ const Mirror = {
     }).catch(e => ({ v: 0, failed: 1, why: (e && e.code) || 'threw' }));
   },
 
+  /** Has anything gone into _Data that this device has not read?
+
+      `seen[app|_Data]` is the push stamp this device is caught up to. It moves
+      when we read the tab, and when we push having already been caught up —
+      so our own push does not send us back to download what we just sent.
+
+      ── why it is not "was the last push ours?" ──
+
+      It used to be, and that answer hides the other device. The sheet keeps
+      ONE stamp, and whoever pushes last overwrites it. So: the laptop pushes
+      an edit, the phone opens, its read times out on a cold start, it sends
+      its own rows anyway — and now the last push is the phone's. Every sync
+      after that the phone said "that one was mine" and skipped _Data, and the
+      laptop's edit never arrived until the laptop happened to push again.
+      Changes went phone to laptop and stalled laptop to phone.
+
+      Now our own push only counts as read if we had read everything before
+      it. If we had not, `seen` stays behind, the stamp differs, and the next
+      sync reads the tab — our rows and theirs, merged on updated_at, so the
+      extra download costs nothing but time.
+
+      One gap is left, and it is narrow: the other device pushing in the few
+      seconds between our read and our own push landing. Closing it needs the
+      sheet to keep more than one stamp, which is a script change. */
+  bagIsNew(appId, pre) {
+    const stamp = ((pre && pre.pushedAt) || {})[appId] || '';
+    return mcfg.sheetV >= 3 && !!stamp && stamp !== (mcfg.seen[appId + '|_Data'] || '');
+  },
+
   /* ── 1 and 2: pull and resolve ── */
   pull(appId, pre) {
     adoptOldLink(appId);
     if (!mcfg.url) return Promise.resolve({ skipped: 'no link' });
     const S = IO.spec(appId);
+    /* ── the rows other apps write ──
+       Tom, 2026-09-15: "Why does my local copy of LOG sync properly but not
+       my github copy?" A pull read only this app's own _Data tab, and every
+       app pushes into its own. STATUS's bullets from the phone go into
+       _Data · status, so a LOG opened on its own never saw them; the local
+       copy only did because STATUS was open in the same browser, pulling them
+       into the store both apps share.
+
+       So an app says whose tabs hold the rows it shows, and which types:
+       `reads: { status: ['note', 'day'] }`. The tab is downloaded when that
+       app has pushed since this app last looked at it, by the same receipt
+       that decides our own tab, and only the named types are kept, so LOG
+       does not take in STATUS's label photographs on its way to a bullet. */
+    const reads = S.reads || {};
+    const readApps = Object.keys(reads).filter(a => a !== appId && Array.isArray(reads[a]) && reads[a].length);
     const apply = tabs => {
       const out = { changed: 0, added: 0, clashes: 0 };
+      /* The save file first, then the tables. A row the other device deleted
+         arrives here as its tombstone. Read the tables first and the line
+         still standing on the tab would go in alive with a fresh stamp, and
+         the tombstone, older, would lose. "The rows no table describes"
+         below says what this tab is; it was applied last until 2026-09-15. */
+      if (g.Rec) {
+        let rows = [];
+        [IO.bagName(appId)].concat(IO.OLDBAG).forEach(n => {
+          if (tabs[n]) rows = rows.concat(IO.bagRows(tabs[n]));
+        });
+        if (rows.length) out.merged = g.Rec.merge(rows);
+        readApps.forEach(a => {
+          const grid = tabs[IO.bagName(a)];
+          if (!grid) return;
+          const theirs = IO.bagRows(grid).filter(r => r && reads[a].indexOf(r.type) > -1);
+          if (theirs.length) out.merged = (out.merged || 0) + g.Rec.merge(theirs);
+        });
+      }
       (S.tables || []).forEach(t => {
         /* the old prefixed name too: anything typed into it before the
            rename is still real, and the pull runs before the push that
@@ -1477,7 +1765,12 @@ const Mirror = {
         out.added += diff.added.length;
         out.clashes += diff.clashes.length;
         IO.applyTable(appId, diff);                 /* never deletes on a pull */
-        diff.clashes.forEach(c => IO.logConflict(appId, c));
+        /* Mirror's, not IO's. It was IO.logConflict, which has not existed since
+           the mirror moved into this file, so the first clash threw here — after
+           this table, before every table after it and before _Data. The PC read
+           the phone's rows, crashed, never stored them, and never moved `seen`,
+           so it crashed on the same clash every forty five seconds. */
+        diff.clashes.forEach(c => Mirror.logConflict(appId, c));
       });
 
       /* ── the rows no table describes ──
@@ -1499,16 +1792,10 @@ const Mirror = {
          a restore follows and the reason a stale sheet cannot overwrite work
          done since. Tombstones come through it too, so a reading deleted on
          the phone is deleted on the laptop instead of quietly returning. */
-      if (g.Rec) {
-        /* Ours first, then the flat _Data an older sheet still holds — rows
-           written before the tabs were split per app are real rows, and one
-           merge salvages them instead of stranding them. */
-        let rows = [];
-        [IO.bagName(appId)].concat(IO.OLDBAG).forEach(n => {
-          if (tabs[n]) rows = rows.concat(IO.bagRows(tabs[n]));
-        });
-        if (rows.length) out.merged = g.Rec.merge(rows);
-      }
+      /* Merged at the top of this function, before the tables, since
+         2026-09-15. Ours first, then the flat _Data an older sheet still
+         holds — rows written before the tabs were split per app are real
+         rows, and one merge salvages them instead of stranding them. */
       return out;
     };
 
@@ -1537,20 +1824,21 @@ const Mirror = {
          question we already knew. */
       const stamp = (pre.pushedAt || {})[appId] || '';
       const bagKey = appId + '|_Data';
-      const seenBag = mcfg.seen[bagKey] || '';
-      /* Skipping our own push is only safe once we have read the tab at all.
-         A device that has never read it does not know what else is in there:
-         the laptop's first sync pushed, so the last stamp was its own, and on
-         that reasoning it went on skipping the one tab holding the phone's
-         entire history. Never read means always read. */
-      const mineLast = !!seenBag && stamp === (mcfg.pushed[appId] || '');
       const bagTabsWanted = [];
-      if (mcfg.sheetV >= 3 && stamp && stamp !== seenBag && !mineLast) {
+      if (Mirror.bagIsNew(appId, pre)) {
         bagTabsWanted.push(IO.bagName(appId));
         /* a sheet still carrying the flat tab from before the split */
         if (pre.index['_Data']) bagTabsWanted.push('_Data');
         bagTabsWanted.forEach(n => { if (want.indexOf(n) < 0) want.push(n); });
       }
+      /* another app's tab, when that app has pushed since we last read it */
+      const readWanted = {};
+      readApps.forEach(a => {
+        const n = IO.bagName(a), at = (pre.pushedAt || {})[a] || '';
+        if (mcfg.sheetV < 3 || !pre.index[n] || !at || at === (mcfg.seen[appId + '|' + n] || '')) return;
+        readWanted[n] = at;
+        if (want.indexOf(n) < 0) want.push(n);
+      });
 
       /* Nobody has typed in the sheet since we last looked, so there is
          nothing to read. This is the ordinary case and it now costs nothing. */
@@ -1561,7 +1849,8 @@ const Mirror = {
         /* moved only after the rows are in, so a failure half way through
            means we read the tab again rather than skip it forever */
         want.forEach(n => {
-          if (bagTabsWanted.indexOf(n) > -1) mcfg.seen[bagKey] = stamp;
+          if (readWanted[n] != null) mcfg.seen[appId + '|' + n] = readWanted[n];
+          else if (bagTabsWanted.indexOf(n) > -1) mcfg.seen[bagKey] = stamp;
           else mcfg.seen[appId + '|' + n] = pre.index[n].edited;
         });
         msave();
@@ -1626,6 +1915,12 @@ const Mirror = {
        while this push is still in the air is newer than this stamp and goes
        next time; stamping afterwards would step straight over it. */
     const at = new Date().toISOString();
+    /* Were we caught up on _Data when this push began? Only then does our own
+       stamp count as read once it lands. Worked out from the index this sync
+       read just now and the `seen` the pull just moved, never from memory. */
+    const bagKey = appId + '|_Data';
+    const before = ((opts.index && opts.index.pushedAt) || {})[appId] || '';
+    const caughtUp = !!before && before === (mcfg.seen[bagKey] || '');
 
     /* ── sending everything, and clearing nothing ──
 
@@ -1726,6 +2021,7 @@ const Mirror = {
            make the tab twelve lines long. */
         if (((r.pushedAt || {})[appId] || '') === at) {
           mcfg.pushed[appId] = at;
+          if (caughtUp) mcfg.seen[bagKey] = at;
           if (clearing) mcfg.full[appId] = at;
           if (sig) mcfg.sig[appId] = sig;
           mcfg.at = g.Day.today(); msave();
@@ -1824,7 +2120,7 @@ const Mirror = {
     const mline = { a: appId, w: quiet ? 'auto' : 'manual', o: Mirror.outstanding(appId) ? 1 : 0 };
     let idx = null;
     return Mirror.index(appId)
-      .then(pre => { idx = pre; return Mirror.pull(appId, pre).catch(() => ({ skipped: 'could not read', failed: 1 })); })
+      .then(pre => { idx = pre; return Mirror.pull(appId, pre).catch(e => ({ skipped: 'could not read', failed: 1, why: threwWhy(e) })); })
       .then(got => {
         /* ── read first, and if the read failed, do not write ──
 
@@ -2009,7 +2305,7 @@ const Mirror = {
         idx = pre;
         line.v = (pre && pre.v) || 0;
         if (pre && pre.failed) line.y = 'sheet-silent';
-        return Mirror.pull(appId, pre).catch(() => ({ failed: 1 }));
+        return Mirror.pull(appId, pre).catch(e => ({ failed: 1, why: threwWhy(e) }));
       })
       .then(got => {
         line.g = IO.came(got || {}) || 0;
@@ -2032,7 +2328,7 @@ const Mirror = {
           return !!(res && (res.state === 'confirmed' || res.state === 'clean'));
         }, () => { line.y = (readFailed ? line.y + '+' : '') + 'push-threw'; return false; });
       })
-      .catch(() => { line.y = line.y || 'threw'; return false; });
+      .catch(e => { line.y = (line.y ? line.y + '+' : '') + threwWhy(e); return false; });
     const done = ok => {
       release(appId);
       line.r = ok ? 'ok' : 'fail';

@@ -46,6 +46,33 @@ function css() {
 .mb-shotx{min-height:var(--tap);padding:0 var(--s-5);border-radius:var(--radius-sm);
   border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;
   font:inherit;font-size:var(--f-2);cursor:pointer}
+/* ── a fold in a settings tab (UI.more) ── */
+.mb-more{margin-top:var(--s-4,16px);border-top:1px solid var(--border,#1e2a38)}
+.mb-more-h{display:flex;align-items:center;justify-content:space-between;width:100%;
+  min-height:var(--tap,44px);padding:0;background:none;border:0;cursor:pointer;
+  color:var(--text-2,#b8c9d8);font:inherit;font-size:var(--f-1,12px);
+  letter-spacing:var(--track-cap,.08em);text-transform:uppercase}
+.mb-more-h i{width:var(--s-2,8px);height:var(--s-2,8px);margin-right:var(--s-2,8px);
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:rotate(45deg);transition:transform var(--dur-fast,120ms)}
+.mb-more.open .mb-more-h i{transform:rotate(-135deg)}
+.mb-more-b{display:none}
+.mb-more.open .mb-more-b{display:block}
+/* ── the share panel (IO.share) ──
+   The picture on a checkerboard, so what is see-through reads as see-through. */
+.mb-sharepv{display:flex;justify-content:center;margin-bottom:var(--s-2)}
+.mb-sharepv img{height:44vh;height:44svh;max-width:100%;aspect-ratio:9/16;object-fit:contain;
+  border-radius:var(--radius-md);border:var(--border-width,1px) solid var(--border);
+  background:repeating-conic-gradient(var(--surface-3) 0 25%,var(--surface-2) 0 50%) 0 0/var(--s-4) var(--s-4);
+  transition:opacity var(--dur-fast,120ms)}
+.mb-sharepv img.wait{opacity:.45}
+.mb-sharelbl{font-size:var(--f-1);letter-spacing:var(--track-cap);text-transform:uppercase;
+  color:var(--text-muted);margin:var(--s-3) 0 var(--s-2)}
+.mb-shotstage{position:fixed;left:-99999px;top:0;pointer-events:none}
+/* See-through, for the Transparent and Translucent pictures: the card itself.
+   An app can go further for its own inner surfaces. */
+.mb-glass{background:color-mix(in srgb,var(--surface-1) 32%,transparent)!important;box-shadow:none!important}
+.mb-glass,.mb-glass *{text-shadow:0 1px 2px rgba(0,0,0,.45)}
 .mb-timefield{display:flex;gap:var(--s-2);align-items:stretch}
 .mb-timefield input{flex:1;min-width:0}
 .mb-ampm{flex:none;min-width:56px;min-height:var(--tap);padding:0 var(--s-3);
@@ -75,6 +102,14 @@ function css() {
   min-height:var(--tap,44px);border-bottom:1px solid var(--border,#1e2a38)}
 .mb-row:last-child{border-bottom:0}
 .mb-row .lbl{flex:1;min-width:0}
+/* A text box or a select is width:100%, so beside a label it claimed the
+   whole row and squeezed the label to 0px, at every width. A row holding one
+   stacks instead: label, then the field under it. A short box given its own
+   max-width stays beside its label. Found by TRAIN, which did this itself. */
+.mb-row:has(> .mb-input:not([style*="max-width"])),
+.mb-row:has(> .mb-sel){flex-direction:column;align-items:stretch;gap:var(--s-2,8px)}
+.mb-row:has(> .mb-input:not([style*="max-width"])) > .lbl,
+.mb-row:has(> .mb-sel) > .lbl{flex:none}
 .mb-row .lbl b{display:block;font-weight:var(--w-bold,700);font-size:var(--f-2,14px);color:var(--text-1,#dbe7f0)}
 .mb-row .lbl span{display:block;color:var(--text-muted,#5b6d80);font-size:var(--f-1,12px);line-height:1.5;margin-top:2px}
 /* No border here on purpose. Two background colours already separate the row
@@ -105,7 +140,7 @@ function css() {
 .mb-seg i.ind{position:absolute;top:3px;bottom:3px;left:0;border-radius:calc(var(--radius-md,10px) - 3px);
   background:var(--surface-1,#0e141d);box-shadow:var(--e-1,0 1px 3px rgba(0,0,0,.3));pointer-events:none;
   transition:transform var(--dur-med,240ms) var(--ease-out,ease),width var(--dur-med,240ms) var(--ease-out,ease)}
-.mb-seg button{position:relative;z-index:1;flex:1 0 auto;min-height:38px;padding:0 var(--s-3,12px);
+.mb-seg button{position:relative;z-index:1;flex:1 0 auto;min-height:var(--tap,44px);padding:0 var(--s-3,12px);
   border:0;background:none;cursor:pointer;white-space:nowrap;
   font-family:var(--font-display,system-ui);font-size:var(--f-1,12px);font-weight:var(--w-bold,700);
   letter-spacing:.1em;color:var(--text-muted,#5b6d80);
@@ -151,8 +186,10 @@ function css() {
   background:var(--surface-1,#0e141d);border:1px solid var(--border-strong,#2b3a4d);
   border-radius:var(--radius-md,10px);box-shadow:var(--e-3,0 10px 20px rgba(0,0,0,.3));
   font-family:var(--font-body,system-ui);font-size:var(--f-2,14px)}
-.mb-menu button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:none;
+.mb-menu button{display:flex;align-items:center;gap:var(--s-2,8px);width:100%;text-align:left;padding:8px 10px;border:0;background:none;
   cursor:pointer;color:var(--text-2,#7f93a8);border-radius:var(--radius-sm,6px);font:inherit}
+.mb-menu button > span{flex:1;min-width:0}
+.mb-menu button.on{color:var(--accent,#7ee8fa)}
 .mb-menu button.bad{color:var(--danger,#ff6b81)}
 .mb-menu hr{border:0;border-top:1px solid var(--border,#1e2a38);margin:4px 2px}
 
@@ -190,7 +227,7 @@ function css() {
 .mb-btn:focus-visible{outline:2px solid var(--focus,#7ee8fa);outline-offset:2px}
 .mb-veil{position:fixed;inset:0;z-index:8900;display:flex;align-items:center;justify-content:center;padding:20px;
   background:var(--overlay,rgba(4,7,11,.72));backdrop-filter:blur(3px)}
-.mb-sheet{position:relative;width:min(var(--mb-w,520px),96vw);max-height:88vh;display:flex;flex-direction:column;
+.mb-sheet{position:relative;width:min(var(--mb-w,520px),96vw);max-height:88vh;max-height:88svh;display:flex;flex-direction:column;
   background:var(--surface-1,#0e141d);color:var(--text-1,#dbe7f0);
   border:1px solid var(--border-strong,#2b3a4d);border-radius:var(--radius-md,14px);
   box-shadow:0 30px 80px -30px #000;font-family:var(--font-body,system-ui);font-size:13px;overflow:hidden}
@@ -215,7 +252,11 @@ let toastEl, toastT;
    card on a laptop. Without mobile.js these fall back to the plain versions,
    so nothing that already calls UI breaks. */
 const M = () => g.Mobile;
+let menuAway = null;   /* the listener that closes an open desktop menu */
 const buzz = (kind, opts) => { const m = M(); if (m) m.feedback(kind, opts); else if (g.Sfx) g.Sfx.play(kind === 'warn' ? 'error' : 'drop'); };
+
+/* which UI.more folds are open, by key, so a tab that redraws keeps them open */
+const MORE_OPEN = {};
 
 const UI = {
   el: el, esc: esc,
@@ -326,12 +367,19 @@ const UI = {
   /** A time control. The wheel on a phone; a box you type into, plus an
       AM/PM button, on anything with a pointer. `onset` gets "HH:MM" or "". */
   timeField(value, onset) {
+    /* It styles itself. It used to leave its box bare and never load the
+       shared stylesheet, so in an app that had not loaded it some other way
+       (BLOCK) the box was the browser's default white with pale theme text in
+       it, and AM/PM was loose text. Tom, 2026-09-14: "why is the contrast bad
+       in BLOCK". */
+    css();
     let val = value || '';
     const fine = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches;
     const wrap = el('div', 'mb-timefield');
 
     if (!fine) {
       const i = document.createElement('input');
+      i.className = 'mb-input';
       i.type = 'time'; i.value = val;
       i.onchange = () => { val = i.value; onset(val); };
       wrap.appendChild(i);
@@ -339,6 +387,7 @@ const UI = {
     }
 
     const i = document.createElement('input');
+    i.className = 'mb-input';
     i.type = 'text'; i.inputMode = 'numeric'; i.autocomplete = 'off';
     i.placeholder = '930';
 
@@ -460,13 +509,25 @@ const UI = {
       the bottom, which is where a thumb already is. */
   menu(x, y, items, opts) {
     css(); UI.closeMenus();
+    /* An item may carry `sub`, a list of its own, and `check`, which marks
+       the one in force. Neither was drawn until 2026-09-15: WEIGHT's range
+       and BESIDE's measures offered a Show and a Measures that did nothing
+       when chosen, which is a bug reported as a missing feature (DOCTRINE,
+       law 3). A sub opens as a menu of its own in the same place; on a
+       phone that is a second sheet. */
+    items = (items || []).map(it => (!it || it === '-' || typeof it !== 'object') ? it : Object.assign({}, it, {
+      on: !!(it.on || it.check),
+      fn: it.sub ? () => UI.menu(x, y, it.sub, Object.assign({}, opts, { title: it.label })) : it.fn,
+    })).filter(Boolean);
     const m = M();
     if (m && m.sheetish()) return m.actions((opts && opts.title) || '', items, opts);
 
+    const ico = role => (g.Icons && g.Icons.svg) ? g.Icons.svg(role, { size: 14 }) : '';
     const box = el('div', 'mb-menu');
     items.forEach(it => {
       if (it === '-') return box.appendChild(el('hr'));
-      const b = el('button', it.kind || '', esc(it.label));
+      const b = el('button', (it.kind || '') + (it.on ? ' on' : ''),
+        '<span>' + esc(it.label) + '</span>' + (it.on ? ico('done') : '') + (it.sub ? ico('next') : ''));
       b.onclick = () => { UI.closeMenus(); buzz('select'); it.fn && it.fn(); };
       box.appendChild(b);
     });
@@ -474,10 +535,22 @@ const UI = {
     const r = box.getBoundingClientRect();
     box.style.left = Math.min(x, innerWidth - r.width - 8) + 'px';
     box.style.top = Math.min(y, innerHeight - r.height - 8) + 'px';
-    setTimeout(() => document.addEventListener('pointerdown', UI.closeMenus, { once: true }), 0);
+    /* The next press anywhere closes it — except a press on the menu itself.
+       That one used to close it too, removing the item before its click could
+       land, so on a wide window nothing in a menu could be chosen with a mouse
+       (root brief, foundation item 11). */
+    const away = e => {
+      if (e.target && e.target.closest && e.target.closest('.mb-menu')) return;
+      UI.closeMenus();
+    };
+    menuAway = away;
+    setTimeout(() => { if (menuAway === away) document.addEventListener('pointerdown', away); }, 0);
     return box;
   },
-  closeMenus() { document.querySelectorAll('.mb-menu').forEach(n => n.remove()); },
+  closeMenus() {
+    if (menuAway) { document.removeEventListener('pointerdown', menuAway); menuAway = null; }
+    document.querySelectorAll('.mb-menu').forEach(n => n.remove());
+  },
 
   /* ── components ──
      Small, and deliberately so. An app that needs a control that is not here
@@ -548,6 +621,32 @@ const UI = {
     return r;
   },
 
+  /** A fold-away part of a settings tab, closed until opened, so a tab leads
+      with what gets changed. Tom, 2026-09-15: settings are intuitive and never
+      overwhelming. `fill(box)` draws what is inside, the first time it opens.
+      `key` keeps it open while the tab redraws. */
+  more(title, fill, key) {
+    css();
+    const wrap = el('div', 'mb-more');
+    const head = el('button', 'mb-more-h mb-press', '<span>' + esc(title) + '</span><i aria-hidden="true"></i>');
+    head.type = 'button';
+    const body = el('div', 'mb-more-b');
+    let drawn = false;
+    const set = open => {
+      wrap.classList.toggle('open', open);
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open && !drawn) { drawn = true; fill(body); }
+    };
+    head.onclick = () => {
+      const open = !wrap.classList.contains('open');
+      if (key) MORE_OPEN[key] = open;
+      set(open); buzz('select');
+    };
+    wrap.appendChild(head); wrap.appendChild(body);
+    set(!!(key && MORE_OPEN[key]));
+    return wrap;
+  },
+
   /** an input that already knows which keyboard it wants */
   field(kind, opts) {
     css();
@@ -564,15 +663,46 @@ const UI = {
   /* ── settings ──
      Two tabs. Look, sound and feel are all "how this app comes across", which
      is one idea and does not need three places to live. */
+  /** This page's own version, from <meta name="mb-version" content="1.0.4, 2026-09-14">.
+      Tom, 2026-09-14: each app has a version of its own, because one app goes
+      three weeks untouched while another changes three times in a day. The
+      commit that changes an app bumps it (root CLAUDE.md, Commits). */
+  version() {
+    const m = document.querySelector('meta[name="mb-version"]');
+    const hit = m && /^\s*(\d+(?:\.\d+)*)\s*(?:,\s*(\d{4}-\d{2}-\d{2}))?/.exec(m.content || '');
+    if (!hit) return null;
+    const date = hit[2] || '';
+    /* spelled out here, not by the browser: Chrome's British short month is
+       "Sept" and other browsers say "Sep", and the line should read the same
+       on every device */
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const bits = date.split('-').map(Number);
+    const dateText = date ? bits[2] + ' ' + MON[bits[1] - 1] + ' ' + bits[0] : '';
+    return { v: hit[1], date: date, dateText: dateText };
+  },
+
   /** opts.order names the tab ids in the order they should appear.
       opts.append bolts extra drawing onto a tab the foundation owns. */
   settings(appId, extraTabs, opts) {
     css();
     opts = opts || {};
-    const tabs = [];
-    if (g.Skins || g.Sfx || g.Mobile) tabs.push({ id: 'app', name: 'APP', draw: drawApp.bind(null, appId) });
+    /* The app's own tabs first: they are what make this panel this app's,
+       and APP and DATA are the same everywhere. `order` still wins. */
+    const tabs = (extraTabs || []).slice();
+    /* Theme and sound are chosen in STYLE and nowhere else. Tom, 2026-09-15:
+       "remove theme picking from everything except from STYLE, simply the
+       data screen". STYLE keeps this tab; opts.look puts it back anywhere. */
+    if ((appId === 'style' || opts.look) && (g.Skins || g.Sfx || g.Mobile))
+      tabs.push({ id: 'app', name: 'APP', draw: drawApp.bind(null, appId) });
     if (g.IO) tabs.push({ id: 'data', name: 'DATA', draw: el2 => g.IO.panel(el2, appId) });
-    (extraTabs || []).forEach(t => tabs.push(t));
+
+    /* Every app with data gets the short sheet section under DATA: the link
+       and a Sync now button. The home screen and STATUS set the sheet up, and
+       STATUS passes sync:false because it draws the whole setup itself. */
+    if (g.IO && g.IO.syncRow && opts.sync !== false && (g.IO.spec(appId).types || []).length) {
+      const dt = tabs.filter(x => x.id === 'data')[0];
+      if (dt) { const was = dt.draw; dt.draw = (pane, h) => { was(pane, h); g.IO.syncRow(pane, appId); }; }
+    }
 
     if (opts.order) {
       const rank = id => { const i = opts.order.indexOf(id); return i < 0 ? 99 : i; };
@@ -587,9 +717,13 @@ const UI = {
       t.draw = (pane, h) => { was(pane, h); more(pane, h); };
     });
 
+    const appName = (g.IO && g.IO.spec(appId).name !== appId) ? String(g.IO.spec(appId).name) : String(appId);
     let active = tabs[0] && tabs[0].id;
     return UI.dialog({
-      title: 'SETTINGS', width: 560,
+      /* the app's own name on it, so it is plain which app these settings change */
+      title: opts.title || (g.IO && g.IO.spec(appId).name !== appId
+        ? String(g.IO.spec(appId).name).toUpperCase() + ' SETTINGS' : 'SETTINGS'),
+      width: 560,
       body: (body, h) => {
         const pane = el('div');
         const show = id => {
@@ -605,6 +739,13 @@ const UI = {
           h.box.insertBefore(bar, body);
         }
         body.appendChild(pane);
+        /* which version of this app is open, under every tab */
+        const ver = UI.version();
+        if (ver) {
+          const p = el('p', null, esc(appName.toUpperCase() + ' ' + ver.v + (ver.dateText ? ', updated ' + ver.dateText : '')));
+          p.style.cssText = 'color:var(--text-muted,#5b6d80);font-size:var(--f-1,12px);margin:var(--s-5,24px) 0 0';
+          body.appendChild(p);
+        }
         show(active);
       },
       actions: [{ label: 'DONE', kind: 'go' }],
@@ -760,12 +901,21 @@ function drawApp(appId, pane) {
     pane.appendChild(UI.row('Volume', null, r));
   }
 
-  if (M) {
-    const canBuzz = !!navigator.vibrate;
-    pane.appendChild(UI.row('Vibrate', canBuzz ? null : 'This device cannot vibrate. iPhones never can.',
-      UI.toggle(M.haptics && canBuzz, on => { M.setHaptics(on); if (on) M.haptic('success'); })));
+  /* Only where it does something. A computer has no motor and an iPhone will
+     not let a web page use one, so on either the row was a switch that did
+     nothing. Tom, 2026-09-14: settings should affect what is relevant. */
+  const canBuzz = !!navigator.vibrate && !!(g.matchMedia && g.matchMedia('(pointer: coarse)').matches);
+  if (M && canBuzz) {
+    pane.appendChild(UI.row('Vibrate', null,
+      UI.toggle(M.haptics, on => { M.setHaptics(on); if (on) M.haptic('success'); })));
   }
 }
+
+/* The stylesheet goes in as soon as this file loads, not the first time a
+   component draws. A page that used the shared classes before drawing one got
+   bare browser controls: TRAIN's Add Setup was a white system button, and
+   BLOCK's start time was a white box. */
+css();
 
 g.UI = UI;
 })(window);

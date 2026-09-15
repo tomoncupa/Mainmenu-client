@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en" data-built="105533b9">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mb-version" content="1.0.8, 2026-09-15">
+<title>LOG</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▤</text></svg>">
+<meta name="theme-color" content="#0B0E14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="../shared/skins.js?v=105533b9"></script>
+<script src="../shared/day.js?v=105533b9"></script>
+<script src="../shared/records.js?v=105533b9"></script>
+<script src="../shared/journal.js?v=105533b9"></script>
+<script src="../shared/mobile.js?v=105533b9"></script>
+<script src="../shared/sound.js?v=105533b9"></script>
+<script src="../shared/ui.js?v=105533b9"></script>
+<script src="../shared/chart.js?v=105533b9"></script>
+<script src="../shared/io.js?v=105533b9"></script>
+<script src="../shared/health.js?v=105533b9"></script>
+<script src="../shared/icons.js?v=105533b9"></script>
+
+<style>
+/* Colours and sizes are tokens, never numbers. shared/THEMING.md is the
+   contract this app obeys. The raw pixel values are geometry the script
+   measures and hands over (--dh pixels per day, --sh the screen, --datew the
+   widest date, block tops and column widths): measurements, not spacing
+   decisions. The stroke widths and opacities on the day graph are chart
+   values of the kind STATUS's own charts carry. `ch` widths are lengths of
+   text, which is what they measure.
+
+   A desktop app, read sitting down. Text size is a setting; --tb (bullets and
+   written lines), --td (dates), --ts (small print) and --tl (block names) are
+   each set to one of the type tokens by it. */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text-1);
+  font-family:var(--font-body);font-size:var(--tb, var(--f-4));font-weight:var(--w-body);
+  font-variant-numeric:tabular-nums;
+  display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+body.resizing,body.resizing *{cursor:col-resize !important;user-select:none}
+body.moving,body.moving *{cursor:grabbing !important;user-select:none}
+
+/* Wraps rather than pushing buttons off the edge in a narrow window. */
+header{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2);
+  padding:calc(var(--s-3) + var(--safe-t)) var(--s-4) var(--s-3);
+  background:var(--surface-1);box-shadow:var(--e-1),var(--rim);position:relative;z-index:5}
+.logo{font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--f-6);letter-spacing:.18em}
+.logo b{color:var(--accent)}
+/* Below this width the header's controls need the logo's room to stay on one
+   row; the browser tab already says LOG. Measured at 1280 wide, 2026-09-14. */
+@media (max-width: 1359px){ .logo{display:none} }
+.spacer{flex:1}
+.yr{display:flex;align-items:center;gap:var(--s-1)}
+.yr b{font-family:var(--font-display);font-size:var(--f-4);font-weight:var(--w-bold);
+  min-width:calc(var(--s-10) * 1.5);text-align:center;white-space:nowrap}
+.yr button:disabled{opacity:.35;cursor:default}
+.quiet{font-size:var(--f-2);color:var(--text-muted)}
+.quiet:empty{display:none}
+
+/* ── the filters ──
+   Which bullets show and how they sit. Tom, 2026-09-14, asking for a
+   prettier screen, picked "filters into one button": the switches that were
+   a second header row drop from a filter icon beside ADD. A dot on the icon
+   says some kinds are hidden, so a filtered page never passes for a quiet
+   one. */
+#filterBtn{position:relative}
+#filterBtn.on::after{content:'';position:absolute;top:var(--s-1);right:var(--s-1);width:var(--s-2);height:var(--s-2);
+  border-radius:var(--radius-full);background:var(--accent)}
+.bar{position:absolute;top:100%;left:0;z-index:20;margin-top:var(--s-2);display:flex;flex-direction:column;align-items:flex-start;
+  gap:var(--s-4);padding:var(--s-4);background:var(--surface-3);border-radius:var(--radius-md);box-shadow:var(--e-3),var(--rim)}
+.bar[hidden]{display:none}
+.bar .grp{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-4)}
+.bar .k{font-size:var(--f-2);color:var(--text-muted);min-width:var(--s-9)}
+.tg{display:inline-flex;align-items:center;gap:var(--s-2)}
+.tg .tl{font-size:var(--f-3);color:var(--text-2);cursor:pointer;user-select:none;white-space:nowrap}
+/* A row of switches inside a Settings row. */
+.opts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-4);max-width:calc(var(--s-10) * 3)}
+.opts .k{font-size:var(--f-2);color:var(--text-muted);min-width:var(--s-9)}
+.opts .line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-2) var(--s-4);flex-basis:100%}
+/* The swatch is the legend: each graph switch wears its line's colour, next
+   to the word, so the colour is never the only way to tell them apart. */
+.sw{display:inline-block;width:var(--s-4);height:var(--s-1);border-radius:var(--radius-full);
+  margin-right:var(--s-2);vertical-align:middle}
+.sw.mood,.gr i.mood{background:var(--data-1)}
+.sw.energy,.gr i.energy{background:var(--data-3)}
+.sw.caffeine,.gr i.caffeine{background:var(--data-6)}
+
+/* The only scrolling surface. The wheel scrolls it, a held button drags it,
+   the side mouse buttons change the view. position:relative makes it what
+   every offsetTop is measured from. */
+main{flex:1;min-height:0;overflow:auto;overflow-anchor:none;position:relative;
+  padding-bottom:var(--safe-b);cursor:grab}
+main.dragging{cursor:grabbing;user-select:none}
+
+/* ══════════ THE TIMELINE ══════════
+   Side columns for the units bigger than the view, then the day columns:
+   the days themselves, what got done, mood and energy, in his order. A side
+   block is placed by measuring where its first and last day actually are;
+   the day columns are cells of one row, so they always share its height. */
+.cal{min-width:100%;width:max-content}
+.row{display:flex}
+/* No grid. Tom, 2026-09-14, picked "no grid lines": columns are told apart
+   by space and surface, and a line is drawn only where a month begins. */
+.agg{display:flex;position:sticky;left:0;z-index:2;background:var(--bg);margin-right:var(--s-3)}
+.c-y{width:var(--w-y, var(--s-10))}
+.c-q{width:var(--w-q, var(--s-10))}
+.c-m{width:var(--w-m, clamp(var(--s-10), 14vw, calc(var(--s-10) * 2)))}
+.c-w{width:var(--w-w, clamp(var(--s-10), 14vw, calc(var(--s-10) * 2)))}
+/* A day column's width comes from its own --w-<key> once dragged, else its
+   starting width; the script hands both over as --cw. */
+.heads .c.cx,.xt,.xn{width:var(--cw, var(--s-9))}
+
+/* Headings are small print: they name columns, they are not the content. A
+   column's edge shows only while the pointer is over the headings, which is
+   when he might resize one. */
+.heads{position:sticky;top:0;z-index:3;background:var(--surface-1);
+  box-shadow:0 var(--border-width) 0 var(--border)}
+.heads .agg{z-index:4;background:var(--surface-1)}
+.heads .c{position:relative;flex:0 0 auto;min-width:0;padding:var(--s-2) var(--s-3);font-family:var(--font-body);font-size:var(--f-2);
+  font-weight:var(--w-body);color:var(--text-muted);
+  border-right:var(--border-width) solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (hover:hover) and (pointer:fine){ .heads:hover .c{border-right-color:var(--border)} }
+.heads .c.c-d{flex:1 1 auto;min-width:calc(var(--s-10) * 2)}
+/* A day column's heading drags sideways to rearrange. */
+.heads .c[data-x]{cursor:grab}
+.heads .c.lift{opacity:.4}
+.heads .c.drop-l::before,.heads .c.drop-r::after{content:'';position:absolute;top:0;bottom:0;width:var(--s-1);background:var(--accent)}
+.heads .c.drop-l::before{left:0}
+.heads .c.drop-r::after{right:0}
+.ghost{position:fixed;z-index:50;pointer-events:none;padding:var(--s-2) var(--s-3);background:var(--surface-3);
+  color:var(--text-1);border:var(--border-width) solid var(--accent);border-radius:var(--radius-sm);box-shadow:var(--e-3);
+  font-family:var(--font-display);font-size:var(--f-2);font-weight:var(--w-bold);letter-spacing:var(--track-cap);white-space:nowrap}
+/* The drag handle on a column heading's right edge, as in Sheets. A
+   double-click puts the width back. */
+.rz{position:absolute;top:0;bottom:0;right:0;width:var(--s-2);cursor:col-resize;z-index:5}
+.rz:hover,body.resizing .rz.on{background:var(--accent);opacity:.6}
+
+.col{position:relative;flex:0 0 auto}
+.col.c-d{flex:1 1 auto;background:var(--bg)}
+
+/* ── a week, month, quarter or year block ──
+   Neighbours alternate between two surfaces, bigger units take the stronger
+   line, and name, count and writing each start at the same left edge. */
+.blk{position:absolute;left:0;right:0;top:0;background:var(--surface-1);
+  padding:var(--s-2) var(--s-3) 0;line-height:var(--lh-tight);cursor:pointer}
+.col .blk:nth-child(even){background:var(--surface-2)}
+.c-y .blk,.c-q .blk,.blk.m0,.blk.y0{box-shadow:inset 0 var(--border-width) 0 var(--border-strong)}
+.stick{position:sticky;top:calc(var(--headh) + var(--s-2))}
+.blk .lab{display:block;font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--tl, var(--f-4));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk .tot{display:block;margin-top:var(--s-1);font-size:var(--ts, var(--f-2));color:var(--text-muted);white-space:nowrap}
+.blk.zero .tot{opacity:.6}
+.blk.bare{padding:0}
+.blk.bare .stick,.blk.lab-only .tot{display:none}
+.ws{margin-top:var(--s-2);font-size:var(--ts, var(--f-2));line-height:var(--lh-tight);color:var(--text-1);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--ln);overflow:hidden;
+  overflow-wrap:anywhere}
+.ws[hidden]{display:none}
+/* The name opens the period; it underlines under the pointer. */
+.blk .lab:hover,.hd .lab:hover{text-decoration:underline}
+
+/* ══════════ A DAY ══════════
+   A month heading where a month begins, then one row of cells. The day
+   cell is a heading band (the date and the day's line) with bullets below;
+   the other cells are what got done, and the day's average mood and energy. */
+.day{position:relative;display:flex;flex-direction:column;overflow:hidden;cursor:pointer}
+.day.m0{border-top:var(--border-width) solid var(--border-strong)}
+/* In the rows of Month, Quarter and Year every other week group sits on a
+   soft surface, so weeks read as groups with no lines; zoomed in, each
+   day's own heading band does that job. */
+.cal:not(.near) .day.alt{background:var(--surface-1)}
+/* Today: a bar of the accent down its left edge, over whatever is there. */
+.day.today::before{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--s-1);background:var(--accent);z-index:3;pointer-events:none}
+.cal:not(.near) .day.today{background:var(--surface-2)}
+.drow{display:flex;flex:1 1 auto;min-height:0}
+.xc{position:relative;flex:0 0 auto;min-width:0}
+.xd{flex:1 1 auto;display:flex;flex-direction:column;min-width:calc(var(--s-10) * 2)}
+.day>.mo,.xd>.hd,.xd>.bw,.xl{display:none}
+
+/* Zoomed out: a day is exactly its share of the screen. */
+.cal:not(.near) .day{height:var(--dh)}
+.cal.tiny .day{border-top-width:0}
+.cal.small:not(.near) .xd>.hd{display:grid}
+.cal:not(.near):not(.small) .xt>*,.cal:not(.near):not(.small) .xn>*{display:none}
+
+/* Zoomed in, and always in the notebook: a day grows to fit, so it never
+   has to be opened to be read. */
+.cal.near .day{min-height:var(--dh)}
+.cal.near .xd>.hd{display:grid}
+.cal.near .xd>.bw{display:flex}
+.cal.near .day>.mo{display:block}
+
+.mo{padding:var(--s-4) var(--s-4) var(--s-2);background:var(--bg);font-family:var(--font-display);
+  font-weight:var(--w-bold);font-size:var(--tl, var(--f-4));letter-spacing:var(--track-cap);color:var(--text-2)}
+
+/* The date takes the width of the widest date, measured, so every day's
+   line starts at the same place. */
+.hd{grid-template-columns:var(--datew, var(--s-9)) minmax(0,1fr);column-gap:var(--s-4);align-items:baseline;
+  min-width:0;padding:var(--s-2) var(--s-4);background:var(--surface-1)}
+/* The date is quieter than the line he wrote beside it: the same size, a
+   softer colour. Tom, 2026-09-14, picked "today and your line stand out". */
+.hd .lab{font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--tb, var(--f-4));
+  white-space:nowrap;letter-spacing:var(--track-tight);color:var(--text-2)}
+.day.today .hd{background:var(--surface-3)}
+.day.today .hd .lab{color:var(--accent)}
+.cal.small:not(.near) .xd>.hd{grid-template-columns:var(--datews, var(--s-8)) minmax(0,1fr);
+  height:100%;align-items:center;padding:0 var(--s-3);background:none;line-height:1}
+.cal.small:not(.near) .xd>.hd .lab{font-family:var(--font-body);font-size:var(--ts, var(--f-2))}
+.cal.small:not(.near) .xd>.hd .sum{font-size:var(--ts, var(--f-2));line-height:1}
+
+/* The day's line, beside the date. Looks like text until pointed at. */
+.sum{min-width:0;max-width:80ch;width:100%;font:inherit;font-size:var(--tb, var(--f-4));
+  line-height:var(--lh-tight);color:var(--text-1);background:none;border:0;border-radius:0;
+  border-bottom:var(--border-width) solid transparent;padding:0;cursor:text}
+.sum:hover{border-bottom-color:var(--border)}
+.sum:focus{outline:none;border-bottom-color:var(--accent)}
+
+/* ── bullets, below the band ── */
+.bw{position:relative;flex:1 1 auto;flex-direction:column;min-height:0}
+.bls{position:relative;z-index:1;display:flex;flex-direction:column;gap:var(--s-1);
+  padding:var(--s-2) var(--s-4) var(--s-3) var(--s-6);max-width:90ch}
+.bls:empty{padding:0}
+.bl{display:flex;align-items:baseline;gap:var(--s-3);min-width:0;
+  font-size:var(--tb, var(--f-4));line-height:var(--lh-tight);cursor:pointer}
+/* The mark, the words and the time are shared/journal.js, drawn the way
+   STATUS draws them (Tom, 2026-09-14). LOG keeps the line to one row. */
+.bl .k{align-self:center}
+.bl .tx{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── what got done ──
+   Tom, 2026-09-13: a column for "What got done today", functionally
+   different from the day's line. A box of its own, as many lines as it
+   needs; the day grows with it. Zoomed out, its first line. */
+.cell{display:block;width:100%;height:100%;min-height:100%;field-sizing:content;resize:none;
+  border:0;border-radius:0;background:none;color:var(--text-1);font:inherit;font-size:var(--tb, var(--f-4));
+  line-height:var(--lh-tight);padding:var(--s-2) var(--s-3);cursor:text}
+.cell:focus{outline:var(--border-width) solid var(--accent);outline-offset:calc(var(--border-width) * -1)}
+.cal.small:not(.near) .cell{font-size:var(--ts, var(--f-2));line-height:1;padding:0 var(--s-3);
+  white-space:pre;overflow:hidden;display:flex;align-items:center}
+
+/* ── the day's average mood and energy ── */
+.xn{display:flex;justify-content:flex-end;align-items:flex-start}
+.xv{padding:var(--s-2) var(--s-3);font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--tb, var(--f-4))}
+.xn.f-mood .xv{color:var(--data-1)}
+.xn.f-energy .xv{color:var(--data-3)}
+.xv .xu{margin-left:var(--s-1);font-family:var(--font-body);font-weight:var(--w-body);font-size:var(--ts, var(--f-2));color:var(--text-muted)}
+.cal.small:not(.near) .xn{align-items:center}
+.cal.small:not(.near) .xv{padding:0 var(--s-3);font-size:var(--ts, var(--f-2))}
+
+/* ── the day graph ── */
+.gr{position:absolute;top:0;bottom:0;left:var(--s-4);right:var(--s-4);pointer-events:none;z-index:0}
+.gr svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.gr path{fill:none;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.gr path.mood{stroke:var(--data-1);opacity:.22}
+.gr path.energy{stroke:var(--data-3);opacity:.22}
+.gr path.caffeine{stroke:var(--data-6);stroke-dasharray:3 3;opacity:.5}
+.gr i{position:absolute;width:var(--s-2);height:var(--s-2);margin:calc(var(--s-1) * -1) 0 0 calc(var(--s-1) * -1);
+  border-radius:var(--radius-full);pointer-events:auto;cursor:default}
+.gr i.mood,.gr i.energy{opacity:.35}
+.gr i.caffeine{opacity:.8}
+
+/* ══════════ THE NOTEBOOK ══════════
+   Tom, 2026-09-14: "Scrolling down - If something leaves the upper right
+   area it shows up in the lower left again." One stream of days, read down
+   the left page and on down the right. Both pages hold the same stream and
+   stay on screen; the script slides the left one by the scroll and the right
+   one by the scroll plus a page, so the stream wraps from one to the other.
+   `clip`, not `hidden`, so focusing a box on a page cannot scroll the page
+   itself. The pad under the pages is what gives the scroller its length.
+   There are no column headings on a page, so a day's other cells sit under
+   its bullets, each with its name. */
+.cal.book{width:100%}
+.pages{position:sticky;top:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);height:var(--sh)}
+.page{position:relative;min-width:0;overflow:clip}
+.page+.page{border-left:calc(var(--border-width) * 2) solid var(--border-strong)}
+.flow{position:absolute;left:0;right:0;top:0}
+.cal.book .drow{flex-direction:column}
+.cal.book .xc{border-right:0}
+.cal.book .xt,.cal.book .xn{width:auto}
+.cal.book .xl{display:block;padding:var(--s-2) var(--s-4) 0;font-size:var(--ts, var(--f-2));color:var(--text-muted)}
+.cal.book .xn{justify-content:space-between;align-items:baseline}
+.cal.book .xn.empty{display:none}
+.cal.book .cell{padding:var(--s-1) var(--s-4) var(--s-2)}
+
+#probe{position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;width:calc(var(--s-10) * 2)}
+#probe .blk{position:static}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">LO<b>G</b></div>
+  <div class="yr">
+    <button id="prevBtn" class="mb-btn mb-press mb-tap" onclick="goStep(-1)" aria-label="Back" data-icon="prev"></button>
+    <b id="focusLabel"></b>
+    <button id="nextBtn" class="mb-btn mb-press mb-tap" onclick="goStep(1)" aria-label="Forward" data-icon="next"></button>
+  </div>
+  <button class="mb-btn mb-press mb-tap" onclick="toToday()">TODAY</button>
+  <div id="levels"></div>
+  <button id="filterBtn" class="mb-btn mb-press mb-tap" aria-label="Filters" aria-expanded="false" data-icon="filter"></button>
+  <button class="mb-btn go mb-press mb-tap" onclick="noteDialog({}, addTarget())">ADD</button>
+  <span class="quiet" id="state"></span>
+  <div class="spacer"></div>
+  <button class="mb-btn mb-press mb-tap" onclick="openSettings()" aria-label="Settings" title="Settings" data-icon="settings"></button>
+  <button class="mb-btn mb-press mb-tap" onclick="location.href='../index.html'" aria-label="Home" data-icon="app.home"></button>
+  <div class="bar" id="bar" hidden></div>
+</header>
+<main id="scroller" class="mb-scroll"><div class="cal" id="cal"></div></main>
+<div id="probe" aria-hidden="true"></div>
+
+<script>
+/* ═══════════════════════════════ LOG ═══════════════════════════════
+   The journal module. The last few weeks of bullets, set inside the year
+   around them. See log/CLAUDE.md for what it is for and why each decision
+   was made.
+
+   A bullet is a `note` row and a day's line is the `note` field of the `day`
+   row, both STATUS's shapes, so a line written here or there is the same
+   line in both. Mood, energy, caffeine, weight and sleep are read from
+   STATUS and never written. LOG owns two types: `recap`, what he wrote about
+   a week group, month, quarter or year, and `cell`, one day's entry in one
+   of his text columns.                                                    */
+
+const APP = {
+  id: 'log',
+  name: 'Log',
+  icon: '▤',
+  blurb: 'the journal, the last few weeks at a glance',
+  /* `recap` and `cell` are LOG's own. `note` and `day` are STATUS's shapes;
+     LOG writes them by merging into what is there, under the root brief's
+     many-writers rule. */
+  types: ['recap', 'cell'],
+};
+
+Skins.load('../shared/skins.json').then(() => { Skins.restore(APP.id);
+  if (window.Icons) Icons.paint(null, { force: true });
+  /* A theme changes the font, and the font changes how tall a line is. */
+  measure(); applySizes(); if (!touched) toToday(); });
+if (window.Icons) Icons.paint();
+Sfx.init(APP.id);
+Rec.declare(APP.id, APP.types);
+/* The backup carries the journal and everything written about it, or a
+   restore of LOG is a restore of nothing. */
+/* `reads`: the rows LOG shows that other apps write, and whose sheet tab
+   holds them. Tom, 2026-09-15: the GitHub copy of LOG never showed STATUS's
+   bullets from the phone, because a sync read only LOG's own tab. */
+IO.register({ app: APP.id, name: APP.name, types: ['note', 'day', 'recap', 'cell'],
+  reads: { status: ['note', 'day', 'ev', 'field'], quest: ['note'] } });
+
+const esc = UI.esc;
+const attr = s => esc(String(s == null ? '' : s)).replace(/"/g, '&quot;');
+/* Month names in full. Tom, 2026-09-13: "Don't abbreviate the name of the
+   months." */
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DATE_OK = /^\d{4}-\d{2}-\d{2}$/;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+let seq = 0;
+const uid = () => Rec.USER + '-' + Date.now().toString(36) + '-' +
+  (seq++).toString(36) + Math.random().toString(36).slice(2, 5);
+
+const S = {
+  get: (k, d) => { const v = Rec.setting(APP.id, k); return v == null ? d : v; },
+  set: (k, v) => Rec.setting(APP.id, k, v),
+};
+
+/* A setting that is a list, kept in a fixed order so it reads the same way
+   twice. */
+const setInList = (key, all, cur, id, on) => S.set(key, all.filter(v => v === id ? on : cur.indexOf(v) > -1));
+
+/* ══════════════════════ VIEWS ══════════════════════
+   Each is how many days fill the screen; Weeks is two, Month 31 and Quarter
+   92 so the longest of each fits whole, Year 366.
+
+   `cols` are the side columns, every unit bigger than the view. `spread`
+   marks a view that can be a notebook. 2 Days is always a notebook; the
+   others that have a spread follow the Notebook switch. `snap` is the edge a
+   scroll settles on: a day, or the named side block. */
+const LEVELS = [
+  { id: 'd1', name: 'Day',     n: 1,   cols: [],              spread: 1 },
+  { id: 'd2', name: '2 Days',  n: 2,   cols: [],              spread: 2, book: true },
+  { id: 'd3', name: '3 Days',  n: 3,   cols: [],              spread: 3 },
+  { id: 'w1', name: 'Week',    n: 7,   cols: ['w'],           spread: 'w' },
+  { id: 'w2', name: 'Weeks',   n: 14,  cols: ['w'],           spread: 'ww' },
+  { id: 'm',  name: 'Month',   n: 31,  cols: ['m', 'w'],      snap: 'w' },
+  { id: 'q',  name: 'Quarter', n: 92,  cols: ['q', 'm'],      snap: 'm' },
+  { id: 'y',  name: 'Year',    n: 366, cols: ['y', 'q', 'm'], snap: 'q' },
+];
+const LV = id => LEVELS.findIndex(l => l.id === id);
+
+/* Which views are offered at all. Tom, 2026-09-13: "Right click
+   functionality to pick what view modes are even available." A right click
+   on the view strip, or the Views row in Settings. One always stays. */
+const viewsOn = () => { const v = S.get('views', null); const ok = Array.isArray(v) ? v.filter(id => LV(id) > -1) : []; return ok.length ? ok : LEVELS.map(l => l.id); };
+const viewOn = i => viewsOn().indexOf(LEVELS[i].id) > -1;
+/* The nearest offered view to `i`, looking in `dir` first. */
+function nearestView(i, dir) {
+  for (let j = i; j >= 0 && j < LEVELS.length; j += dir || 1) if (viewOn(j)) return j;
+  for (let j = i; j >= 0 && j < LEVELS.length; j -= dir || 1) if (viewOn(j)) return j;
+  return LV(viewsOn()[0]);
+}
+/* The view LOG opens on is a setting; Month unless he picks another. */
+const openLevel = () => { const i = LV(S.get('open', 'm')); return nearestView(i < 0 ? LV('m') : i, 1); };
+
+const MIN_DH = 1;
+const COL_NAMES = { y: 'Year', q: 'Quarters', m: 'Months', w: 'Weeks' };
+const COL_KIND = { y: 'year', q: 'quarter', m: 'month', w: 'week' };
+let level = LV('m'), dayHeight = 20;
+let touched = false;         /* once he has moved the view himself, a late theme load must not yank it */
+
+/* Side columns he has hidden, per view. Tom, 2026-09-13: "definitely include
+   the option to hide quarters in the year view." */
+const hiddenSide = id => { const h = S.get('hide', null); return h && Array.isArray(h[id]) ? h[id] : []; };
+function toggleSide(id, k) {
+  const h = Object.assign({}, S.get('hide', null) || {}), cur = hiddenSide(id);
+  h[id] = cur.indexOf(k) > -1 ? cur.filter(x => x !== k) : cur.concat(k);
+  S.set('hide', h);
+}
+
+/* ── the day columns ──
+   The days themselves (`d`), and beside them, in his order: what got done,
+   then every measure STATUS tracks, then calories, protein and spending
+   from its meals and purchases.
+
+   Tom, 2026-09-14: "Pair LOG closer to STATUS, so I don't have to ask for a
+   manual weight column. Sometimes I will want to see it, sometimes I won't.
+   LOG is like a way to view my STATUS entries en masse." So the columns are
+   read off STATUS's own field list: a measure added in STATUS is a column
+   here without anyone asking. Each can be shown or hidden, renamed, resized
+   and moved. What got done, mood and energy show until hidden; everything
+   else waits to be shown. */
+const X_EXTRA = [
+  { key: 'kcal',    kind: 'meal',  prop: 'kcal', name: 'Calories' },
+  { key: 'protein', kind: 'meal',  prop: 'p',    name: 'Protein', unit: 'g' },
+  { key: 'spent',   kind: 'spend',               name: 'Spent' },
+];
+const X_SHOWN_FIRST = ['done', 'f-mood', 'f-energy'];
+let xDefCache = null;        /* cleared whenever the store changes, since a field can be added in STATUS */
+function xDefs() {
+  if (xDefCache) return xDefCache;
+  const fields = Object.values(Rec.map('field')).filter(f => f && f.id)
+    .sort((a, b) => (a.order || 0) - (b.order || 0) || String(a.label || '').localeCompare(String(b.label || '')));
+  xDefCache = [{ key: 'done', kind: 'text', name: 'What got done today' }]
+    .concat(fields.map(f => ({ key: 'f-' + String(f.id).replace(/[^a-zA-Z0-9_-]/g, '_'), kind: 'field', name: f.label || f.id, unit: f.unit || '', f })))
+    .concat(X_EXTRA);
+  return xDefCache;
+}
+const xDef = k => xDefs().find(x => x.key === k) || null;
+const xKeys = () => xDefs().map(x => x.key);
+const defaultName = k => { const d = xDef(k); return d ? d.name : k === 'd' ? 'Days' : COL_NAMES[k] || k; };
+const colName = k => { const n = S.get('colnames', null); return (n && n[k]) || defaultName(k); };
+const isXOn = k => { const v = S.get('xvis', null) || {}; return k in v ? !!v[k] : X_SHOWN_FIRST.indexOf(k) > -1; };
+const xWidth = k => 'var(--w-' + k + ', ' + (xDef(k) && xDef(k).kind === 'text' ? 'calc(var(--s-10) * 2.5)' : 'var(--s-9)') + ')';
+function xOrder() {
+  const all = ['d'].concat(xKeys()), saved = S.get('xorder', null);
+  const out = (Array.isArray(saved) ? saved : []).filter(k => all.indexOf(k) > -1);
+  all.forEach(k => { if (out.indexOf(k) < 0) out.push(k); });
+  return out;
+}
+const visibleX = () => xOrder().filter(k => k === 'd' || isXOn(k));
+
+/* Columns saved before 2026-09-14 were called `mood` and `energy` and were
+   hidden by a list; they are STATUS's fields now, `f-mood` and `f-energy`,
+   shown or hidden by a map. Carried across once, in place, so nothing he
+   set is lost. */
+(function migrateColumns() {
+  const ren = k => k === 'mood' ? 'f-mood' : k === 'energy' ? 'f-energy' : k;
+  const order = S.get('xorder', null);
+  if (Array.isArray(order) && order.some(k => k !== ren(k))) S.set('xorder', order.map(ren));
+  const hide = S.get('xhide', null);
+  if (Array.isArray(hide)) {
+    const vis = Object.assign({}, S.get('xvis', null) || {});
+    hide.forEach(k => { vis[ren(k)] = false; });
+    S.set('xvis', vis);
+    S.set('xhide', null);
+  }
+  ['colnames', 'colw'].forEach(key => {
+    const o = S.get(key, null);
+    if (o && typeof o === 'object' && ('mood' in o || 'energy' in o)) {
+      const n = {};
+      Object.keys(o).forEach(k => { n[ren(k)] = o[k]; });
+      S.set(key, n);
+    }
+  });
+})();
+
+/* Newest days first, or oldest first. A re-click on the view that is on
+   flips it, and the "Newest day first" switch shows and sets the same. */
+const desc = () => !!S.get('desc', false);
+const notebookOn = () => !!S.get('notebook', false);
+const isBook = () => { const L = LEVELS[level]; return !!L.spread && (!!L.book || notebookOn()); };
+const colsNow = () => isBook() ? [] : LEVELS[level].cols.filter(k => hiddenSide(LEVELS[level].id).indexOf(k) < 0);
+
+const TODAY = Day.today();
+
+/* ── text size ── */
+const TEXT = {
+  normal: ['--f-3', '--f-4', '--f-1', '--f-3'],
+  large:  ['--f-4', '--f-5', '--f-2', '--f-4'],
+  larger: ['--f-5', '--f-6', '--f-3', '--f-5'],
+};
+function applyText() {
+  const t = TEXT[S.get('text', 'large')] || TEXT.large, b = document.body.style;
+  b.setProperty('--tb', 'var(' + t[0] + ')');
+  b.setProperty('--td', 'var(' + t[1] + ')');
+  b.setProperty('--ts', 'var(' + t[2] + ')');
+  b.setProperty('--tl', 'var(' + t[3] + ')');
+}
+
+/* ══════════════════════ STATUS'S JOURNAL ══════════════════════
+   The kinds, the time parser, the clock labels and the two publish steps are
+   shared/journal.js, the one set of rules STATUS, QUESTS and the home screen
+   read too. The half-life sum below is still a copy of STATUS's: change both. */
+
+const NOTE_KINDS = Journal.KINDS;
+const MARK = { todo: '×', entry: '·', event: '–', idea: '!' };
+function parseLine(raw, date) { return Journal.parseLine(raw, date); }
+function hhmm(ms) { return Journal.hhmm(ms); }
+function clockLabel(at) { return Journal.clockLabel(at); }
+function durLabel(d) { return Journal.durLabel(d); }
+function publishNotes(d) { return Journal.publishNotes(d, APP.id); }
+
+/* ══════════════════════ WHAT SHOWS, AND ON WHICH DAY ══════════════════════
+   The day rules are STATUS's: an entry, event or idea is on the day it is
+   written on; a finished todo is on the day it was ticked; an open todo is
+   on the day it was written, with a box to tick, and not counted. `para` is
+   the old name for an entry. Cancelled lines show nowhere. */
+const shown = () => { const v = S.get('show', null); return Array.isArray(v) ? v : NOTE_KINDS.map(k => k.id); };
+const sortMode = () => S.get('sort', 'time');
+const SORTS = [{ id: 'time', name: 'By time' }, { id: 'manual', name: 'As arranged' }, { id: 'newest', name: 'Latest first' }];
+
+let byDay = new Map();
+let byKey = new Map();
+let firstMin = new Map();
+let lineCount = 0;
+
+/* Time order is the start, the same as STATUS: Journal.sortClock. */
+function sortClock(p) { return Journal.sortClock(p); }
+
+function indexJournal() {
+  byDay = new Map(); byKey = new Map(); firstMin = new Map(); lineCount = 0;
+  const show = shown();
+  Rec.all('note', {}).forEach(r => {
+    const p = r.payload;
+    if (!p) return;
+    const kind = p.kind === 'para' ? 'entry' : p.kind;
+    if (!MARK[kind]) return;
+    lineCount++;
+    /* A cancelled todo shows faded and is not counted, the way STATUS shows
+       it. An open todo with a due date sits on its due day, so Move to
+       tomorrow moves it here too. (Tom, 2026-09-14: no differences.) */
+    const open = kind === 'todo' && !p.done && !p.cancelled;
+    const day = kind === 'todo' && p.done ? (p.doneOn || r.date) : (open && p.due ? p.due : r.date);
+    if (!day || !DATE_OK.test(day)) return;
+    const c = sortClock(p);
+    if (c !== 9999) {
+      const m = Math.floor(c / 100) * 60 + c % 100;
+      if (!firstMin.has(day) || m < firstMin.get(day)) firstMin.set(day, m);
+    }
+    if (show.indexOf(kind) < 0) return;
+    const x = { key: r.key, date: r.date, day, kind, open, p };
+    byKey.set(r.date + '|' + r.key, x);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(x);
+    /* A todo moved to another day still shows on the days it was moved from,
+       as > at the bottom, the way STATUS shows it (Tom, 2026-09-14). The
+       spans are `moved`, written by Journal.moveToTomorrow. */
+    if (kind === 'todo' && Array.isArray(p.moved)) p.moved.forEach(m => {
+      if (!m || !DATE_OK.test(m.from || '') || !DATE_OK.test(m.to || '')) return;
+      /* every day it touched and was not done on, from the day it sat on to
+         the day it was moved from; never the days it skipped after the move
+         (Tom, 2026-09-14) */
+      for (let dd = m.from, n = 0; dd <= m.to && n < 400; dd = Day.shift(dd, 1), n++) {
+        if (dd === day || (p.due && dd >= p.due) || (p.done && p.doneOn === dd)) continue;
+        if (!byDay.has(dd)) byDay.set(dd, []);
+        if (byDay.get(dd).some(y => y.key === r.key && y.movedAway)) continue;
+        byDay.get(dd).push({ key: r.key, date: r.date, day: dd, kind, open: false, p, movedAway: true });
+      }
+    });
+  });
+  const mode = sortMode();
+  const cmp = (a, b) => {
+    if (!!a.movedAway !== !!b.movedAway) return a.movedAway ? 1 : -1;
+    if (a.open !== b.open) return a.open ? -1 : 1;
+    if (mode === 'manual') return (a.p.ord || 0) - (b.p.ord || 0) || (a.p.t || 0) - (b.p.t || 0);
+    if (mode === 'newest') return (b.p.t || 0) - (a.p.t || 0);
+    return sortClock(a.p) - sortClock(b.p) || (a.p.t || 0) - (b.p.t || 0);
+  };
+  byDay.forEach(list => list.sort(cmp));
+}
+const counted = d => (byDay.get(d) || []).filter(x => !x.open && !x.p.cancelled && !x.movedAway).length;
+
+/* ══════════════════════ THE DAY GRAPH ══════════════════════
+   Read from STATUS, never written. The left edge is the earliest weigh-in,
+   sleep entry or bullet that day, the right edge midnight. Mood and energy
+   are dots placed by the time of day each reading was logged; caffeine is
+   STATUS's own half-life sum. Which lines draw is a setting. */
+const graphOn = () => { const v = S.get('graph', null); return Array.isArray(v) ? v : ['mood', 'energy', 'caffeine']; };
+const GRAPH = [{ id: 'mood', name: 'Mood' }, { id: 'energy', name: 'Energy' }, { id: 'caffeine', name: 'Caffeine' }];
+/* 400mg a day is the ceiling the US FDA and the EU's food safety authority
+   both give for healthy adults, which is why it is the default top. */
+const cafTop = () => Math.max(50, +S.get('caftop', 400) || 400);
+const MIN_SPAN = 360;
+
+let G = null;
+function indexGraph() {
+  const F = Rec.map('field');
+  const caf = (F.caffeine && +F.caffeine.half > 0) ? F.caffeine
+    : Object.values(F).find(f => f && f.from === 'caff' && +f.half > 0) || null;
+  /* Meals and purchases by day, for caffeine off a label and for the
+     calories, protein and spending columns. */
+  const byDate = type => {
+    const m = new Map();
+    Rec.all(type, {}).forEach(r => {
+      if (!r.payload || !r.date) return;
+      if (!m.has(r.date)) m.set(r.date, []);
+      m.get(r.date).push(r.payload);
+    });
+    return m;
+  };
+  G = { mood: F.mood || null, energy: F.energy || null, caf, meals: byDate('meal'), spends: byDate('spend') };
+  xDefCache = null;
+}
+const evList = (date, fid) => { const r = Rec.get('ev', date, fid); return r && r.e ? r.e : []; };
+const minuteOf = t => { const d = new Date(t); return d.getHours() * 60 + d.getMinutes(); };
+/* A day's figure for a column, as STATUS shows it on its tile. A measure is
+   STATUS's value(): typed entries plus any food-label amount it is fed by,
+   then the last reading, the average or the total, as the field says. A
+   check is a tick; a scale or a decimal field has one decimal; anything
+   else is a whole number. Calories and protein are the day's meals added
+   up; Spent is the day's purchases. Blank when there is nothing. */
+const r1 = v => String(Math.round(v * 10) / 10);
+const money = v => Math.round(v).toLocaleString();
+function xValue(def, d) {
+  if (def.kind === 'meal') {
+    const s = (G.meals.get(d) || []).reduce((a, m) => a + (parseFloat(m[def.prop]) || 0), 0);
+    return s ? Math.round(s).toLocaleString() : '';
+  }
+  if (def.kind === 'spend') {
+    const s = (G.spends.get(d) || []).reduce((a, x) => a + (parseFloat(String(x.amt).replace(/,/g, '')) || 0), 0);
+    return s ? money(s) : '';
+  }
+  const f = def.f, per = f.per == null ? 1 : f.per;
+  const e = evList(d, f.id).map(x => ({ t: +x.t || 0, v: +x.v || 0 }));
+  if (f.from) (G.meals.get(d) || []).forEach(m => {
+    const v = (parseFloat(m[f.from]) || 0) * per;
+    if (v > 0) e.push({ t: +m.t || 0, v: v });
+  });
+  if (!e.length) return '';
+  e.sort((a, b) => a.t - b.t);
+  const v = f.agg === 'sum' ? e.reduce((a, x) => a + x.v, 0)
+    : f.agg === 'avg' ? e.reduce((a, x) => a + x.v, 0) / e.length
+    : e[e.length - 1].v;
+  if (f.measure === 'check') return v ? '✓' : '';
+  if (f.measure === 'scale' || f.dec) return r1(v);
+  return Math.round(v).toLocaleString();
+}
+
+function dayStart(d) {
+  let s = firstMin.has(d) ? firstMin.get(d) : null;
+  ['weight', 'sleep'].forEach(id => evList(d, id).forEach(e => {
+    const m = minuteOf(e.t);
+    if (s == null || m < s) s = m;
+  }));
+  return s == null ? 0 : Math.min(s, 1440 - MIN_SPAN);
+}
+
+function cafDoses(date) {
+  const f = G.caf, per = f.per == null ? 1 : f.per;
+  const out = evList(date, f.id).map(e => ({ t: e.t, v: +e.v || 0 }));
+  (G.meals.get(date) || []).forEach(m => {
+    const v = (parseFloat(m[f.from]) || 0) * per;
+    if (v > 0) out.push({ t: m.t, v: v, food: m.name });
+  });
+  return out;
+}
+
+function graphHTML(d) {
+  if (!G || d > TODAY) return '';
+  const on = graphOn(), W = 1440, H = 100, PAD = 6;
+  const start = dayStart(d);
+  const xOf = m => (m - start) / (W - start) * W;
+  const yOf = u => PAD + (1 - clamp(u, 0, 1)) * (H - PAD * 2);
+  let drew = false, dots = '';
+  /* The lines are shared/chart.js, stretched to the day's row; the dots stay
+     HTML so they stay round at any row size. */
+  const c = Chart.make({ w: W, h: H, pad: { l: 0, r: 0, t: PAD, b: PAD }, stretch: true });
+  c.xLinear(start, W).ySet(0, 1, 1);
+  const dot = (cls, m, u, tip) => {
+    dots += '<i class="' + cls + '" style="left:' + (xOf(m) / W * 100).toFixed(2) + '%;top:' + (yOf(u) / H * 100).toFixed(2) +
+      '%" title="' + attr(tip) + '"></i>';
+  };
+  ['mood', 'energy'].forEach(id => {
+    const f = G[id];
+    if (!f || on.indexOf(id) < 0) return;
+    const top = Math.max(2, Math.min(10, f.max || 5));
+    const pts = evList(d, id).map(e => ({ m: minuteOf(e.t), u: ((+e.v || 1) - 1) / (top - 1), e }))
+      .filter(p => p.m >= start).sort((a, b) => a.m - b.m);
+    if (!pts.length) return;
+    if (pts.length > 1) { c.line(pts.map(p => [p.m, p.u]), id); drew = true; }
+    pts.forEach(p => dot(id, p.m, p.u, clockLabel(hhmm(p.e.t)) + ' · ' + (f.label || id) + ' ' + p.e.v + ' of ' + top));
+  });
+  if (G.caf && on.indexOf('caffeine') > -1) {
+    const f = G.caf, half = +f.half;
+    const mid = new Date(d + 'T00:00:00').getTime();
+    const span = Math.ceil(half * 4 / 24) + 1;
+    const doses = [];
+    Day.range(Day.shift(d, -(span - 1)), d).forEach(x => cafDoses(x).forEach(e => doses.push(e)));
+    const level = T => doses.reduce((a, e) => { const hrs = (T - e.t) / 3600000; return hrs < 0 ? a : a + e.v * Math.pow(0.5, hrs / half); }, 0);
+    const samples = [];
+    for (let m = start; m < W; m += 15) samples.push({ m, v: level(mid + m * 60000) });
+    samples.push({ m: W, v: level(mid + W * 60000) });
+    const peak = samples.reduce((a, s) => Math.max(a, s.v), 0);
+    if (peak >= 1) {
+      const topMg = Math.max(cafTop(), peak);
+      c.line(samples.map(s => [s.m, s.v / topMg]), 'caffeine');
+      drew = true;
+      doses.filter(e => e.t >= mid + start * 60000 && e.t < mid + 86400000).forEach(e => {
+        dot('caffeine', minuteOf(e.t), level(e.t + 1000) / topMg,
+          clockLabel(hhmm(e.t)) + ' · ' + Math.round(e.v) + 'mg caffeine' + (e.food ? ' (' + e.food + ')' : ''));
+      });
+    }
+  }
+  if (!drew && !dots) return '';
+  return '<div class="gr" aria-hidden="true">' + (drew ? c.el.outerHTML : '') + dots + '</div>';
+}
+
+/* ══════════════════════ DATE MATHS ══════════════════════
+   The timeline runs from the first record to today. The first record is the
+   earliest dated journal line, day, measurement or meal; Settings can set a
+   different start. A period the timeline cuts through is drawn as the part
+   inside it. */
+function firstRecord() {
+  let s = TODAY;
+  ['note', 'day', 'ev', 'meal', 'spend', 'cell'].forEach(t => Rec.all(t, {}).forEach(r => {
+    if (r.date && DATE_OK.test(r.date) && r.date < s) s = r.date;
+  }));
+  return s;
+}
+function startDate() {
+  const set = S.get('start', '');
+  return set && DATE_OK.test(set) && set <= TODAY ? set : firstRecord();
+}
+
+const WEEK_STARTS = [1, 8, 15, 22, 29];
+
+/* ── what a day is called ──
+   Tom, 2026-09-14: "I want to see things like 2026, M9, Week 37, Day 256",
+   configured in Settings, since sometimes just "Day 256" or "Week 37" or
+   "Week 37/52" or "Week 37 Day 2" is what he wants. So a label is built from
+   parts he switches on, always in this order: the year, the month's number,
+   the week of the year with the day's place in that week, the day of the
+   year, then the date in words. "Out of" adds the totals.
+
+   WEEKS OF THE YEAR count from January 1 in sevens by default, the same way
+   his week groups count from the 1st of a month, so week 1 is January 1 to 7
+   and Day 2 of a week is its second day. Settings can switch to ISO weeks
+   instead: Monday to Sunday, week 1 holding the year's first Thursday, Day 1
+   a Monday. Either way a 365-day year has 53 weeks, the last one short. */
+const LABEL_PARTS = [
+  { id: 'yr', name: 'Year' },
+  { id: 'mn', name: 'Month number' },
+  { id: 'wk', name: 'Week of year' },
+  { id: 'wn', name: 'Day of week' },
+  { id: 'dy', name: 'Day of year' },
+  { id: 'wd', name: 'Weekday' },
+  { id: 'dt', name: 'Date' },
+  { id: 'mo', name: 'Month' },
+];
+const labelParts = () => {
+  const v = S.get('dlabel', null);
+  const ok = Array.isArray(v) ? LABEL_PARTS.map(p => p.id).filter(id => v.indexOf(id) > -1) : [];
+  return ok.length ? ok : ['wd', 'dt'];
+};
+const labelTotals = () => !!S.get('dltot', false);
+const weekMode = () => S.get('wkmode', 'jan1') === 'iso' ? 'iso' : 'jan1';
+const labelKey = () => labelParts().join() + '|' + labelTotals() + '|' + weekMode();
+const yearLen = y => Day.diff(y + '-12-31', y + '-01-01') + 1;
+function isoWeek(d) {
+  const t = new Date(d + 'T12:00:00'), wd = (t.getDay() + 6) % 7;
+  t.setDate(t.getDate() - wd + 3);
+  const jan4 = new Date(t.getFullYear(), 0, 4, 12);
+  return { week: 1 + Math.round(((t - jan4) / 86400000 - 3 + (jan4.getDay() + 6) % 7) / 7), year: t.getFullYear() };
+}
+function dayLabel(d) {
+  const parts = labelParts(), tot = labelTotals(), has = id => parts.indexOf(id) > -1;
+  const y = +d.slice(0, 4), doy = Day.diff(d, y + '-01-01') + 1, out = [];
+  if (has('yr')) out.push(String(y));
+  if (has('mn')) out.push('M' + +d.slice(5, 7));
+  let week = '';
+  if (weekMode() === 'iso') {
+    const w = isoWeek(d);
+    if (has('wk')) week = 'Week ' + w.week + (tot ? '/' + isoWeek(w.year + '-12-28').week : '');
+    if (has('wn')) week += (week ? ' ' : '') + 'Day ' + ((Day.dow(d) + 6) % 7 + 1) + (tot ? '/7' : '');
+  } else {
+    if (has('wk')) week = 'Week ' + Math.ceil(doy / 7) + (tot ? '/' + Math.ceil(yearLen(y) / 7) : '');
+    if (has('wn')) week += (week ? ' ' : '') + 'Day ' + ((doy - 1) % 7 + 1) + (tot ? '/7' : '');
+  }
+  if (week) out.push(week);
+  if (has('dy')) out.push('Day ' + doy + (tot ? '/' + yearLen(y) : ''));
+  const words = [];
+  if (has('wd')) words.push(Day.label(d, { weekday: 'short' }));
+  if (has('dt')) words.push(String(+d.slice(8)));
+  if (has('mo')) words.push(MONTHS[+d.slice(5, 7) - 1]);
+  if (words.length) out.push(words.join(' '));
+  return out.join(', ');
+}
+
+function buildTimeline(first, last) {
+  const days = Day.range(first, last);
+  const span = (from, to, extra) => {
+    const f = from < first ? first : from, t = to > last ? last : to;
+    return f > t ? null : Object.assign({ from: f, to: t, i0: Day.diff(f, first), n: Day.diff(t, f) + 1 }, extra);
+  };
+  const mStart = (y, m) => y + '-' + String(m + 1).padStart(2, '0') + '-01';
+  const mEnd = (y, m) => Day.shift(m === 11 ? (y + 1) + '-01-01' : mStart(y, m + 1), -1);
+  const add = (list, s) => { if (s) list.push(s); };
+  const y0 = +first.slice(0, 4), y1 = +last.slice(0, 4);
+
+  const years = [], quarters = [], months = [], weeks = [];
+  for (let y = y0; y <= y1; y++) {
+    add(years, span(mStart(y, 0), mEnd(y, 11), { label: String(y) }));
+    [0, 1, 2, 3].forEach(q => add(quarters, span(mStart(y, q * 3), mEnd(y, q * 3 + 2), { label: 'Q' + (q + 1) + ' ' + y })));
+    MONTHS.forEach((nm, m) => {
+      const ms = mStart(y, m), me = mEnd(y, m);
+      add(months, span(ms, me, { label: nm + (m === 0 || (ms <= first && me >= first) ? ' ' + y : '') }));
+      const end = +me.slice(8);
+      WEEK_STARTS.forEach((s, i) => {
+        if (s > end) return;
+        const e = i < WEEK_STARTS.length - 1 ? Math.min(WEEK_STARTS[i + 1] - 1, end) : end;
+        const dd = n => ms.slice(0, 8) + String(n).padStart(2, '0');
+        const w = span(dd(s), dd(e), {});
+        if (!w) return;
+        const a = +w.from.slice(8), b = +w.to.slice(8);
+        w.label = 'Week ' + (i + 1) + ': ' + a + (a === b ? '' : '–' + b);
+        weeks.push(w);
+      });
+    });
+  }
+
+  const dayList = days.map(d => {
+    const lab = dayLabel(d);
+    const month = d.slice(8) === '01' || d === first ? MONTHS[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4) : '';
+    return span(d, d, { label: lab, month });
+  });
+  /* Every other week group along the whole timeline, for the soft surface
+     that groups days without lines. */
+  weeks.forEach((w, gi) => { for (let k = 0; k < w.n; k++) dayList[w.i0 + k].alt = gi % 2 === 1; });
+
+  const pre = [0];
+  days.forEach((d, i) => { pre.push(pre[i] + counted(d)); });
+  return { y0, y1, first, last, days, years, quarters, months, weeks, dayList, pre };
+}
+const countOf = p => T.pre[p.i0 + p.n] - T.pre[p.i0];
+const bullets = n => n + (n === 1 ? ' bullet' : ' bullets');
+const ascIdx = date => clamp(Day.diff(date, T.first), 0, T.days.length - 1);
+const domIdx = date => desc() ? T.days.length - 1 - ascIdx(date) : ascIdx(date);
+
+/* ══════════════════════ DRAWING ══════════════════════ */
+let T = null;
+let blocks = [];
+let aggCols = [];
+let dayCol = null, dayEls = [];
+let flows = [];              /* the notebook's two copies of the stream, left page then right */
+let dayCache = new Map();    /* date → markup, cleared whenever the data or the columns change */
+const M = { near: 40, small: 18, lab: 24, full: 44, wsLine: 18 };
+
+/* A bullet is shared/journal.js: STATUS's mark, then the words, then the time
+   after them. Tom, 2026-09-14: "I don't want differences", STATUS winning. A
+   todo on a day that has gone shows > as it does in STATUS, and still ticks. */
+function bulletHTML(x) {
+  const p = x.p, line = Object.assign({}, p, { kind: x.kind });
+  const cls = 'bl mb-bullet' + (x.open ? ' open' : '') + (p.done && !x.movedAway ? ' done' : '') + (p.cancelled ? ' cancelled' : '');
+  return '<div class="' + cls + '" data-k="' + attr(x.key) + '" data-d="' + x.date + '" title="' + attr(p.text || '') + '">' +
+    (x.kind === 'todo'
+      ? '<button class="k mb-tap" type="button" aria-label="' + (p.done ? 'Untick' : 'Tick') + '">' + Journal.markHTML('todo', x.day !== TODAY || !!x.movedAway) + '</button>'
+      : '<span class="k" aria-hidden="true">' + Journal.markHTML(x.kind) + '</span>') +
+    '<span class="tx">' + Journal.textHTML(line) + '</span></div>';
+}
+
+const recapOf = (kind, from) => (Rec.get('recap', from, kind) || {}).text || '';
+const cellOf = (d, col) => (Rec.get('cell', d, col) || {}).text || '';
+
+function dayHTML(p) {
+  const hit = dayCache.get(p.from);
+  if (hit) return hit;
+  const cls = ['day'];
+  if (p.from.slice(8) === '01') cls.push('m0');
+  else if (WEEK_STARTS.indexOf(+p.from.slice(8)) > 0) cls.push('wk');
+  if (p.from === TODAY) cls.push('today');
+  if (p.alt) cls.push('alt');
+  const list = byDay.get(p.from) || [];
+  const note = (Rec.get('day', p.from, '') || {}).note || '';
+  const cells = visibleX().map(k => {
+    if (k === 'd') {
+      return '<div class="xc xd">' +
+        '<div class="hd"><span class="lab">' + esc(p.label) + '</span>' +
+          '<input class="sum" type="text" maxlength="240" data-d="' + p.from + '" value="' + attr(note) +
+          '" aria-label="' + attr(p.label) + '"></div>' +
+        '<div class="bw">' + graphHTML(p.from) + '<div class="bls">' + list.map(bulletHTML).join('') + '</div></div></div>';
+    }
+    const def = xDef(k);
+    if (!def) return '';
+    const cw = ' style="--cw:' + xWidth(k) + '"';
+    if (def.kind === 'text') {
+      return '<div class="xc xt" data-col="' + k + '"' + cw + '><span class="xl">' + esc(colName(k)) + '</span>' +
+        '<textarea class="cell" rows="1" data-d="' + p.from + '" data-col="' + k + '" aria-label="' + attr(colName(k) + ', ' + p.label) + '">' +
+        esc(cellOf(p.from, k)) + '</textarea></div>';
+    }
+    const v = xValue(def, p.from);
+    return '<div class="xc xn ' + k + (v ? '' : ' empty') + '" data-col="' + k + '"' + cw + '>' +
+      '<span class="xl">' + esc(colName(k)) + '</span><span class="xv">' +
+      (v ? esc(v) + (def.unit && v !== '✓' ? '<span class="xu">' + esc(def.unit) + '</span>' : '') : '') + '</span></div>';
+  }).join('');
+  const html = '<div class="' + cls.join(' ') + '" data-from="' + p.from + '"' +
+    (note ? ' title="' + attr(p.label + ': ' + note) + '"' : '') + '>' +
+    (p.month ? '<div class="mo">' + esc(p.month) + '</div>' : '') +
+    '<div class="drow">' + cells + '</div></div>';
+  dayCache.set(p.from, html);
+  return html;
+}
+
+function aggHTML(p, col) {
+  const kind = COL_KIND[col];
+  const cls = ['blk'];
+  if (p.from.slice(5) === '01-01') cls.push('y0');
+  else if (p.from.slice(8) === '01') cls.push('m0');
+  const n = countOf(p);
+  if (!n) cls.push('zero');
+  const rc = recapOf(kind, p.from);
+  const range = Day.label(p.from) + (p.n > 1 ? ' to ' + Day.label(p.to) : '') + ' ' + p.from.slice(0, 4);
+  return '<div class="' + cls.join(' ') + '" data-kind="' + kind + '" data-from="' + p.from + '" data-to="' + p.to + '" title="' + attr(rc || range) + '">' +
+    '<div class="stick"><span class="lab">' + esc(p.label) + '</span>' +
+    '<span class="tot" title="' + bullets(n) + '">' + n + '</span>' +
+    (rc ? '<div class="ws" hidden>' + esc(rc) + '</div>' : '') +
+    '</div></div>';
+}
+
+let renderedKey = '';
+function render(force) {
+  const key = level + '|' + isBook() + '|' + desc();
+  if (!force && key === renderedKey) return;
+  renderedKey = key;
+  const cal = $('cal'), book = isBook();
+  cal.classList.toggle('book', book);
+  cal.style.height = '';
+  if (book) {
+    const stream = (desc() ? T.dayList.slice().reverse() : T.dayList).map(dayHTML).join('');
+    cal.innerHTML = '<div class="pages"><div class="page"><div class="flow">' + stream + '</div></div>' +
+      '<div class="page"><div class="flow">' + stream + '</div></div></div>';
+    flows = [...cal.querySelectorAll('.flow')];
+    blocks = []; aggCols = []; dayCol = null;
+    /* Places are measured on the left copy; the right one is the same stream. */
+    dayEls = [...flows[0].children];
+  } else {
+    const c = colsNow(), sets = { y: T.years, q: T.quarters, m: T.months, w: T.weeks };
+    const order = desc() ? T.dayList.slice().reverse() : T.dayList;
+    /* The headings are always drawn on the timeline now, because the day
+       columns have names, even in the views with no side columns. */
+    cal.innerHTML =
+      '<div class="row heads" id="heads">' +
+        (c.length ? '<div class="agg">' + c.map(k => '<div class="c c-' + k + '" data-side="' + k + '">' + COL_NAMES[k] +
+          '<span class="rz" data-col="' + k + '" title="Drag to resize"></span></div>').join('') + '</div>' : '') +
+        visibleX().map(k => '<div class="c ' + (k === 'd' ? 'c-d' : 'cx') + '" data-x="' + k + '"' +
+          (k === 'd' ? '' : ' style="--cw:' + xWidth(k) + '"') + ' title="' + attr(colName(k)) + '">' + esc(colName(k)) +
+          (k === 'd' ? '' : '<span class="rz" data-col="' + k + '" title="Drag to resize"></span>') + '</div>').join('') +
+      '</div>' +
+      '<div class="row body">' +
+        (c.length ? '<div class="agg">' + c.map(k => '<div class="col c-' + k + '" data-col="' + k + '">' + sets[k].map(p => aggHTML(p, k)).join('') + '</div>').join('') + '</div>' : '') +
+        '<div class="col c-d">' + order.map(dayHTML).join('') + '</div>' +
+      '</div>';
+    aggCols = [...cal.querySelectorAll('.body .agg .col')];
+    blocks = [...cal.querySelectorAll('.body .agg .blk')].map(el => ({
+      el, col: el.parentNode.dataset.col, from: el.dataset.from, to: el.dataset.to,
+      state: '', ws: el.querySelector('.ws'), lines: -1, top: -1, h: -1,
+    }));
+    dayCol = cal.querySelector('.body .c-d');
+    dayEls = [...dayCol.children];
+    flows = [];
+  }
+  $('state').textContent = !lineCount ? 'No journal lines' : !shown().length ? 'No bullet types selected' : '';
+}
+
+/* Every different day name on the timeline, so the date column is as wide
+   as the widest one the chosen label actually makes. */
+let measuredLabel = '';
+const labelSamples = () => T ? [...new Set(T.dayList.map(p => p.label))] : ['Wed 30'];
+function measure() {
+  measuredLabel = labelKey();
+  const pr = $('probe');
+  const h = (cls, html) => { pr.innerHTML = '<div class="' + cls + '">' + html + '</div>'; return pr.firstChild.offsetHeight; };
+  const hd = '<span class="lab">Wed 30</span><input class="sum" value="Line">';
+  pr.innerHTML = '<div class="cal near"><div class="day"><div class="xd"><div class="hd" style="display:grid">' + hd + '</div></div></div></div>';
+  M.near = pr.querySelector('.hd').offsetHeight;
+  pr.innerHTML = '<div class="cal small"><div class="day"><div class="xd"><div class="hd" style="display:grid;height:auto">' + hd + '</div></div></div></div>';
+  M.small = pr.querySelector('.hd').offsetHeight;
+  const widest = (ctx) => {
+    pr.innerHTML = '<div class="cal ' + ctx + '"><div class="day"><div class="xd"><div class="hd" style="display:block">' +
+      labelSamples().map(l => '<span class="lab" style="display:inline-block">' + esc(l) + '</span>').join('') +
+      '</div></div></div></div>';
+    return Math.ceil(Math.max.apply(null, [...pr.querySelectorAll('.lab')].map(s => s.getBoundingClientRect().width)));
+  };
+  document.body.style.setProperty('--datew', widest('near') + 'px');
+  document.body.style.setProperty('--datews', widest('small') + 'px');
+  const stick = inner => '<div class="stick">' + inner + '</div>';
+  M.lab = h('blk', stick('<span class="lab">January 2026</span>'));
+  M.full = h('blk', stick('<span class="lab">January 2026</span><span class="tot">0 bullets</span>'));
+  M.wsLine = h('blk', stick('<span class="lab">January 2026</span><span class="tot">0 bullets</span><div class="ws" style="--ln:1">Line</div>')) - M.full;
+  pr.innerHTML = '';
+}
+
+/* ══════════════════════ SIZES AND PLACES ══════════════════════ */
+const sc = $('scroller');
+const headH = () => { const h = $('heads'); return h ? h.offsetHeight : 0; };
+const bodyH = () => sc.clientHeight - headH();
+const dhFor = n => {
+  const v = bodyH() / n;
+  return v >= M.small ? Math.floor(v) : Math.max(0.5, v);
+};
+const nearAt = () => Math.min(M.near, M.small * 2);
+
+function applySizes() {
+  const cal = $('cal');
+  /* In the notebook the screen is two pages, so a day is at least its share
+     of both: Day fills the spread, 2 Days a page each. */
+  if (isBook()) {
+    const H = sc.clientHeight;
+    cal.classList.add('near');
+    cal.classList.remove('small', 'tiny');
+    cal.style.setProperty('--sh', H + 'px');
+    cal.style.setProperty('--dh', Math.floor(2 * H / LEVELS[level].n) + 'px');
+    /* The pages stay put; the notebook's own height is what scrolls, one
+       screen plus as far as the stream runs past two pages. */
+    if (flows.length) cal.style.height = (H + Math.max(0, flows[0].offsetHeight - 2 * H)) + 'px';
+    flowBook();
+    return;
+  }
+  dayHeight = dhFor(LEVELS[level].n);
+  cal.style.setProperty('--dh', dayHeight + 'px');
+  cal.classList.toggle('near', dayHeight >= nearAt());
+  cal.classList.toggle('small', dayHeight < nearAt() && dayHeight >= M.small);
+  cal.classList.toggle('tiny', dayHeight < 3);
+  cal.style.setProperty('--headh', headH() + 'px');
+  layoutAgg();
+}
+
+function layoutAgg() {
+  if (!dayCol || !blocks.length) return;
+  const H = dayCol.offsetHeight;
+  aggCols.forEach(c => { c.style.height = H + 'px'; });
+  for (const b of blocks) {
+    const a = dayEls[domIdx(b.from)], z = dayEls[domIdx(b.to)];
+    const y1 = Math.min(a.offsetTop, z.offsetTop);
+    const y2 = Math.max(a.offsetTop + a.offsetHeight, z.offsetTop + z.offsetHeight);
+    if (y1 !== b.top) { b.el.style.top = y1 + 'px'; b.top = y1; }
+    if (y2 - y1 !== b.h) { b.el.style.height = (y2 - y1) + 'px'; b.h = y2 - y1; }
+    const px = b.h;
+    const s = px < M.lab ? 'bare' : px < M.full ? 'lab-only' : '';
+    if (s !== b.state) {
+      if (b.state) b.el.classList.remove(b.state);
+      if (s) b.el.classList.add(s);
+      b.state = s;
+    }
+    if (b.ws) {
+      const ln = s ? 0 : Math.max(0, Math.floor((px - M.full) / Math.max(1, M.wsLine)));
+      if (ln !== b.lines) {
+        b.ws.style.setProperty('--ln', ln);
+        b.ws.hidden = ln < 1;
+        b.lines = ln;
+      }
+    }
+  }
+}
+
+/* A day's place on the scroller. In the notebook that is its place in the
+   stream, which is what the scroll position means there. */
+const dayY = i => (dayCol ? dayCol.offsetTop : 0) + dayEls[i].offsetTop;
+const dayHt = i => dayEls[i].offsetHeight;
+/* How much of the stream is on screen: one screen, or two pages. */
+const screenH = () => isBook() ? 2 * sc.clientHeight : sc.clientHeight;
+function dateAt(y) {
+  let lo = 0, hi = dayEls.length - 1;
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (dayY(mid) <= y) lo = mid; else hi = mid - 1; }
+  return { i: lo, f: clamp((y - dayY(lo)) / Math.max(1, dayHt(lo)), 0, 1) };
+}
+function anchorAt(y) {
+  if (!dayEls.length) return { date: TODAY, f: 0 };
+  const a = dateAt(y);
+  return { date: dayEls[a.i].dataset.from, f: a.f };
+}
+
+/* Slide the notebook's pages to the scroll: the left page shows the stream
+   from the scroll down, the right page the page after it. */
+function flowBook() {
+  if (flows.length < 2) return;
+  const s = sc.scrollTop, H = sc.clientHeight;
+  flows[0].style.transform = 'translateY(' + (-s) + 'px)';
+  flows[1].style.transform = 'translateY(' + (-(s + H)) + 'px)';
+}
+
+/* A scroll the app made itself is remembered, so it is not mistaken for his
+   own and does not move the day in focus. */
+let progAt = 0, setAt = -1;
+/* When he last scrolled, dragged or pressed a key. Only a scroll close
+   behind one of those moves the focus: the page moving because a view got
+   shorter is the browser, not him. */
+let userAt = 0;
+function setTop(y) {
+  progAt = Date.now();
+  userAt = 0;
+  const was = sc.scrollTop;
+  sc.scrollTop = y;
+  setAt = sc.scrollTop === was ? -1 : sc.scrollTop;
+  flowBook();
+}
+
+function restore(an, y) {
+  const i = domIdx(an.date);
+  setTop(dayY(i) + an.f * dayHt(i) - y);
+}
+
+/* Redraw everything in place: after a column, view or setting change that
+   the cached days do not know about. */
+function redrawInPlace() {
+  const an = anchorAt(sc.scrollTop + headH());
+  dayCache = new Map();
+  render(true);
+  applySizes();
+  restore(an, headH());
+  showFocus();
+}
+
+/* ── the day in focus ──
+   Tom, 2026-09-14: "Changing the view group should never change the date
+   focused on." One date, kept apart from the scroll position: his own
+   scrolling, the arrows, TODAY and opening a box move it; changing the view,
+   the order or the notebook only puts it back at the top. It is the top day
+   on screen, or at the far end of the timeline the last day, so a Month
+   showing the last four weeks is focused on today, not four weeks ago. */
+let focus = TODAY;
+function readFocus() {
+  if (!T || !dayEls.length) return;
+  const max = sc.scrollHeight - sc.clientHeight;
+  if (max > 0 && sc.scrollTop >= max - 1) { focus = desc() ? T.first : T.last; return; }
+  const a = dateAt(sc.scrollTop + headH());
+  focus = dayEls[a.f > 0.5 ? Math.min(a.i + 1, dayEls.length - 1) : a.i].dataset.from;
+}
+function placeFocus() {
+  if (!T || !dayEls.length) return;
+  if (focus < T.first) focus = T.first;
+  if (focus > T.last) focus = T.last;
+  setTop(dayY(domIdx(focus)) - headH());
+}
+
+/* The bar and the label first: either can change the header's height, and
+   the sizes are measured off what is left of the screen. */
+function setLevel(i) {
+  level = clamp(i, 0, LEVELS.length - 1);
+  drawBar();
+  render();
+  syncLevels();
+  showFocus();
+  applySizes();
+  placeFocus();
+  showFocus();
+}
+/* One offered view in or out from the current one. */
+function stepLevel(dir) {
+  for (let j = level + dir; j >= 0 && j < LEVELS.length; j += dir) if (viewOn(j)) return j;
+  return level;
+}
+
+/* TODAY goes to today, in the view that is on. */
+function toToday() {
+  if (!T) return;
+  focus = TODAY;
+  placeFocus();
+  showFocus();
+}
+
+/* Open a box: a day at Day; a week group at Week, or at 2 or 3 Days for the
+   short end-of-month groups; a month at Month; a quarter at Quarter; a year
+   at Year. If that view is not offered, the nearest one that is. */
+function openBox(box) {
+  touched = true;
+  const from = box.dataset.from, to = box.dataset.to || from;
+  let id = 'd1';
+  if (!box.classList.contains('day')) {
+    const kind = box.dataset.kind, n = Day.diff(to, from) + 1;
+    id = kind === 'year' ? 'y' : kind === 'quarter' ? 'q' : kind === 'month' ? 'm'
+      : n <= 1 ? 'd1' : n === 2 ? 'd2' : n === 3 ? 'd3' : 'w1';
+  }
+  level = nearestView(LV(id), -1);
+  focus = desc() ? to : from;
+  drawBar();
+  render();
+  syncLevels();
+  showFocus();
+  applySizes();
+  placeFocus();
+  showFocus();
+  Mobile.feedback('open');
+}
+
+const addTarget = () => LEVELS[level].n === 1 ? focus : TODAY;
+
+/* ── the arrows ──
+   Tom, 2026-09-14: "The arrows should change between dates, not the year."
+   One step is what the view shows: Day, 2 Days and 3 Days move that many
+   days; Week one week group; Weeks two (1–14, 15–28, the rest); Month a
+   month; Quarter a quarter; Year a year. Between them, what is in focus. */
+const p2 = n => String(n).padStart(2, '0');
+const monthOn = (d, k) => { const t = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1 + k, 1, 12); return t.getFullYear() + '-' + p2(t.getMonth() + 1) + '-01'; };
+const STEP_STARTS = { w1: WEEK_STARTS, w2: [1, 15, 29] };
+function unitStart(d) {
+  const id = LEVELS[level].id, m = +d.slice(5, 7);
+  if (id === 'y') return d.slice(0, 4) + '-01-01';
+  if (id === 'q') return d.slice(0, 5) + p2(m - (m - 1) % 3) + '-01';
+  if (id === 'm') return d.slice(0, 8) + '01';
+  return d.slice(0, 8) + p2(STEP_STARTS[id].filter(s => s <= +d.slice(8)).pop());
+}
+function nextStart(u) {
+  const id = LEVELS[level].id;
+  if (id === 'y') return (+u.slice(0, 4) + 1) + '-01-01';
+  if (id === 'q') return monthOn(u, 3);
+  if (id === 'm') return monthOn(u, 1);
+  const len = new Date(+u.slice(0, 4), +u.slice(5, 7), 0).getDate();
+  const s = STEP_STARTS[id].find(v => v > +u.slice(8));
+  return s && s <= len ? u.slice(0, 8) + p2(s) : monthOn(u, 1);
+}
+/* Where an arrow would put the focus. The same date back means it cannot go. */
+function arrowTarget(dir) {
+  if (!T) return focus;
+  const n = LEVELS[level].n;
+  if (n <= 3) {
+    if (!desc()) {
+      const base = focus === T.last ? Day.shift(T.last, 1 - n) : focus;
+      const t = Day.shift(base, dir * n);
+      if (Day.shift(t, n - 1) >= T.last) return T.last;
+      return t < T.first ? T.first : t;
+    }
+    const base = focus === T.first ? Day.shift(T.first, n - 1) : focus;
+    const t = Day.shift(base, dir * n);
+    if (Day.shift(t, 1 - n) <= T.first) return T.first;
+    return t > T.last ? T.last : t;
+  }
+  const cur = unitStart(focus);
+  if (dir < 0 && cur <= T.first) return focus;
+  const u = dir > 0 ? nextStart(cur) : unitStart(Day.shift(cur, -1));
+  if (u > T.last) return focus;
+  const end = Day.shift(nextStart(u), -1);
+  if (desc()) return end > T.last ? T.last : end;
+  if (end >= T.last) return T.last;
+  return u < T.first ? T.first : u;
+}
+function goStep(dir) {
+  const t = arrowTarget(dir);
+  if (t === focus) return;
+  touched = true;
+  focus = t;
+  placeFocus();
+  showFocus();
+}
+/* The header names the days on screen: one date in Day, else the first and
+   last day showing. Tom, 2026-09-14, picked "say each thing once": the side
+   columns already name the week, month and year, so the header names the
+   days instead of repeating one of them. */
+function focusLabel() {
+  const yr = d => d.slice(0, 4), mon = d => MONTHS[+d.slice(5, 7) - 1];
+  const one = d => Day.label(d, { weekday: 'short' }) + ' ' + +d.slice(8) + ' ' + mon(d).slice(0, 3) + ' ' + yr(d);
+  if (LEVELS[level].n === 1 || !dayEls.length) return one(focus);
+  const top = dateAt(sc.scrollTop + headH()), bot = dateAt(sc.scrollTop + screenH() - 1);
+  const i = top.f > 0.5 && top.i + 1 < dayEls.length ? top.i + 1 : top.i;
+  const j = Math.max(i, bot.f < 0.5 && bot.i > 0 ? bot.i - 1 : bot.i);
+  let a = dayEls[i].dataset.from, b = dayEls[j].dataset.from;
+  if (a > b) { const t = a; a = b; b = t; }
+  if (a === b) return one(a);
+  const short = d => mon(d).slice(0, 3);
+  if (a.slice(0, 7) === b.slice(0, 7)) return +a.slice(8) + '–' + +b.slice(8) + ' ' + short(b) + ' ' + yr(b);
+  return +a.slice(8) + ' ' + short(a) + (yr(a) === yr(b) ? '' : ' ' + yr(a)) + ' – ' + +b.slice(8) + ' ' + short(b) + ' ' + yr(b);
+}
+function showFocus() {
+  if (!T) return;
+  $('focusLabel').textContent = focusLabel();
+  $('prevBtn').disabled = arrowTarget(-1) === focus;
+  $('nextBtn').disabled = arrowTarget(1) === focus;
+}
+
+function setDesc(on) {
+  touched = true;
+  S.set('desc', !!on);
+  render(true);
+  applySizes();
+  placeFocus();
+  showFocus();
+  drawBar();
+  Mobile.feedback('toggle');
+}
+
+/* ── snap ── */
+function snapEdges() {
+  if (isBook()) return null;
+  const unit = LEVELS[level].snap;
+  if (unit && blocks.length) return blocks.filter(b => b.col === unit).map(b => dayCol.offsetTop + b.top).sort((a, b) => a - b);
+  return null;
+}
+let snapT = null, snapping = false;
+function snapNow() {
+  if (!T || drag || rz || mv || snapping || Date.now() - progAt < 350) return;
+  const top = sc.scrollTop + headH();
+  let best = null;
+  const edges = snapEdges();
+  if (edges && edges.length) {
+    let lo = 0, hi = edges.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (edges[mid] <= top) lo = mid; else hi = mid - 1; }
+    best = edges[lo];
+    if (lo + 1 < edges.length && edges[lo + 1] - top < top - best) best = edges[lo + 1];
+  } else if (dayEls.length) {
+    const a = dateAt(top), y1 = dayY(a.i), y2 = a.i + 1 < dayEls.length ? dayY(a.i + 1) : y1;
+    best = top - y1 <= y2 - top ? y1 : y2;
+  }
+  if (best == null) return;
+  const dist = Math.abs(best - top);
+  if (dist < 1 || dist > sc.clientHeight * 0.2) return;
+  snapping = true;
+  const target = best - headH();
+  sc.scrollTo({ top: target, behavior: 'smooth' });
+  /* A smooth scroll only moves while the page is being drawn. Once the glide
+     has had its time, the view is put where it was going anyway. */
+  setTimeout(() => {
+    if (Math.abs(sc.scrollTop - target) > 1) setTop(target);
+    snapping = false;
+  }, 450);
+}
+const snapSoon = () => { clearTimeout(snapT); snapT = setTimeout(snapNow, 160); };
+
+/* ── the view strip ──
+   Only the offered views. Clicking the one already on flips the order of
+   the days; a right click picks which views are offered. */
+let levelSeg = null, syncing = false;
+function drawLevels() {
+  const box = $('levels');
+  box.innerHTML = '';
+  if (!viewOn(level)) level = nearestView(level, 1);
+  const on = LEVELS.filter((l, i) => viewOn(i));
+  levelSeg = UI.segmented(on.map(l => ({ id: l.id, name: l.name })), LEVELS[level].id, id => {
+    if (syncing) return;
+    touched = true;
+    setLevel(LV(id));
+  });
+  levelSeg.addEventListener('click', e => {
+    if (syncing) return;
+    const b = e.target.closest('button');
+    if (b && b.classList.contains('on')) setDesc(!desc());
+  }, true);
+  box.appendChild(levelSeg);
+}
+function syncLevels() {
+  if (!levelSeg) return;
+  syncing = true;
+  levelSeg.select(LEVELS[level].id);
+  syncing = false;
+}
+function toggleView(id) {
+  const cur = viewsOn(), on = cur.indexOf(id) > -1;
+  if (on && cur.length === 1) { UI.toast('One view stays on'); return; }
+  setInList('views', LEVELS.map(l => l.id), cur, id, !on);
+  const was = level;
+  drawLevels();
+  if (level !== was) setLevel(level); else syncLevels();
+}
+function viewsMenu(e) {
+  UI.menu(e.clientX, e.clientY, LEVELS.map((l, i) => ({
+    label: (viewOn(i) ? 'Hide ' : 'Show ') + l.name, fn: () => toggleView(l.id),
+  })), { title: 'Views' });
+}
+$('levels').addEventListener('contextmenu', e => { e.preventDefault(); viewsMenu(e); });
+Mobile.hold($('levels'), e => { if (e.type !== 'contextmenu' && e.pointerType !== 'mouse') viewsMenu(e); });
+/* The rest of the header had nothing on a right click. Tom, 2026-09-15:
+   "header right click in LOG no functionality." Everything the header does,
+   in one menu. The view strip keeps its own. */
+document.querySelector('header').addEventListener('contextmenu', e => {
+  if (e.target.closest('#levels, #bar')) return;
+  e.preventDefault();
+  UI.menu(e.clientX, e.clientY, [
+    { label: 'Go to today', fn: toToday },
+    { label: 'Add a bullet', fn: () => noteDialog({}, addTarget()) },
+    { label: 'Filters', fn: () => openFilters(true) },
+    { label: 'Choose views', fn: () => viewsMenu(e) },
+    { label: 'Show or hide columns', fn: columnsDialog },
+    '-',
+    { label: 'Settings', fn: openSettings },
+  ], { title: 'LOG' });
+});
+
+/* ══════════════════════ COLUMNS ══════════════════════
+   Tom, 2026-09-13: "Right click functionality to hide and show columns ala
+   windows explorer." A right click on any column heading lists every column
+   this view can show, each to hide or show; a day column's heading adds
+   Rename and Move. Side columns are hidden per view; the day columns
+   everywhere. Settings has the same switches. */
+function toggleX(k) {
+  const v = Object.assign({}, S.get('xvis', null) || {});
+  v[k] = !isXOn(k);
+  S.set('xvis', v);
+}
+/* Every column this view can show, as switches, in one box. */
+function columnsDialog() {
+  const L = LEVELS[level];
+  UI.dialog({
+    title: 'COLUMNS', width: 560,
+    body: b => {
+      const grp = UI.el('div', 'mb-group');
+      if (L.cols.length) {
+        const s = UI.el('div', 'opts');
+        L.cols.forEach(k => s.appendChild(toggleEl(COL_NAMES[k], hiddenSide(L.id).indexOf(k) < 0, () => toggleSide(L.id, k))));
+        grp.appendChild(UI.row('In ' + L.name, 'The bigger units beside the days', s));
+      }
+      const x = UI.el('div', 'opts');
+      xKeys().forEach(k => x.appendChild(toggleEl(colName(k), isXOn(k), () => toggleX(k))));
+      grp.appendChild(UI.row('Day columns', 'Your STATUS entries beside the days', x));
+      b.appendChild(grp);
+    },
+    actions: [{ label: 'DONE', kind: 'go' }],
+  });
+}
+function renameCol(k) {
+  let inp = null;
+  const save = h => {
+    const v = inp.value.trim(), n = Object.assign({}, S.get('colnames', null) || {});
+    if (v && v !== defaultName(k)) n[k] = v; else delete n[k];
+    S.set('colnames', n);
+    h.close();
+  };
+  UI.dialog({
+    title: 'RENAME COLUMN', width: 420,
+    body: (b, h) => {
+      inp = UI.field('text', { value: colName(k) });
+      inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); save(h); } };
+      b.appendChild(inp);
+      UI.focusSoon(inp);
+    },
+    actions: [{ label: 'CANCEL' }, { label: 'SAVE', kind: 'go', fn: h => { save(h); return false; } }],
+  });
+}
+/* Tom, 2026-09-14: "Right click menu is too populated." So the menu is about
+   the column clicked, and every other column lives in one box behind
+   "Show or hide columns". Moving is a drag, as in Sheets. */
+function columnsMenu(e, head) {
+  const items = [], side = head && head.dataset.side, k = head && head.dataset.x;
+  if (side) items.push({ label: 'Hide column', fn: () => toggleSide(LEVELS[level].id, side) });
+  if (k && k !== 'd') items.push({ label: 'Hide column', fn: () => toggleX(k) });
+  if (k) items.push({ label: 'Rename', fn: () => renameCol(k) });
+  items.push({ label: 'Show or hide columns', fn: columnsDialog });
+  UI.menu(e.clientX, e.clientY, items, { title: head ? head.textContent : 'Columns' });
+}
+
+/* A day column's heading drags sideways to a new place. */
+let mv = null;
+$('cal').addEventListener('pointerdown', e => {
+  const head = e.target.closest('.heads .c[data-x]');
+  if (!head || e.target.closest('.rz') || e.button !== 0) return;
+  e.stopPropagation();
+  mv = { k: head.dataset.x, x: e.clientX, moved: false, over: null, head: head, ghost: null };
+}, true);
+
+/* ══════════════════════ THE FILTERS ══════════════════════
+   A panel under the filter icon. It stays open while switches are flipped
+   and closes on a press anywhere else or Escape. */
+function toggleEl(label, on, onChange, sw) {
+  const w = UI.el('span', 'tg');
+  const t = UI.toggle(on, onChange);
+  t.classList.add('mb-tap');
+  t.setAttribute('aria-label', label);
+  const l = UI.el('span', 'tl', (sw ? '<span class="sw ' + sw + '"></span>' : '') + esc(label));
+  l.onclick = () => t.click();
+  w.appendChild(l);
+  w.appendChild(t);
+  return w;
+}
+function drawBar() {
+  const bar = $('bar');
+  bar.innerHTML = '';
+  const g = UI.el('div', 'grp');
+  g.appendChild(UI.el('span', 'k', 'Show'));
+  const kinds = NOTE_KINDS.map(k => k.id);
+  NOTE_KINDS.forEach(k => g.appendChild(toggleEl(k.plural, shown().indexOf(k.id) > -1,
+    on => { setInList('show', kinds, shown(), k.id, on); })));
+  bar.appendChild(g);
+
+  /* Two orders that used to share the word "newest": the lines inside a
+     day, and the days themselves. Named apart. */
+  const g2 = UI.el('div', 'grp');
+  g2.appendChild(UI.el('span', 'k', 'Lines in a day'));
+  g2.appendChild(UI.segmented(SORTS, sortMode(), v => { S.set('sort', v); }));
+  bar.appendChild(g2);
+
+  const L = LEVELS[level];
+  const g3 = UI.el('div', 'grp');
+  g3.appendChild(UI.el('span', 'k', 'Days'));
+  g3.appendChild(toggleEl('Newest day at the top', desc(), on => setDesc(on)));
+  if (L.spread && !L.book) g3.appendChild(toggleEl('Notebook', notebookOn(), on => {
+    touched = true;
+    S.set('notebook', !!on);
+    render(); applySizes(); placeFocus(); showFocus();
+  }));
+  bar.appendChild(g3);
+  markFilters();
+}
+const markFilters = () => $('filterBtn').classList.toggle('on', shown().length < NOTE_KINDS.length);
+function openFilters(on) {
+  const bar = $('bar'), btn = $('filterBtn');
+  bar.hidden = !on;
+  btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  if (on) bar.style.left = Math.max(0, Math.min(btn.offsetLeft, bar.parentNode.clientWidth - bar.offsetWidth)) + 'px';
+}
+$('filterBtn').addEventListener('click', () => openFilters($('bar').hidden));
+document.addEventListener('pointerdown', e => {
+  if (!$('bar').hidden && !e.target.closest('#bar, #filterBtn')) openFilters(false);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('bar').hidden) openFilters(false); });
+
+/* ══════════════════════ SETTINGS ══════════════════════
+   A LOG tab ahead of the suite's own tabs. One help line under each. */
+function openSettings() {
+  UI.settings(APP.id, [{ id: 'log', name: 'LOG', draw: drawLogSettings }], { order: ['log', 'app', 'data'] });
+}
+function drawLogSettings(pane) {
+  pane.innerHTML = '';
+  const grp = UI.el('div', 'mb-group');
+  const opts = () => UI.el('div', 'opts');
+
+  const sel = document.createElement('select');
+  sel.className = 'mb-sel';
+  LEVELS.forEach(l => { const o = document.createElement('option'); o.value = l.id; o.textContent = l.name; sel.appendChild(o); });
+  sel.value = LEVELS[openLevel()].id;
+  sel.onchange = () => S.set('open', sel.value);
+  grp.appendChild(UI.row('Opens on', 'The view LOG starts in', sel));
+
+  grp.appendChild(UI.row('Text size', 'Dates, bullets and blocks',
+    UI.segmented([{ id: 'normal', name: 'Normal' }, { id: 'large', name: 'Large' }, { id: 'larger', name: 'Larger' }],
+      S.get('text', 'large'), v => { S.set('text', v); applyText(); measure(); applySizes(); })));
+
+  /* Moved here from the filter bar. Tom, 2026-09-13: "Move caffeine, mood,
+     energy to settings." */
+  const lines = opts(), lineIds = GRAPH.map(x => x.id);
+  GRAPH.forEach(x => lines.appendChild(toggleEl(x.name, graphOn().indexOf(x.id) > -1,
+    on => setInList('graph', lineIds, graphOn(), x.id, on), x.id)));
+  grp.appendChild(UI.row('Day graph', 'Lines drawn behind each day’s bullets', lines));
+
+  const xs = opts();
+  xKeys().forEach(k => xs.appendChild(toggleEl(colName(k), isXOn(k), () => toggleX(k))));
+  grp.appendChild(UI.row('Day columns', 'Your STATUS entries beside the days, in every view', xs));
+
+  /* The rest, folded away. Tom, 2026-09-15: settings are intuitive and never
+     overwhelming. Opens on, text size, the day graph and the day columns are
+     what gets changed; everything else here is set once. */
+  grp.appendChild(UI.more('More', box => {
+    const views = opts();
+    LEVELS.forEach((l, i) => views.appendChild(toggleEl(l.name, viewOn(i), () => toggleView(l.id))));
+    box.appendChild(UI.row('Views', 'Which views the strip offers', views));
+
+    const first = firstRecord();
+    const di = document.createElement('input');
+    di.type = 'date'; di.className = 'mb-input'; di.max = TODAY;
+    di.value = S.get('start', '') || '';
+    di.onchange = () => { S.set('start', di.value && di.value <= TODAY ? di.value : ''); touched = false; };
+    box.appendChild(UI.row('Timeline starts', 'Blank starts at your first record, ' + Day.label(first) + ' ' + first.slice(0, 4), di));
+
+    const side = opts();
+    LEVELS.filter(l => l.cols.length).forEach(l => {
+      const line = UI.el('div', 'line');
+      /* "In Month" rather than "Month", or the list read Week, Weeks, Weeks */
+      line.appendChild(UI.el('span', 'k', 'In ' + l.name));
+      l.cols.forEach(k => line.appendChild(toggleEl(COL_NAMES[k], hiddenSide(l.id).indexOf(k) < 0, () => toggleSide(l.id, k))));
+      side.appendChild(line);
+    });
+    box.appendChild(UI.row('Side columns', 'The bigger units shown beside each view', side));
+
+    /* What each day is called, with today's name shown as it will read. */
+    const labels = opts(), preview = UI.el('div', 'line k');
+    const showPreview = () => { preview.textContent = 'Today reads: ' + dayLabel(TODAY); };
+    LABEL_PARTS.forEach(pt => labels.appendChild(toggleEl(pt.name, labelParts().indexOf(pt.id) > -1, on => {
+      setInList('dlabel', LABEL_PARTS.map(p => p.id), labelParts(), pt.id, on);
+      showPreview();
+    })));
+    labels.appendChild(toggleEl('Out of', labelTotals(), on => { S.set('dltot', !!on); showPreview(); }));
+    labels.appendChild(preview);
+    showPreview();
+    box.appendChild(UI.row('Day label', 'The parts each day is named with', labels));
+
+    box.appendChild(UI.row('Weeks of the year', 'January 1 in sevens, or Monday to Sunday',
+      UI.segmented([{ id: 'jan1', name: 'From January 1' }, { id: 'iso', name: 'Monday start' }], weekMode(),
+        v => { S.set('wkmode', v); showPreview(); })));
+
+    const ci = UI.field('decimal', { value: cafTop() });
+    ci.onchange = () => S.set('caftop', Math.max(50, Math.round(+ci.value) || 400));
+    box.appendChild(UI.row('Caffeine scale', 'Milligrams at the top of a day’s graph', ci));
+
+    const rb = UI.el('button', 'mb-btn mb-press mb-tap', 'RESET');
+    rb.type = 'button';
+    rb.onclick = () => { S.set('colw', {}); applyColW(); applySizes(); UI.toast('Column widths reset'); };
+    box.appendChild(UI.row('Column widths', 'Back to the starting widths', rb));
+  }, 'log-more'));
+
+  pane.appendChild(grp);
+}
+
+/* ══════════════════════ COLUMN WIDTHS ══════════════════════ */
+const colW = () => { const v = S.get('colw', null); return v && typeof v === 'object' ? v : {}; };
+let widthsSet = [];
+function applyColW() {
+  const w = colW(), cal = $('cal');
+  widthsSet.forEach(k => { if (!w[k]) cal.style.removeProperty('--w-' + k); });
+  widthsSet = Object.keys(w).filter(k => w[k]);
+  widthsSet.forEach(k => cal.style.setProperty('--w-' + k, w[k] + 'px'));
+}
+let rz = null, rzT = null;
+$('cal').addEventListener('pointerdown', e => {
+  const h = e.target.closest('.rz');
+  if (!h) return;
+  e.preventDefault(); e.stopPropagation();
+  rz = { k: h.dataset.col, x: e.clientX, w: h.parentNode.getBoundingClientRect().width, cur: 0, h };
+  h.classList.add('on');
+  document.body.classList.add('resizing');
+}, true);
+window.addEventListener('pointermove', e => {
+  if (rz) {
+    rz.cur = Math.round(clamp(rz.w + e.clientX - rz.x, 64, 800));
+    $('cal').style.setProperty('--w-' + rz.k, rz.cur + 'px');
+    if (!rzT) rzT = setTimeout(() => { rzT = null; applySizes(); }, 40);
+    return;
+  }
+  if (mv) {
+    if (!mv.moved && Math.abs(e.clientX - mv.x) < 6) return;
+    /* As in Sheets: the heading being moved fades where it was, a copy of
+       it follows the pointer, and a bar shows where it will land. */
+    if (!mv.moved) {
+      mv.moved = true;
+      document.body.classList.add('moving');
+      mv.head.classList.add('lift');
+      mv.ghost = UI.el('div', 'ghost', esc(mv.head.textContent));
+      document.body.appendChild(mv.ghost);
+    }
+    mv.ghost.style.left = (e.clientX + 12) + 'px';
+    mv.ghost.style.top = (e.clientY + 12) + 'px';
+    const over = [...document.querySelectorAll('.heads .c[data-x]')].find(c => { const r = c.getBoundingClientRect(); return e.clientX >= r.left && e.clientX < r.right; });
+    const after = over ? e.clientX > over.getBoundingClientRect().left + over.getBoundingClientRect().width / 2 : false;
+    document.querySelectorAll('.heads .c.drop-l, .heads .c.drop-r').forEach(c => c.classList.remove('drop-l', 'drop-r'));
+    if (over && over.dataset.x !== mv.k) over.classList.add(after ? 'drop-r' : 'drop-l');
+    mv.over = over ? { k: over.dataset.x, after: after } : null;
+  }
+});
+window.addEventListener('pointerup', () => {
+  if (rz) {
+    if (rz.cur) S.set('colw', Object.assign({}, colW(), { [rz.k]: rz.cur }));
+    rz.h.classList.remove('on');
+    rz = null;
+    document.body.classList.remove('resizing');
+    applySizes();
+    return;
+  }
+  if (mv) {
+    const m = mv;
+    mv = null;
+    document.body.classList.remove('moving');
+    if (m.ghost) m.ghost.remove();
+    m.head.classList.remove('lift');
+    document.querySelectorAll('.heads .c.drop-l, .heads .c.drop-r').forEach(c => c.classList.remove('drop-l', 'drop-r'));
+    if (m.moved && m.over && m.over.k !== m.k) {
+      const o = xOrder().filter(k => k !== m.k);
+      let j = o.indexOf(m.over.k);
+      if (m.over.after) j++;
+      o.splice(j, 0, m.k);
+      S.set('xorder', o);
+    }
+  }
+});
+$('cal').addEventListener('dblclick', e => {
+  const h = e.target.closest('.rz');
+  if (!h) return;
+  const w = colW();
+  delete w[h.dataset.col];
+  S.set('colw', w);
+  applyColW(); applySizes();
+});
+
+/* ══════════════════════ WRITING ══════════════════════
+   Every write re-reads the row first and merges into it, never rebuilds it
+   from what is on screen. The root brief's many-writers rule. */
+let reveal = null;
+let heldAt = 0;
+
+function saveSummary(d, raw) {
+  const v = String(raw || '').trim();
+  const cur = Rec.get('day', d, '') || {};
+  if ((cur.note || '') === v) return;
+  const next = Object.assign({}, cur, { note: v });
+  if (!v) delete next.note;
+  if (Object.keys(next).length) Rec.set('day', d, '', next);
+  else Rec.del('day', d, '');
+}
+/* One day's entry in a text column. Trailing space is dropped, the lines
+   inside are kept. */
+function saveCell(d, col, raw) {
+  const v = String(raw || '').replace(/\s+$/, '');
+  const cur = Rec.get('cell', d, col);
+  if (((cur && cur.text) || '') === v) return;
+  if (v) Rec.set('cell', d, col, Object.assign({}, cur || {}, { text: v }));
+  else if (cur) Rec.del('cell', d, col);
+}
+
+function summaryDialog(box) {
+  const from = box.dataset.from, to = box.dataset.to || from;
+  const kind = box.classList.contains('day') ? 'day' : box.dataset.kind;
+  const month = MONTHS[+from.slice(5, 7) - 1] + ' ' + from.slice(0, 4);
+  const title = (kind === 'day' ? Day.label(from, { weekday: 'short' }) + ' ' + +from.slice(8) + ' ' + month
+    : kind === 'year' ? from.slice(0, 4)
+    : kind === 'quarter' ? 'Q' + (Math.floor((+from.slice(5, 7) - 1) / 3) + 1) + ' ' + from.slice(0, 4)
+    : kind === 'month' ? month
+    : (box.querySelector('.lab') ? box.querySelector('.lab').textContent : +from.slice(8) + '–' + +to.slice(8)) + ' ' + month).toUpperCase();
+  const current = kind === 'day' ? ((Rec.get('day', from, '') || {}).note || '') : recapOf(kind, from);
+  let ta = null;
+  const save = h => {
+    const v = ta.value.trim();
+    if (kind === 'day') saveSummary(from, v);
+    else {
+      const cur = Rec.get('recap', from, kind);
+      if (v) Rec.set('recap', from, kind, Object.assign({}, cur || {}, { text: v }));
+      else if (cur) Rec.del('recap', from, kind);
+    }
+    Mobile.feedback('success');
+    h.close();
+  };
+  UI.dialog({
+    title: title, width: 520,
+    body: (b, h) => {
+      ta = UI.field('note', { rows: kind === 'day' ? 2 : 5, value: current });
+      ta.onkeydown = e => {
+        if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.isComposing || e.keyCode === 229) return;
+        e.preventDefault();
+        save(h);
+      };
+      b.appendChild(ta);
+      UI.focusSoon(ta);
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'SAVE', kind: 'go', fn: h => { save(h); return false; } },
+    ],
+  });
+}
+
+function noteDialog(x, d) {
+  const isNew = !x.key;
+  if (isNew && !Day.editable(d)) { UI.toast('Tomorrow isn’t here yet'); return; }
+  /* A new bullet starts as an Entry, every time. Tom, 2026-09-13: "Default
+     type when making a bullet should be Entry." */
+  let kind = x.kind || 'entry';
+  let ta = null;
+  const title = (isNew ? 'ADD · ' : 'EDIT · ') +
+    Day.label(isNew ? d : x.date, { weekday: 'short', day: 'numeric', month: 'long' }).toUpperCase();
+
+  const commit = (h, again) => {
+    const raw = ta.value.trim();
+    /* Tom, 2026-09-14: "Im unable to delete a bullet?" Emptying a line and
+       saving it deletes it, with an undo, as well as the DELETE button. */
+    if (!raw && !isNew) { h.close(); removeLine(x); return; }
+    if (!raw) { UI.toast('Nothing to save', { bad: true }); return; }
+    const pz = parseLine(raw, isNew ? d : (x.day || x.date));
+    let own = d;
+    if (isNew) {
+      const list = Rec.all('note', { date: d });
+      Rec.set('note', d, uid(), {
+        kind: kind, text: pz.text, t: Date.now(), made: d,
+        at: pz.at, dur: pz.dur,
+        ord: list.length, done: 0, cancelled: 0,
+      });
+      reveal = d;
+    } else {
+      own = x.date;
+      const cur = Rec.get('note', own, x.key);
+      if (!cur) { UI.toast('That line is gone', { bad: true }); h.close(); return; }
+      Rec.set('note', own, x.key, Object.assign({}, cur, {
+        kind: kind, text: pz.text, at: pz.at, dur: pz.dur,
+        by: kind === 'todo' ? (cur.by || null) : null,
+      }));
+      reveal = x.day;
+    }
+    publishNotes(own);
+    Mobile.feedback(again ? 'tick' : 'success');
+    if (again) { ta.value = ''; UI.focusSoon(ta, true); }
+    else h.close();
+  };
+
+  UI.dialog({
+    title: title, width: 520,
+    body: (b, h) => {
+      b.appendChild(UI.segmented(NOTE_KINDS.map(k => ({ id: k.id, name: k.label })), kind, v => { kind = v; }));
+      const p = x.p || {};
+      ta = UI.field('note', { rows: 2, value: isNew ? '' :
+        String(p.text || '') + (p.at ? ' ' + clockLabel(p.at) : '') + (p.dur ? ' ' + durLabel(p.dur) : '') });
+      ta.style.marginTop = 'var(--s-3)';
+      ta.onkeydown = e => {
+        if (e.key !== 'Enter' || e.shiftKey || e.altKey) return;
+        if (e.isComposing || e.keyCode === 229) return;
+        e.preventDefault();
+        if (!ta.value.trim() && isNew) { h.close(); return; }
+        commit(h, isNew);
+      };
+      b.appendChild(ta);
+      UI.focusSoon(ta);
+    },
+    actions: [
+      isNew ? null : { label: 'DELETE', kind: 'bad', fn: h => { h.close(); removeLine(x); return false; } },
+      { label: 'CANCEL' },
+      { label: isNew ? 'ADD' : 'SAVE', kind: 'go', fn: h => { commit(h, false); return false; } },
+    ].filter(Boolean),
+  });
+}
+
+/* Journal.tick, the tick STATUS and QUESTS use: done today, the Done time
+   kept, and a repeating todo doing a round instead of finishing. */
+function tick(x) {
+  const res = Journal.tick(x.date, x.key, { day: TODAY, src: APP.id });
+  if (!res) return;
+  reveal = res.done ? TODAY : x.date;
+  Mobile.feedback(res.done ? 'tick' : 'untick');
+  if (res.round) UI.undo('next round ' + (res.next || ''), res.undo);
+}
+
+function removeLine(x) {
+  const keep = Rec.get('note', x.date, x.key);
+  if (!keep) return;
+  Rec.del('note', x.date, x.key);
+  publishNotes(x.date);
+  Mobile.haptic('warn');
+  UI.undo('Removed <b>' + esc(keep.text || '') + '</b>', () => { Rec.set('note', x.date, x.key, keep); publishNotes(x.date); });
+}
+
+const bulletOf = el => byKey.get(el.dataset.d + '|' + el.dataset.k);
+
+/* Click. The name of a day, week, month, quarter or year opens it. A todo's
+   box ticks and a bullet edits. Blank space on a day adds a bullet (Tom,
+   2026-09-13: "Tapping blank space on a day should enter bullet entry");
+   blank space on a bigger block opens the box to write about it. The day's
+   line and the text columns take the cursor themselves. */
+$('cal').addEventListener('click', e => {
+  if (Date.now() - heldAt < 800) return;
+  if (e.target.closest('.sum, .cell, .rz, .heads')) return;
+  const tickBox = e.target.closest('button.k');
+  if (tickBox) { const x = bulletOf(tickBox.closest('.bl')); if (x) tick(x); return; }
+  const box = e.target.closest('.day, .agg .blk');
+  if (!box) return;
+  if (e.target.closest('.lab, .mo')) { openBox(box); return; }
+  const bl = e.target.closest('.bl');
+  if (bl) { const x = bulletOf(bl); if (x) noteDialog(x, x.day); return; }
+  if (box.classList.contains('day')) { noteDialog({}, box.dataset.from); return; }
+  summaryDialog(box);
+});
+
+/* The day's line saves on Enter and when left; a text column saves when
+   left, or on Ctrl+Enter. Escape puts either back. */
+const typingIn = el => !!(el && el.classList && (el.classList.contains('sum') || el.classList.contains('cell')));
+const leaveField = inp => {
+  if (inp.classList.contains('sum')) saveSummary(inp.dataset.d, inp.value);
+  else saveCell(inp.dataset.d, inp.dataset.col, inp.value);
+  if (pendingRebuild) { pendingRebuild = false; soon(); }
+};
+$('cal').addEventListener('keydown', e => {
+  const t = e.target;
+  if (!typingIn(t)) return;
+  if (e.key === 'Escape') { t.value = t.defaultValue; t.blur(); return; }
+  if (e.key === 'Enter' && (t.classList.contains('sum') || e.ctrlKey || e.metaKey)) { e.preventDefault(); leaveField(t); t.blur(); }
+});
+$('cal').addEventListener('focusout', e => { if (typingIn(e.target)) leaveField(e.target); });
+
+/* A right click without a drag, or a hold with a finger: a menu. On a column
+   heading, the columns; on a bullet, the bullet; on a box, the box. */
+Mobile.hold($('cal'), e => {
+  if (e.type !== 'contextmenu' && e.pointerType === 'mouse') return;
+  heldAt = Date.now();
+  const head = e.target.closest('.heads .c');
+  if (head || e.target.closest('.heads')) { columnsMenu(e, head || null); return; }
+  const bl = e.target.closest('.bl');
+  if (bl) {
+    const x = bulletOf(bl);
+    if (!x) return;
+    UI.menu(e.clientX, e.clientY, [
+      { label: 'Edit', fn: () => noteDialog(x, x.day) },
+      x.kind === 'todo' ? { label: x.p.done ? 'Untick' : 'Tick', fn: () => tick(x) } : null,
+      /* Move to tomorrow and Cancel it, the same as STATUS and QUESTS */
+      ...Journal.menuItems(Object.assign({}, x.p, { kind: x.kind, date: x.date, key: x.key }), null, APP.id),
+      '-',
+      { label: 'Delete', kind: 'bad', fn: () => removeLine(x) },
+    ].filter(Boolean), { title: x.p.text || '' });
+    return;
+  }
+  const box = e.target.closest('.day, .agg .blk');
+  if (!box) return;
+  const d = box.dataset.from;
+  const items = [{ label: 'Open', fn: () => openBox(box) }, { label: 'Write about it', fn: () => summaryDialog(box) }];
+  if (box.classList.contains('day') && Day.editable(d)) items.push({ label: 'Add a bullet', fn: () => noteDialog({}, d) });
+  const lab = box.querySelector('.lab');
+  UI.menu(e.clientX, e.clientY, items, { title: lab ? lab.textContent : Day.label(d) });
+}, { skip: '.sum,.cell,button.k,.rz' });
+
+/* ══════════════════════ MOVING AROUND ══════════════════════
+   The wheel scrolls. Mouse 4 zooms out and Mouse 5 in, toward the pointer,
+   through the offered views (Tom, 2026-09-14: "Flip mouse 4 and 5"). A held
+   left or right button drags the page. */
+const sideButton = e => e.button === 3 || e.button === 4;
+window.addEventListener('mousedown', e => { if (sideButton(e)) e.preventDefault(); });
+window.addEventListener('auxclick', e => { if (sideButton(e)) e.preventDefault(); });
+window.addEventListener('mouseup', e => {
+  if (!sideButton(e)) return;
+  e.preventDefault();
+  touched = true;
+  setLevel(stepLevel(e.button === 3 ? 1 : -1));
+});
+
+let drag = null, swallowClick = false, swallowMenuAt = 0;
+sc.addEventListener('wheel', () => { userAt = Date.now(); }, { passive: true });
+sc.addEventListener('touchmove', () => { userAt = Date.now(); }, { passive: true });
+window.addEventListener('keydown', e => { if (!typingIn(e.target)) userAt = Date.now(); });
+sc.addEventListener('pointerdown', e => {
+  userAt = Date.now();
+  if (e.pointerType !== 'mouse' || (e.button !== 0 && e.button !== 2)) return;
+  if (e.target.closest('button,input,select,textarea,a,.rz')) return;
+  drag = { x: e.clientX, y: e.clientY, top: sc.scrollTop, left: sc.scrollLeft, moved: false, button: e.button };
+});
+window.addEventListener('pointermove', e => {
+  if (!drag || rz || mv) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 4) return;
+    drag.moved = true; touched = true;
+    sc.classList.add('dragging');
+  }
+  userAt = Date.now();
+  sc.scrollTop = drag.top - dy;
+  sc.scrollLeft = drag.left - dx;
+});
+const endDrag = () => {
+  if (drag && drag.moved) {
+    if (drag.button === 2) swallowMenuAt = Date.now();
+    else { swallowClick = true; setTimeout(() => { swallowClick = false; }, 0); }
+    drag = null;
+    sc.classList.remove('dragging');
+    snapSoon();
+    return;
+  }
+  drag = null;
+  sc.classList.remove('dragging');
+};
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
+sc.addEventListener('click', e => { if (swallowClick) { e.stopPropagation(); e.preventDefault(); } }, true);
+sc.addEventListener('contextmenu', e => {
+  if (Date.now() - swallowMenuAt < 800) { e.preventDefault(); e.stopPropagation(); }
+}, true);
+sc.addEventListener('scroll', () => {
+  flowBook();
+  if (sc.scrollTop === setAt) setAt = -1;
+  else if (Date.now() - userAt < 1000) readFocus();
+  showFocus();
+  if (drag && drag.moved) return;
+  snapSoon();
+}, { passive: true });
+
+/* ── start, and keep up ── */
+function rebuild() {
+  const an = T ? anchorAt(sc.scrollTop + headH()) : null;
+  indexJournal();
+  indexGraph();
+  T = buildTimeline(startDate(), TODAY);
+  if (labelKey() !== measuredLabel) measure();
+  dayCache = new Map();
+  applyColW();
+  const was = level;
+  drawLevels();
+  render(true);
+  applySizes();
+  syncLevels();
+  if (level !== was) drawBar(); else markFilters();
+  if (!touched) toToday();
+  else if (an) restore(an, headH());
+  if (reveal) {
+    const d = reveal;
+    reveal = null;
+    const i = domIdx(d), top = dayY(i), bot = top + dayHt(i);
+    if (bot > sc.scrollTop + screenH()) setTop(bot - screenH());
+    if (top < sc.scrollTop + headH()) setTop(top - headH());
+  }
+  showFocus();
+}
+let rebuildT = null, pendingRebuild = false;
+const typing = () => typingIn(document.activeElement);
+const soon = () => {
+  clearTimeout(rebuildT);
+  rebuildT = setTimeout(() => { if (typing()) { pendingRebuild = true; return; } rebuild(); }, 60);
+};
+
+applyText();
+indexJournal();
+indexGraph();
+T = buildTimeline(startDate(), TODAY);
+level = openLevel();
+applyColW();
+drawLevels();
+drawBar();
+measure();
+render(true);
+applySizes();
+syncLevels();
+toToday();
+Rec.ready(soon);
+Rec.on(soon);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); applySizes(); if (!touched) toToday(); });
+if (window.ResizeObserver) new ResizeObserver(() => {
+  const an = anchorAt(sc.scrollTop + headH());
+  applySizes();
+  if (!touched) toToday(); else restore(an, headH());
+}).observe(sc);
+</script>
+</body>
+</html>

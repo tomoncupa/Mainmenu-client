@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="90a8fdfb">
+<html lang="en" data-built="105533b9">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="mb-version" content="1.0.7, 2026-09-15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,15 +15,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=90a8fdfb"></script>
-<script src="../shared/day.js?v=90a8fdfb"></script>
-<script src="../shared/records.js?v=90a8fdfb"></script>
-<script src="../shared/mobile.js?v=90a8fdfb"></script>
-<script src="../shared/sound.js?v=90a8fdfb"></script>
-<script src="../shared/ui.js?v=90a8fdfb"></script>
-<script src="../shared/io.js?v=90a8fdfb"></script>
-<script src="../shared/icons.js?v=90a8fdfb"></script>
-<script src="../shared/health.js?v=90a8fdfb"></script>
+<script src="../shared/skins.js?v=105533b9"></script>
+<script src="../shared/day.js?v=105533b9"></script>
+<script src="../shared/records.js?v=105533b9"></script>
+<script src="../shared/journal.js?v=105533b9"></script>
+<script src="../shared/chart.js?v=105533b9"></script>
+<script src="../shared/mobile.js?v=105533b9"></script>
+<script src="../shared/sound.js?v=105533b9"></script>
+<script src="../shared/ui.js?v=105533b9"></script>
+<script src="../shared/io.js?v=105533b9"></script>
+<script src="../shared/icons.js?v=105533b9"></script>
+<script src="../shared/health.js?v=105533b9"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -494,35 +497,10 @@ textarea:focus{outline:2px solid var(--focus);outline-offset:-1px}
 
 .note-row{display:flex;align-items:flex-start;gap:var(--s-2);padding:var(--s-2);
   min-height:var(--tap);border-radius:var(--radius-md);background:var(--surface-2);cursor:pointer}
-.note-row .k{flex:0 0 auto;width:16px;display:flex;align-items:center;justify-content:center;
-  color:var(--accent);font-size:var(--f-3);line-height:1.5;font-family:var(--font-mono);
-  position:relative;background:none;border:0;padding:0;cursor:pointer}
-/* The box is 13px of ink and a full finger of target. Growing the ink would
-   make the list shout; growing the reach costs nothing on screen. */
-.note-row .k::after{content:'';position:absolute;left:50%;top:50%;
-  width:var(--tap);height:var(--tap);transform:translate(-50%,-50%)}
-/* the open box, the only mark you tick */
-.nm-box{width:13px;height:13px;border:1.5px solid currentColor;border-radius:3px;display:block}
-.nm-ch{display:block;font-weight:700}
-.note-row .tx{flex:1;min-width:0;line-height:var(--lh-body);overflow-wrap:anywhere}
-/* Done and cancelled are different outcomes and must not look the same. Done
-   is struck through — you did it. Cancelled is faded with the mark crossed —
-   you decided not to, which is still a decision worth keeping. */
-.note-row.done .tx{text-decoration:line-through;color:var(--text-muted)}
-.note-row.done .k{color:var(--text-muted)}
-.note-row.done .nm-box{background:var(--text-muted);border-color:var(--text-muted)}
-.note-row.cancelled{opacity:.45}
-.note-row.cancelled .tx{text-decoration:line-through;text-decoration-style:double}
-.note-row.cancelled .nm-box{border-style:dashed}
-.nm-mig{line-height:13px}
-/* how many days it has been following you */
-.note-row .at{font-style:normal;font-family:var(--font-mono);font-size:var(--f-1);
-  color:var(--accent);margin-left:var(--s-2);white-space:nowrap}
-/* `by` is a deadline and `did` is what happened, so they read differently:
-   one is a warning colour waiting to be earned, the other is spent. */
-.tx .at.by{color:var(--warn)}
-.tx .at.did{color:var(--ok,var(--accent))}
-.tx .at.wrote{opacity:.6}
+/* The mark, the words, the time, done and cancelled are drawn by
+   shared/journal.js, the same in STATUS, LOG and QUESTS (Tom, 2026-09-14).
+   Only the row's own shape is here. */
+.note-row .tx{flex:1}
 /* The journal heading is the biggest word on its card because it is also the
    control that sorts it, and a heading nobody reads as pressable is a control
    nobody presses. */
@@ -536,7 +514,7 @@ textarea:focus{outline:2px solid var(--focus);outline-offset:-1px}
 #sheet .seg .ni{font-size:var(--f-3)}
 
 /* ── chart ── */
-.chart{width:100%;height:180px;display:block}
+.chart{display:block}
 .chart .gl{stroke:var(--surface-3);stroke-width:1}
 .chart .raw{fill:var(--text-muted);opacity:.45}
 .chart .avg{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
@@ -556,7 +534,8 @@ textarea:focus{outline:2px solid var(--focus);outline-offset:-1px}
 .chart .now{stroke:var(--border-strong);stroke-width:1;stroke-dasharray:2 3}
 /* What is still in you, over the day it was taken. Its own scale on the right:
    milligrams and calories share nothing but an axis. */
-.chart .decay{fill:none;stroke:var(--data-6);stroke-width:1.75;opacity:.85}
+.chart .decay{fill:none;stroke:var(--data-6);stroke-width:1.75;opacity:.85;vector-effect:non-scaling-stroke}
+.chart .decaya{fill:var(--data-6);opacity:.12;stroke:none}
 .chart .lab{fill:var(--text-muted);font-family:var(--font-mono);font-size:var(--f-1)}
 
 .grid28{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin-top:var(--s-2)}
@@ -638,6 +617,9 @@ Rec.declare(APP.id, APP.types);
    time. That is the whole point of these tabs. */
 IO.register({
   app: APP.id, name: APP.name, types: APP.types,
+  /* the rows STATUS shows that other apps write, from their own sheet tabs:
+     todos from QUESTS and LOG, foods from FOODDÉX, spending from WEALTH */
+  reads: { quest: ['note'], log: ['note', 'day'], portion: ['food'], wealth: ['spend', 'acct'] },
   sheets: function () { return exportSheets(); },
   tables: [
     { name: 'Food', type: 'food', cols: [
@@ -974,6 +956,8 @@ const liveFields = () => Object.values(fields()).filter(f => f.on)
 function evList(date, fid) { const r = Rec.get('ev', date, fid); return r && r.e ? r.e : []; }
 
 function evAdd(date, fid, v) {
+  /* how many were still to log before this one, for afterLog's Day complete */
+  LEFT_WAS = outstanding().length;
   const f = field(fid) || {};
   const e = f.once ? [] : evList(date, fid).slice();
   e.push({ t: Date.now(), v: v });
@@ -1160,12 +1144,9 @@ function calTarget() {
    An Entry is prose — what used to be its own paragraph mode is simply a
    longer kind of line, which removes a whole switch from the screen.       */
 
-const NOTE_KINDS = [
-  { id: 'todo',  label: 'Todo',  rank: 0, to: 'QUEST' },
-  { id: 'entry', label: 'Entry', rank: 1, to: 'LOG' },
-  { id: 'event', label: 'Event', rank: 2, to: 'LOG' },
-  { id: 'idea',  label: 'Idea',  rank: 3, to: 'LOG,SPARK' },
-];
+/* The four kinds, and every other rule for a journal line, are in
+   shared/journal.js, which LOG, QUESTS and the home screen read too. */
+const NOTE_KINDS = Journal.KINDS;
 
 /* The marks, in bullet-journal notation rather than pictures. A dash, a dot
    and a bang are faster to read than any icon, they cannot render differently
@@ -1178,7 +1159,7 @@ const NOTE_KINDS = [
 
    Drawn as one glyph each so they take the theme's colour and scale with the
    text around them. */
-const NOTE_MARK = { todo: '', entry: '·', event: '–', idea: '!' };
+/* the marks themselves are Journal.markHTML in shared/journal.js */
 /* A task that has followed you here is drawn `>`, not as a box.
 
    That is what the notation already means — migrated — and it is the whole
@@ -1186,12 +1167,7 @@ const NOTE_MARK = { todo: '', entry: '·', event: '–', idea: '!' };
    `>` is something you have now decided to do four times. Same row, same tick,
    different glyph, so the list tells you which is which at a glance instead of
    making you read the little age badge on the right. */
-const noteSvg = (id, migrated) =>
-  id !== 'todo'
-    ? '<span class="nm-ch" aria-hidden="true">' + (NOTE_MARK[id] || '·') + '</span>'
-    : migrated
-      ? '<span class="nm-ch nm-mig" aria-hidden="true">&gt;</span>'
-      : '<span class="nm-box" aria-hidden="true"></span>';
+const noteSvg = (id, migrated) => Journal.markHTML(id, migrated);
 
 const noteKind = id => NOTE_KINDS.filter(k => k.id === id)[0] || NOTE_KINDS[1];
 /* ── what a Kind column says in the spreadsheet ──
@@ -1227,29 +1203,11 @@ const kindLabels = () => {
    Only tasks migrate. An entry, an event and an idea are records of a
    particular day and belong to that day. */
 function notes(date) {
-  const d = date || vd();
-  const out = [];
-  Rec.all('note').forEach(r => {
-    const p = r.payload;
-    if (!p) return;
-    /* written on this day */
-    if (r.date === d) { out.push(Object.assign({ key: r.key, date: d }, p)); return; }
-    if (!r.date) return;
-    /* still open, written before this day: it follows you forward */
-    if (p.kind === 'todo' && !p.done && !p.cancelled && r.date < d) {
-      out.push(Object.assign({ key: r.key, date: r.date, carried: Day.diff(d, r.date) }, p));
-      return;
-    }
-    /* DONE ON this day, written on another. Tom, 2026-09-04: "I want done
-       tasks to show up on the day I did them, so I know that I did them on
-       that day." The row does not move - it stays on the day it was written,
-       which is what keeps the history honest - but the day you finished it
-       shows it too, marked with where it came from. */
-    if (p.kind === 'todo' && p.done && p.doneOn === d) {
-      out.push(Object.assign({ key: r.key, date: r.date, from: r.date }, p));
-    }
-  });
-  return out.sort(noteOrder);
+  /* Which day a line shows on is Journal.place in shared/journal.js: a todo
+     with a `due` follows its due date (set in QUESTS, 2026-09-14), an open
+     todo follows you forward, and a done one also shows on the day it was
+     done. LOG, QUESTS and the home screen read the same rule. */
+  return Journal.notes(date || vd()).sort(noteOrder);
 }
 
 /* Sorting. To-dos hold the top whatever else is chosen, because an open task
@@ -1264,31 +1222,21 @@ function notes(date) {
    `key: undefined`, so the very next read overwrites the real key with
    nothing, and the row after that gets written to a fresh id called
    "undefined". Delete them properly. */
-function bare(x) {
-  const o = Object.assign({}, x);
-  delete o.key; delete o.date; delete o.carried; delete o.from;
-  return o;
-}
+function bare(x) { return Journal.bare(x); }
 
-/* The clock a line sorts by, which is not the same question as the clock it
-   shows. A finished task happened when you ticked it, not when you wrote it
-   down - Tom, 2026-09-04: "done tasks sort with the journal bullet types,
-   according to the time I checked them." A line with no clock at all falls
-   back to when it was written, so the list is one real sequence rather than a
-   timed half and an untimed clump. */
-function noteClock(x) {
-  const s = (x.kind === 'todo' && x.done && x.doneAt) ? x.doneAt : x.at;
-  if (s) return +String(s).replace(':', '');
-  if (x.t) { const w = hhmm(x.t); return w ? +w.replace(':', '') : 9999; }
-  return 9999;
-}
+/* The clock a line sorts by: its start. Tom, 2026-09-14: "use the start time
+   for time sorting", replacing 2026-09-04's sorting a done task by when it was
+   ticked. Journal.sortClock in shared/journal.js, which LOG uses too. */
+function noteClock(x) { return Journal.sortClock(x); }
 
 function noteOrder(a, b) {
   /* An open task holds the top whatever else is chosen: it is the one kind of
      line you need to see without looking for it. A DONE one does not - it has
      stopped being a task and gone back to being a thing that happened, which
      is exactly what everything else on this list is. */
-  const top = x => (x.kind === 'todo' && !x.done && !x.cancelled) ? 0 : 1;
+  /* A todo moved to another day sinks to the bottom of the day it left, as >
+     (Tom, 2026-09-14). */
+  const top = x => x.movedAway ? 2 : (x.kind === 'todo' && !x.done && !x.cancelled) ? 0 : 1;
   if (top(a) !== top(b)) return top(a) - top(b);
   const mode = S.get('noteSort', 'manual');
   if (mode === 'manual') return (a.ord || 0) - (b.ord || 0);
@@ -1314,52 +1262,18 @@ function noteOrder(a, b) {
    90min — so a bare number is never mistaken for one. Both may appear:
    "Train 2:45 90m".
 
-   A bare 2:45 with no am/pm is read the way a person means it: hours 1 to 6
-   are afternoon, because nobody journals a 2:45am lift. 7 to 12 are taken as
-   written.                                                                  */
-const TIME_RE = /\s+(?:at\s+)?(\d{1,2})(?::|\.)(\d{2})\s*(am|pm)?$/i;
-const HOUR_RE = /\s+(?:at\s+)?(\d{1,2})\s*(am|pm)$/i;
-const DUR_RE  = /\s+(?:for\s+)?(?:(\d+)\s*h(?:rs?|ours?)?\s*(\d{1,2})?|(\d+)\s*(m|min|mins|minutes?))$/i;
+   Also "at 8", and a range, "2-4:30", which sets the time and the length. A
+   range needs a colon, an am or pm, or "at" or "from", so "Squat 3-5" stays
+   words.
 
-function parseLine(raw) {
-  let text = String(raw == null ? '' : raw).trim();
-  let at = null, dur = null;
-
-  /* duration first: "1h30" would otherwise look like nothing, and stripping it
-     leaves a clean end for the time to match against */
-  const d = text.match(DUR_RE);
-  if (d) {
-    dur = d[1] != null ? (+d[1] * 60 + (+d[2] || 0)) : +d[3];
-    if (!(dur > 0)) dur = null; else text = text.slice(0, d.index).trim();
-  }
-
-  let m = text.match(TIME_RE);
-  if (m) {
-    let h = +m[1], mm = +m[2];
-    if (mm <= 59 && h <= 23) {
-      const ap = (m[3] || '').toLowerCase();
-      if (ap === 'pm' && h < 12) h += 12;
-      else if (ap === 'am' && h === 12) h = 0;
-      else if (!ap && h >= 1 && h <= 6) h += 12;   /* 2:45 means the afternoon */
-      at = String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-      text = text.slice(0, m.index).trim();
-    }
-  } else {
-    m = text.match(HOUR_RE);
-    if (m) {
-      let h = +m[1];
-      if (h >= 1 && h <= 12) {
-        if (m[2].toLowerCase() === 'pm' && h < 12) h += 12;
-        if (m[2].toLowerCase() === 'am' && h === 12) h = 0;
-        at = String(h).padStart(2, '0') + ':00';
-        text = text.slice(0, m.index).trim();
-      }
-    }
-  }
-  /* Nothing left but a time is not a line, it is a time. Give the text back. */
-  if (!text) return { text: String(raw).trim(), at: null, dur: null };
-  return { text: text, at: at, dur: dur };
-}
+   THE CLOCK RULE, the same in STATUS, QUESTS and LOG. Tom, 2026-09-14: "at 8
+   on 7:55AM means 8AM, past that then it means 8PM", then "Make the time
+   rules universal." A clock with no am or pm on today is the next time it
+   comes round; once both have gone it stays the evening one. On any other
+   day there is no now to go by, so 1 to 6 is the afternoon and 7 to 11 the
+   morning. 12 is noon. Every kind of line, entries included. The parser is
+   Journal.parseLine in shared/journal.js, the one LOG reads too.            */
+function parseLine(raw, date) { return Journal.parseLine(raw, date); }
 
 /** "14:45" as "2:45pm", the way it is read back on screen. */
 /** a timestamp as the HH:MM the clock label wants */
@@ -1369,21 +1283,13 @@ function parseLine(raw) {
 const smartTime = (raw, nowMin) => UI.smartTime(raw, nowMin);
 const timeInput = (val, onset) => UI.timeField(val, onset);
 
-function hhmm(ms) {
-  const d = new Date(ms);
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-}
-function clockLabel(at) {
-  if (!at) return '';
-  const [h, m] = at.split(':').map(Number);
-  const ap = h < 12 ? 'am' : 'pm', hh = h % 12 === 0 ? 12 : h % 12;
-  return hh + ':' + String(m).padStart(2, '0') + ap;
-}
-const durLabel = d => !d ? '' : (d >= 60 ? (d % 60 ? Math.floor(d / 60) + 'h' + String(d % 60).padStart(2, '0') : Math.floor(d / 60) + 'h') : d + 'm');
+function hhmm(ms) { return Journal.hhmm(ms); }
+function clockLabel(at) { return Journal.clockLabel(at); }
+function durLabel(d) { return Journal.durLabel(d); }
 
 const addNote = (date, kind, text) => {
   const list = Rec.all('note', { date: date });
-  const parsed = parseLine(text);
+  const parsed = parseLine(text, date);
   Rec.set('note', date, uid(), {
     /* `t` is when it was written, which is not the same as the day it belongs
        to — a task logged at midnight for tomorrow, or a line backfilled a week
@@ -1417,33 +1323,8 @@ const addNote = (date, kind, text) => {
 
    Keyed on the text, so editing the line updates its entry instead of leaving
    the old one behind, and writing the same thing twice is one row.          */
-function publishTimed(d) {
-  const want = {};
-  notes(d).filter(x => x.date === d && x.at && !x.done && !x.cancelled).forEach(x => {
-    const id = 'note-at-' + String(x.text).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
-    if (!id || id === 'note-at-') return;
-    want[id] = 1;
-    Rec.set('activity', null, id, { name: x.text, cat: 'journal' });
-    Rec.set('tick', d, id, { src: APP.id, qty: 1, at: x.at, dur: x.dur || 0 });
-  });
-  /* anything that used to be a timed line here and is not any more */
-  Rec.all('tick', { date: d }).forEach(r => {
-    if (r.key.indexOf('note-at-') === 0 && !want[r.key]) Rec.del('tick', d, r.key);
-  });
-}
-
-function publishNotes(date) {
-  const d = date || Day.today();
-  publishTimed(d);
-  NOTE_KINDS.forEach(k => {
-    const n = Rec.all('note', { date: d })
-      .filter(r => r.payload && r.payload.kind === k.id && !(k.id === 'todo' && r.payload.done)).length;
-    const id = 'note-' + k.id;
-    Rec.set('activity', null, id, { name: k.label + 's', cat: 'journal' });
-    if (n) Rec.set('tick', d, id, { src: APP.id, qty: n, to: k.to });
-    else Rec.del('tick', d, id);
-  });
-}
+function publishTimed(d) { return Journal.publishTimed(d, APP.id); }
+function publishNotes(date) { return Journal.publishNotes(date || Day.today(), APP.id); }
 
 /* ══════════════ MONEY ══════════════ */
 const accts = () => Object.values(Rec.map('acct')).sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -1983,7 +1864,12 @@ function chipRow(vals, onPick, cls) {
 }
 function numberInput(v, step, dec) {
   const w = el('div', 'stepper');
-  const minus = el('button', null, '−'), plus = el('button', null, '+');
+  /* Drawn from the icon set, not typed: a character renders differently on
+     every phone and cannot take the theme's stroke. */
+  const minus = el('button'), plus = el('button');
+  minus.dataset.icon = 'minus'; minus.setAttribute('aria-label', 'Less');
+  plus.dataset.icon = 'add'; plus.setAttribute('aria-label', 'More');
+  if (window.Icons) { minus.innerHTML = Icons.svg('minus'); plus.innerHTML = Icons.svg('add'); }
   const i = document.createElement('input');
   i.className = 'num';
   Mobile.field(i, dec ? 'decimal' : 'number');
@@ -2475,9 +2361,11 @@ function recost(row, before) {
    database entry, and then offers to push the corrected numbers back through
    every serving that used it. The offer is explicit and says how many rows it
    would touch, because rewriting history should never be a side effect. */
-function mealMenu(x, d) {
+function mealMenu(x, d, e) {
   const fd = foods()[x.fid];
-  UI.menu(0, 0, [
+  /* where the mouse was: Tom, 2026-09-15, "right clicks in STATUS are not
+     creating the menu where my mouse is". A phone gets a sheet either way. */
+  UI.menu(e ? e.clientX : 0, e ? e.clientY : 0, [
     { label: 'Edit this serving', note: 'Only this one row', icon: '✎', fn: () => mealSheet(x, d) },
     fd ? { label: 'Edit ' + fd.name, note: 'The food itself, everywhere', icon: '◈', fn: () => foodEditor(fd) } : null,
     '-',
@@ -2776,11 +2664,17 @@ function scaleSheet(f, date) {
 }
 
 /* after any log: if that was the last outstanding once-a-day thing, say so */
+let LEFT_WAS = 0;
 function afterLog() {
-  const left = outstanding().length;
+  const left = outstanding().length, was = LEFT_WAS;
+  LEFT_WAS = 0;
   closeSheet();
   draw();
-  if (!left) { Mobile.feedback('complete'); UI.toast('Day complete'); }
+  /* Only on the log that cleared the last one. Tom, 2026-09-14: "Day
+     Complete coming up too early." It fired on every log once nothing was
+     left, so a mood logged at 8am after the morning weigh-in said the day
+     was complete. */
+  if (!left && was > 0) { Mobile.feedback('complete'); UI.toast('Day complete'); }
 }
 
 /* ══════════════ SPENDING ══════════════
@@ -3774,7 +3668,7 @@ function drawJournal(m) {
 
   const wrap = el('div', 'list');
   list.forEach((x, i) => {
-    const r = el('div', 'note-row' + (x.done ? ' done' : '') + (x.cancelled ? ' cancelled' : ''));
+    const r = el('div', 'note-row mb-bullet' + (x.done && !x.movedAway ? ' done' : '') + (x.cancelled ? ' cancelled' : ''));
     /* ── two targets, two meanings ──
        The line used to do one thing: tapping anywhere ticked it, and the only
        way to fix a typo was to hold. That is backwards. A written line is text
@@ -3783,43 +3677,17 @@ function drawJournal(m) {
 
        It is also what every list app already does, which means it needs no
        explaining. */
+    /* The words, the time after them ("7:00pm - 7:31pm" for a todo, Tom,
+       2026-09-14) and how long it has followed you: Journal.textHTML in
+       shared/journal.js, the same line LOG and QUESTS draw. */
     r.innerHTML = '<button class="k" type="button"></button>' +
-      '<span class="tx">' + esc(x.text) +
-      /* The time you typed, given back in the shape you typed it. It sits
-         after the words rather than before them because the words are what
-         you scan for; the clock is the detail. */
-      /* Times, in the order a task moves through them: when it starts, how
-         long it takes, when it is due, and when it was actually done. Tom,
-         2026-09-03: "Bullet time can be beside entry when checked." */
-      (x.at ? '<i class="at">' + esc(clockLabel(x.at)) + (x.dur ? ' \u00b7 ' + durLabel(x.dur) : '') + '</i>'
-            : (x.dur ? '<i class="at">' + durLabel(x.dur) + '</i>' : '')) +
-      /* ── one Done time, not two ──
-         Tom, 2026-09-05: "Todos with a done time should not have a visible
-         seperate ticked time." Right: the row was carrying "by 4:44" AND the
-         moment it was ticked, which is the same question answered twice and
-         made a finished line the busiest thing on the screen.
-
-         `by` is the Done time now and the tick writes into it, so this is the
-         only clock a finished task shows. Still open, it reads "by" because
-         that is what a time in the future means. */
-      (x.by ? '<i class="at by">' + (x.done ? '' : 'by ') + esc(clockLabel(x.by)) + '</i>' : '') +
-      /* An entry has no time of its own, so the useful clock is when it was
-         written. Only where nothing else is showing, or the row starts
-         carrying three times and says nothing. */
-      (x.kind !== 'todo' && !x.at && !x.dur && x.t
-        ? '<i class="at wrote">' + esc(clockLabel(hhmm(x.t))) + '</i>' : '') +
-      /* how long it has been following you — quiet, but it should sting a bit */
-      (x.carried ? '<i class="carried">' + x.carried + 'd</i>' : '') +
-      /* Finished here, written earlier. Says how long it sat, so a task you
-         finally cleared reads as cleared rather than as a line you wrote
-         today. */
-      (x.from ? '<i class="carried">' + Day.diff(d, x.from) + 'd</i>' : '') + '</span>';
+      '<span class="tx">' + Journal.textHTML(x, d) + '</span>';
     const box = r.querySelector('.k');
     /* The mark says WHEN you are looking, not where the row came from. A box
        is something to do today; an arrow is something that has moved on. Tom,
        2026-08-28: "To do Bullets should only show as > on past days, and as
        check boxes on the present day." */
-    box.innerHTML = noteSvg(x.kind, d !== Day.today());
+    box.innerHTML = noteSvg(x.kind, d !== Day.today() || !!x.movedAway);
     box.setAttribute('aria-label', x.kind === 'todo' ? (x.done ? 'Untick' : 'Tick') : noteKind(x.kind).label);
     if (x.kind === 'todo') {
       box.onclick = e => {
@@ -3832,38 +3700,22 @@ function drawJournal(m) {
         const now = new Date();
         const stamp = String(now.getHours()).padStart(2, '0') + ':' +
                       String(now.getMinutes()).padStart(2, '0');
-        Rec.set('note', own, x.key, Object.assign(bare(x), {
-          done: x.done ? 0 : 1,
-          /* ── the Done time, and whose it is ──
-             The field IS the tick time: ticking writes the real one over
-             whatever you were aiming at, because a field called Done showing a
-             time you did not finish at would be a lie on the row.
-
-             But a time you typed is yours. Tom, 2026-09-05: "unticking keeps
-             manually put done time." So the tick puts yours aside rather than
-             over the side, and un-ticking hands it back. Tick, untick, and the
-             4:44 you meant to finish by is still 4:44.
-
-             `byAuto` is how it knows whose the current one is. The sheet
-             clears it whenever you set the field yourself. */
-          by: x.done ? (x.byWas || null) : stamp,
-          byWas: x.done ? null : (x.byAuto ? (x.byWas || null) : (x.by || null)),
-          byAuto: x.done ? 0 : 1,
-          doneAt: x.done ? null : stamp,
-          /* WHICH DAY you ticked it, so a task written on Monday and finished
-             on Thursday shows up on Thursday. Cleared on un-ticking, like the
-             time is, because a day that outlives the tick lies the same way. */
-          doneOn: x.done ? null : d,
-        }));
-        Mobile.feedback(x.done ? 'untick' : 'tick');
-        publishNotes(own); draw();
+        /* Journal.tick in shared/journal.js, the tick QUESTS and the home
+           screen use. A plain todo flips, keeping the Done time (a typed one
+           put aside and handed back) and the day it was done. A repeating
+           todo from QUESTS does a round instead of finishing. */
+        const res = Journal.tick(own, x.key, { day: d, stamp: stamp, row: x, src: APP.id });
+        if (!res) return;
+        Mobile.feedback(res.done ? 'tick' : 'untick');
+        if (res.round) UI.undo('next round ' + (res.next || ''), () => { res.undo(); draw(); });
+        draw();
       };
     } else {
       box.tabIndex = -1;
       box.style.cursor = 'inherit';
     }
     r.onclick = () => noteSheet(x, x.date || d);
-    Mobile.hold(r, () => noteMenu(x, d, i, list.length));
+    Mobile.hold(r, e => noteMenu(x, d, i, list.length, e));
     wrap.appendChild(r);
   });
   c.appendChild(wrap);
@@ -3957,7 +3809,7 @@ function noteSheet(x, d) {
             Object.assign({}, list[0].payload, { at: atVal || list[0].payload.at, by: byVal || null }));
         }
       } else {
-        const pz = parseLine(text);
+        const pz = parseLine(text, d);
         Rec.set('note', x.date || d, x.key, Object.assign(bare(x), {
           kind: kind, text: pz.text,
           /* A time typed into the line still wins: it is the more recent thing
@@ -4030,22 +3882,16 @@ function noteSheet(x, d) {
   UI.focusSoon(taRef, reopening);
 }
 
-function noteMenu(x, d, i, n) {
+function noteMenu(x, d, i, n, e) {
   const manual = S.get('noteSort', 'manual') === 'manual';
   const own = x.date || d;
-  const isTask = x.kind === 'todo';
-  const save = patch => {
-    Rec.set('note', own, x.key, Object.assign(bare(x), patch));
-    Mobile.feedback('select'); publishNotes(own); draw();
-  };
-  UI.menu(0, 0, [
+  UI.menu(e ? e.clientX : 0, e ? e.clientY : 0, [
     { label: 'Edit', icon: '✎', fn: () => noteSheet(x, own) },
-    /* Cancelled is not deleted. A task you decided not to do is a real
-       outcome and worth keeping — deleting it pretends you never planned it,
-       which is the one thing a log should never do. */
-    isTask && !x.cancelled ? { label: 'Cancel it', note: 'Kept, but stops following you', icon: '⊘',
-      fn: () => save({ cancelled: 1, done: 0 }) } : null,
-    isTask && x.cancelled ? { label: 'Put it back', icon: '↺', fn: () => save({ cancelled: 0 }) } : null,
+    /* Move to tomorrow, and Cancel it or Put it back, are Journal.menuItems
+       in shared/journal.js, so LOG and QUESTS offer the same ones in the same
+       words. Cancelled is not deleted: a task you decided not to do is a real
+       outcome, and deleting it pretends you never planned it. */
+    ...Journal.menuItems(Object.assign({}, x, { date: own, day: d }), draw, APP.id),
     manual && i > 0 ? { label: 'Move up', icon: '↑', fn: () => moveNote(d, x, -1) } : null,
     manual && i < n - 1 ? { label: 'Move down', icon: '↓', fn: () => moveNote(d, x, 1) } : null,
     '-',
@@ -4143,7 +3989,7 @@ function drawFood(m) {
        what I ate" and "change what this food is" are genuinely different, and
        one of them rewrites history. */
     r.onclick = () => mealSheet(x, d);
-    Mobile.hold(r, () => mealMenu(x, d), { skip: '.x' });
+    Mobile.hold(r, e => mealMenu(x, d, e), { skip: '.x' });
     c2.appendChild(r);
   });
   const b = el('button', 'btn go wide', 'Log food');
@@ -4182,7 +4028,7 @@ function drawMoney(m) {
     r.onclick = () => spendSheet(Object.assign({ date: d }, s));
     /* Tap edits it. Hold asks what else — the same split as a logged meal, so
        the gesture means one thing across the app rather than one per screen. */
-    Mobile.hold(r, () => UI.menu(0, 0, [
+    Mobile.hold(r, e => UI.menu(e.clientX, e.clientY, [
       { label: 'Edit', icon: '✎', fn: () => spendSheet(Object.assign({ date: d }, s)) },
       s.viaMeal ? { label: 'Not paid for today', note: 'Keeps the meal, drops the payment', icon: '⊘', fn: () => {
         const m = Rec.get('meal', d, s.viaMeal);
@@ -4709,16 +4555,11 @@ function daySheet(date) {
        They belong here anyway. The picture IS this day's island, and from
        here it can be ANY day - the buttons on Trends could only ever share
        today. Tap back through the week and share the day you actually had. */
-    body.appendChild(el('label', 'fl', 'Share it'));
     const bar = el('div', 'btns');
-    ['story', 'feed'].forEach(kind => {
-      const b = el('button', 'btn mb-press mb-tap', kind === 'story' ? 'STORY' : 'POST');
-      b.onclick = () => shareCard(sc, kind, date);
-      bar.appendChild(b);
-    });
+    const shb = el('button', 'btn mb-press mb-tap', 'SHARE PICTURE');
+    shb.onclick = () => shareCard(date);
+    bar.appendChild(shb);
     body.appendChild(bar);
-    body.appendChild(el('div', 'note', 'Style and size are on ' +
-      (TAB === 'trends' ? 'this screen' : 'Report') + ', under the rank.'));
   });
 }
 
@@ -4777,6 +4618,61 @@ function rankBadge(date) {
      answers a different question. */
   w.onclick = () => { Mobile.feedback('open'); daySheet(d); };
   return w;
+}
+
+/* ── a good day ──
+   Tom, 2026-09-15, picking it from three: a strong day from the last one to
+   three months, with what was written that day. DOCTRINE's positive psychology
+   note: nothing in the suite ever brought back what went well, and a good day
+   from a month ago costs one query. It sits on Report for when it is looked
+   for, never pops up, and says what happened without praising it. The five
+   best days of weeks 2 to 13 take turns. */
+let goodPick = 0;
+function goodDays() {
+  const t = Day.today(), out = [];
+  for (let i = 14; i <= 92; i++) {
+    const d = Day.shift(t, -i), s = scoreFor(d);
+    /* B or better: the best of a thin month can be a C, and a C is not a good day */
+    if (s && s.pct != null && s.rank && rankIndex(s.rank.k) <= rankIndex('B')) out.push({ d: d, s: s });
+  }
+  return out.sort((a, b) => b.s.pct - a.s.pct || (a.d < b.d ? 1 : -1)).slice(0, 5);
+}
+function goodDayCard() {
+  const list = goodDays();
+  if (!list.length) return null;
+  const g = list[goodPick % list.length];
+  const ago = Day.diff(Day.today(), g.d);
+  const c = card('A GOOD DAY', Day.label(g.d) + ', ' + Math.round(ago / 7) + ' weeks ago');
+  const col = rankColour(g.s.rank.k);
+  const head = el('div', 'rankrow');
+  head.innerHTML =
+    '<div class="rankmark" style="color:' + col + ';border-color:' + col + '">' + g.s.rank.k + '</div>' +
+    '<div class="rankside"><div class="hero">' + g.s.pct + '<span class="u">%</span></div></div>';
+  c.appendChild(head);
+  /* what was written: entries, events, ideas and what got done, not what was
+     only meant to happen */
+  const lines = notes(g.d).filter(x => !x.cancelled && !x.movedAway && (x.kind !== 'todo' || x.done));
+  if (lines.length) {
+    lines.slice(0, 8).forEach(x => {
+      const r = el('div', 'mb-bullet' + (x.done ? ' done' : ''));
+      r.innerHTML = '<span class="tx">' + Journal.textHTML(x, g.d) + '</span>';
+      c.appendChild(r);
+    });
+    if (lines.length > 8) c.appendChild(el('div', 'note', 'and ' + (lines.length - 8) + ' more'));
+  } else {
+    c.appendChild(el('div', 'note', 'Nothing written that day.'));
+  }
+  const bar = el('div', 'btns');
+  const open = el('button', 'btn mb-press mb-tap', 'OPEN THE DAY');
+  open.onclick = () => { Mobile.feedback('open'); daySheet(g.d); };
+  bar.appendChild(open);
+  if (list.length > 1) {
+    const next = el('button', 'btn mb-press mb-tap', 'ANOTHER');
+    next.onclick = () => { goodPick++; Mobile.feedback('select'); draw(); };
+    bar.appendChild(next);
+  }
+  c.appendChild(bar);
+  return c;
 }
 
 /* ── the full working, on Trends ── */
@@ -4845,50 +4741,13 @@ function rankCard() {
       (t.rest ? ' &middot; rest day, tops out at A' : '')));
   }
 
+  /* Style, size and Leave spending out moved into the share panel itself
+     (IO.share, shared/io.js), 2026-09-14, so one press shows them all. */
   const bar = el('div', 'btns');
-  const story = el('button', 'btn', 'STORY');
-  const feed = el('button', 'btn', 'POST');
-  story.onclick = () => shareCard(a, 'story');
-  feed.onclick = () => shareCard(a, 'feed');
-  bar.appendChild(story); bar.appendChild(feed);
-  c.appendChild(el('label', 'fl', 'Share it'));
+  const shb = el('button', 'btn mb-press mb-tap', 'SHARE PICTURE');
+  shb.onclick = () => shareCard();
+  bar.appendChild(shb);
   c.appendChild(bar);
-  /* The picture is the Today card, so if the Spent tile is on your Today it is
-     in the picture too. It starts hidden: what you spend is nobody's business
-     and a default that leaks it is the wrong default. */
-  /* ── one choice, not three switches ──
-     Tom, 2026-09-05: "strava leads you to a swipe menu of setting styles, so
-     it can be transparent or a solid block." Right, and three checkboxes was
-     me exposing the machinery instead of the choice. See-through and darken
-     are not two decisions, they are one look, and nobody wants a transparent
-     card with no scrim - that is the unreadable combination. */
-  const nowStyle = shareStyle();
-  c.appendChild(el('label', 'fl', 'Style'));
-  const sseg = el('div', 'seg');
-  SHARE_STYLES.forEach(st => {
-    const sb = el('button', st[0] === nowStyle ? 'on' : '', esc(st[1]));
-    sb.onclick = () => { S.set('shareStyle', st[0]); Mobile.feedback('select'); draw(); };
-    sseg.appendChild(sb);
-  });
-  c.appendChild(sseg);
-  c.appendChild(el('div', 'note', esc(styleDef()[4])));
-
-  const nowSize = shareSize()[0];
-  c.appendChild(el('label', 'fl', 'Island size'));
-  const zseg = el('div', 'seg');
-  SHARE_SIZES.forEach(z => {
-    const zb = el('button', z[0] === nowSize ? 'on' : '', esc(z[1]));
-    zb.onclick = () => { S.set('shareSize', z[0]); Mobile.feedback('select'); draw(); };
-    zseg.appendChild(zb);
-  });
-  c.appendChild(zseg);
-
-  const w = el('label', 'shopt');
-  const b = document.createElement('input');
-  b.type = 'checkbox'; b.checked = !!S.get('hideSpend', 1);
-  b.onchange = () => S.set('hideSpend', b.checked ? 1 : 0);
-  w.appendChild(b); w.appendChild(el('span', null, 'Leave spending out'));
-  c.appendChild(w);
   return c;
 }
 
@@ -4908,33 +4767,12 @@ function rankCard() {
    What is left here is the three decisions that are STATUS's own: which card,
    how wide, and the date on top of it. */
 
-/* Three, his names. I cut Transparent as "a mistake you can pick" and he put
-   it back, which is his call to make: on a dark plain photo it is the best of
-   the three and the gradient is the thing in the way.
-   id, label, see-through, gradient behind it, what it is for */
-const SHARE_STYLES = [
-  ['clear', 'Transparent', 1, 0, 'Just the card, nothing behind it. Best on a dark, plain photo.'],
-  ['glass', 'Translucent', 1, 1, 'The photo shows through, on a soft gradient so it reads on anything.'],
-  ['solid', 'Opaque',      0, 0, 'A solid card. Nothing shows through, so nothing can fight the numbers.'],
-];
-const shareStyle = () => S.get('shareStyle', 'glass');
-
-/* ── how big the island sits in the frame ──
-   Tom, 2026-09-05: "We might want the gradient to be bigger than the island,
-   allowing us to have the island be smaller on the actual story post."
-
-   The gradient always covers the whole frame; what changes is the card. At
-   88% the card IS the post and the photo is a border. Smaller, the photo is
-   the post and the numbers are an overlay on it, which is what a story
-   usually wants. */
-const SHARE_SIZES = [['big', 'Big', 0.88], ['mid', 'Medium', 0.68], ['small', 'Small', 0.52]];
-const shareSize = () => {
-  const id = S.get('shareSize', 'mid');
-  return SHARE_SIZES.filter(x => x[0] === id)[0] || SHARE_SIZES[1];
-};
-const styleDef = () => SHARE_STYLES.filter(x => x[0] === shareStyle())[0] || SHARE_STYLES[0];
-
-async function shareCard(a, kind, date) {
+/* Transparent, Translucent and Opaque, and Big, Medium and Small, live in
+   the shared panel since 2026-09-14 (IO.share), which TRAIN uses too. They
+   are read from the same settings, so a choice made here before carries over.
+   One shape: a story. Tom: "no one is posting generated images as posts
+   anymore". */
+function shareCard(date) {
   /* Which day is being pictured. It used to be whatever day the app was
      showing, which was fine while the only way in was from the Today screen.
      The day sheet can be opened on any day, so it has to say. */
@@ -4948,36 +4786,30 @@ async function shareCard(a, kind, date) {
   const onScreen = document.querySelector('#main .card');
   const cardW = onScreen ? Math.round(onScreen.getBoundingClientRect().width) : 0;
 
-  const shot = islandCard(d, {
-    /* On by default: the point of a transparent PNG is that the photo is part
-       of the picture, and a solid panel over your own body is a sticker. Off
-       is there for a busy photo, where see-through costs you the numbers. */
-    seethru: !!styleDef()[2],
-    /* The picture is the card, so if the Spent tile is on your Today it is in
-       the picture. hideSpend keeps it out, and starts on. */
-    money: !S.get('hideSpend', 1),
-    /* On screen the date is in the app's header a few pixels above this card.
-       A picture leaves the header behind, so the card takes the date itself,
-       in the shape every other card in here uses for a heading. */
-    title: new Date(d + 'T12:00:00').toLocaleDateString(undefined,
-      { weekday: 'long', day: 'numeric', month: 'long' }),
+  IO.share({
+    app: APP.id,
+    name: 'status-' + d,
+    width: Math.max(340, Math.min(440, cardW || 390)),
+    build: o => islandCard(d, {
+      /* the two see-through styles: the photo is part of the picture */
+      seethru: o.glass,
+      /* The picture is the card, so if the Spent tile is on your Today it is
+         in the picture. Leave spending out keeps it out, and starts on: what
+         you spend is nobody's business and a default that leaks it is the
+         wrong default. */
+      money: !o.hideSpend,
+      /* On screen the date is in the app's header a few pixels above this card.
+         A picture leaves the header behind, so the card takes the date itself,
+         in the shape every other card in here uses for a heading. */
+      title: new Date(d + 'T12:00:00').toLocaleDateString(undefined,
+        { weekday: 'long', day: 'numeric', month: 'long' }),
+    }),
+    options: [{ id: 'hideSpend', label: 'Leave spending out', def: 1 }],
+    /* The reading is sized by measuring, and this copy has never been
+       measured - without this a long one clips in the picture while looking
+       fine on the screen it was copied from. */
+    before: n => fitHero(n),
   });
-
-  try {
-    await IO.saveShot(shot, 'status-' + (a && a.rank ? a.rank.k : 'day') + '-' + kind, {
-      w: 1080, h: kind === 'story' ? 1920 : 1350,
-      /* The gradient still fills the frame; only the card shrinks. */
-      fill: shareSize()[2],
-      /* On by default. It is the thing that makes one picture work on a dark
-         photo and a bright one without asking him which he has. */
-      scrim: !!styleDef()[3],
-      width: Math.max(340, Math.min(440, cardW || 390)),
-      /* The reading is sized by measuring, and this copy has never been
-         measured - without this a long one clips in the picture while looking
-         fine on the screen it was copied from. */
-      before: n => fitHero(n),
-    });
-  } catch (e) { /* saveShot has already said so */ }
 }
 
 /* ── the report has two halves ──
@@ -5009,71 +4841,46 @@ let REPTAB = 'stretch';
    row of unrelated meals. A flat morning and a wall after eight is a shape
    you recognise instantly and cannot see anywhere else in this app. */
 function dayShapeChart(d) {
-  const W = 320, H = 150, PL = 30, PR = 26, PT = 12, PB = 18;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  svg.setAttribute('class', 'chart');
-  svg.style.cssText = 'width:100%;height:auto;display:block';
-  const add = (tag, attrs, cls) => {
-    const n = document.createElementNS(svg.namespaceURI, tag);
-    Object.keys(attrs).forEach(k => n.setAttribute(k, attrs[k]));
-    if (cls) n.setAttribute('class', cls);
-    svg.appendChild(n); return n;
-  };
-
-  const X = mins => PL + (Math.max(0, Math.min(1440, mins)) / 1440) * (W - PL - PR);
-
-  /* the hours, every six, because twenty-four labels is hatching */
-  [0, 360, 720, 1080, 1440].forEach(mn => {
-    add('line', { x1: X(mn), y1: PT, x2: X(mn), y2: H - PB }, 'gl');
-    const t = add('text', { x: X(mn), y: H - 5, 'text-anchor': 'middle' }, 'lab');
-    t.textContent = mn === 1440 ? '12am' : clockLabel(String(Math.floor(mn / 60)).padStart(2, '0') + ':00').replace(':00', '');
-  });
-
-  /* ── calories, as the day filling up ── */
+  /* On shared/chart.js since 2026-09-14. Calories as the day filling up, the
+     target as a line, a dot for every meal, and a drag along it to read the
+     running total at any meal. Anything that wears off, caffeine, is its own
+     small chart underneath on the same hours: milligrams and calories share
+     nothing but a clock, and one plot with two scales invents a relationship. */
+  const wrap = el('div');
+  const clock = mn => clockLabel(String(Math.floor(mn / 60) % 24).padStart(2, '0') + ':' + String(mn % 60).padStart(2, '0'));
   const ms = meals(d).slice().sort((a, b) => (a.t || 0) - (b.t || 0));
   const target = calTarget().v || 0;
-  const total = ms.reduce((a, x) => a + (num(x.kcal, 0) || 0), 0);
-  const top = Math.max(target, total) || 1;
-  const Y = v => PT + (1 - v / top) * (H - PT - PB);
-
-  if (target) {
-    add('line', { x1: PL, y1: Y(target), x2: W - PR, y2: Y(target) }, 'goal');
-    const g = add('text', { x: PL + 2, y: Y(target) - 3 }, 'lab');
-    g.textContent = 'target';
-  }
-
   let run = 0;
-  const steps = [];
-  ms.forEach(x => {
+  const steps = ms.map(x => {
     const dt = new Date(x.t || 0);
-    const mn = dt.getHours() * 60 + dt.getMinutes();
     run += num(x.kcal, 0) || 0;
-    steps.push({ mn: mn, v: run, name: x.name, kcal: num(x.kcal, 0) || 0 });
+    return { mn: dt.getHours() * 60 + dt.getMinutes(), v: run, name: x.name, kcal: num(x.kcal, 0) || 0 };
   });
-  if (steps.length) {
-    let dstr = 'M' + X(0) + ' ' + Y(0);
-    steps.forEach(p => { dstr += ' L' + X(p.mn) + ' ' + Y(p.v - p.kcal) + ' L' + X(p.mn) + ' ' + Y(p.v); });
-    dstr += ' L' + X(1440) + ' ' + Y(run);
-    add('path', { d: dstr }, 'avg');
-    steps.forEach(p => {
-      const c = add('circle', { cx: X(p.mn), cy: Y(p.v), r: 2.5 }, 'raw');
-      const ttl = document.createElementNS(svg.namespaceURI, 'title');
-      ttl.textContent = clockLabel(String(Math.floor(p.mn / 60)).padStart(2, '0') + ':' +
-        String(p.mn % 60).padStart(2, '0')) + ' \u00b7 ' + p.name + ' \u00b7 ' + Math.round(p.kcal) + ' kcal';
-      c.appendChild(ttl);
-    });
-  }
 
-  /* ── anything that wears off, drawn over the top ──
-     Its own scale, on the right, because milligrams and calories share
-     nothing but an axis. */
-  const decay = liveFields().filter(f => f.half && dueToday(f, d) && entries(d, f.id).length);
-  decay.slice(0, 1).forEach(f => {
-    const es = entries(d, f.id);
-    const peak = es.reduce((a, e) => a + (num(e.v, 0) || 0), 0) || 1;
-    const Y2 = v => PT + (1 - v / peak) * (H - PT - PB);
+  const box = el('div');
+  wrap.appendChild(box);
+  Chart.mount(box, { h: 170, cls: 'chart', label: 'Calories through the day' }, c => {
+    c.xLinear(0, 1440);
+    c.yFit(steps.map(s => s.v).concat([target, 0]), { min: 0 });
+    c.grid();
+    c.hourAxis(6);
+    if (steps.length) {
+      const line = [[0, 0]].concat(steps.map(s => [s.mn, s.v]), [[1440, run]]);
+      c.area(line);
+      c.step_(line);
+    }
+    if (target) c.rule(target, 'target ' + Math.round(target).toLocaleString());
+    c.dots(steps.map(s => [s.mn, s.v, clock(s.mn) + ' · ' + s.name + ' · ' + Math.round(s.kcal) + ' kcal']), 'mb-dot', 3);
+    if (steps.length) {
+      const lastS = steps[steps.length - 1];
+      c.end([lastS.mn, lastS.v], Math.round(lastS.v).toLocaleString());
+      c.scrub(steps.map(s => [s.mn, s.v]), { fmt: p => clock(p[0]) + ' · ' + Math.round(p[1]).toLocaleString() + ' kcal' });
+    }
+  });
+
+  const decay = liveFields().filter(f => f.half && dueToday(f, d) && entries(d, f.id).length)[0];
+  if (decay) {
+    const es = entries(d, decay.id);
     const pts = [];
     for (let mn = 0; mn <= 1440; mn += 15) {
       let left = 0;
@@ -5081,20 +4888,25 @@ function dayShapeChart(d) {
         const t = new Date(e.t || 0);
         const at = t.getHours() * 60 + t.getMinutes();
         if (mn < at) return;
-        left += (num(e.v, 0) || 0) * Math.pow(0.5, (mn - at) / 60 / f.half);
+        left += (num(e.v, 0) || 0) * Math.pow(0.5, (mn - at) / 60 / decay.half);
       });
       pts.push([mn, left]);
     }
-    add('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ' ' + Y2(p[1])).join(' ') }, 'decay');
-    /* Anchored to the right edge, not started at it: "Caffeine" ran off the
-       side, which is a label that has stopped being one. It also says the
-       peak, because the curve's own scale is not the calorie scale beside it
-       and a line with no number is a shape. */
-    const lab = add('text', { x: W - 2, y: PT + 8, 'text-anchor': 'end' }, 'lab');
-    lab.textContent = f.label + ' · ' + Math.round(peak) + (f.unit || '');
-  });
-
-  return svg;
+    const peak = pts.reduce((a, p) => Math.max(a, p[1]), 0);
+    wrap.appendChild(el('div', 'note', esc(decay.label) + ' still in you, at most <b>' + Math.round(peak) + esc(decay.unit || '') + '</b>'));
+    const box2 = el('div');
+    wrap.appendChild(box2);
+    Chart.mount(box2, { h: 96, cls: 'chart', label: decay.label + ' through the day' }, c => {
+      c.xLinear(0, 1440);
+      c.yFit(pts.map(p => p[1]), { min: 0, lines: 2 });
+      c.grid();
+      c.hourAxis(6);
+      c.area(pts, 'decaya');
+      c.line(pts, 'decay');
+      c.scrub(pts, { fmt: p => clock(p[0]) + ' · ' + Math.round(p[1]) + (decay.unit || '') });
+    });
+  }
+  return wrap;
 }
 
 function drawDayShape(m) {
@@ -5149,6 +4961,8 @@ function drawTrends(m) {
   /* The rank goes first: it is the answer to "how am I doing", and everything
      under it is the working. */
   m.appendChild(rankCard());
+  const good = goodDayCard();
+  if (good) m.appendChild(good);
   const e = TD.estimate();
   const c = card('TDEE', e.basis === 'measured' ? 'measured' : 'starting estimate');
   if (e.tdee == null) {
@@ -5283,6 +5097,27 @@ function drawTrends(m) {
   c2.appendChild(el('div', 'note', (w ? r1(w) + ' lb' : 'nothing logged') +
     (goal != null && w ? ' · ' + r1(Math.abs(w - goal)) + ' lb to go' : '') +
     (e.rate != null ? ' · ' + (e.rate > 0 ? '+' : '') + r1(e.rate) + ' ' + esc(TD.unit()) + ' a week' : '')));
+
+  /* The weight chart as a picture, from its own card. Tom, 2026-09-14, on
+     what STATUS shares: "It depends on where the share button was pressed."
+     Drawn fresh, with its key, on the shared panel. */
+  const wbar = el('div', 'btns');
+  const wsh = el('button', 'btn mb-press mb-tap', 'SHARE PICTURE');
+  wsh.onclick = () => IO.share({
+    app: APP.id,
+    name: 'status-weight-' + Day.today(),
+    width: 390,
+    build: o => {
+      const pc = card('Weight', plotted + ' days');
+      if (o.glass) pc.classList.add('seethru');
+      pc.appendChild(weightChart(e));
+      const lg = c2.querySelector('.legend');
+      if (lg) pc.appendChild(lg.cloneNode(true));
+      return pc;
+    },
+  });
+  wbar.appendChild(wsh);
+  c2.appendChild(wbar);
   m.appendChild(c2);
 
   if (e.basis === 'measured' && e.learn && e.learn.steps) {
@@ -5414,185 +5249,111 @@ function predictWeight(w0, days, intakeOver, tdeeOver) {
    it is left on auto it fits the data first and only widens for the goal if
    the goal is close enough not to crush everything else. */
 function weightChart(e) {
-  const W = 320, H = 172, PL = 34, PR = 8, PT = 10, PB = 18;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-  svg.setAttribute('class', 'chart');
-  /* No preserveAspectRatio="none": it stretched the axis labels and turned the
-     round weigh-in dots into ellipses at any width but one. */
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-  const add = (tag, attrs, cls) => {
-    const n = document.createElementNS(svg.namespaceURI, tag);
-    Object.keys(attrs).forEach(k => n.setAttribute(k, attrs[k]));
-    if (cls) n.setAttribute('class', cls);
-    svg.appendChild(n); return n;
-  };
-
-  const ser = e.series || e.rows, roll = e.roll;
+  const wrap = el('div');
+  const ser = e.series || e.rows, roll = e.roll || [];
   const pts = ser.filter(x => x.w != null);
   if (pts.length < 2) {
-    const t = add('text', { x: 8, y: 24 }, 'lab');
-    t.textContent = 'two weigh-ins and this draws itself';
-    return svg;
+    wrap.appendChild(el('div', 'empty', 'Two weigh-ins and this draws itself.'));
+    return wrap;
   }
 
   const goal = num(S.get('goalWeight', null));
   const goalOn = S.get('goalDate', '') || '';
   const today = Day.today();
   const startDate = ser[0].d || Day.shift(today, -(ser.length - 1));
-
-  /* how many days wide: the history, plus the run to the goal date if it is
-     still ahead of us */
-  const histDays = Math.max(1, ser.length - 1);
+  const dateAt = i => Day.shift(startDate, i);
+  const histEnd = dateAt(ser.length - 1);
   const aheadDays = (goal != null && goalOn && goalOn > today) ? Day.diff(goalOn, today) : 0;
-  const spanDays = histDays + aheadDays;
-  const X = d => PL + (Day.diff(d, startDate) / spanDays) * (W - PL - PR);
-  const Xi = i => PL + (i / spanDays) * (W - PL - PR);
-
-  /* the y range */
-  let lo, hi;
   const fixLo = num(S.get('wScaleLo', null)), fixHi = num(S.get('wScaleHi', null));
-  if (fixLo != null && fixHi != null && fixHi > fixLo) {
-    lo = fixLo; hi = fixHi;                     /* he set it, so it is his */
-  } else {
-    lo = Math.min.apply(null, pts.map(p => p.w));
-    hi = Math.max.apply(null, pts.map(p => p.w));
-    const dataSpan = Math.max(1, hi - lo);
-    /* Include the goal only while doing so does not crush the trend. Past
-       roughly double the data's own range it stops being a chart of your
-       weight and becomes a chart of the gap. */
-    if (goal != null && goal >= lo - dataSpan && goal <= hi + dataSpan) {
-      lo = Math.min(lo, goal); hi = Math.max(hi, goal);
-    }
-    const pad = Math.max(1, (hi - lo) * .12); lo -= pad; hi += pad;
-    /* ── round numbers up the side ──
-       Tom, 2026-09-05: "I can't even tell what the dots mean numerically."
-       The range was the data plus a 12% pad, sliced into quarters, so the
-       labels came out 197, 203, 209 — true, and unreadable. A scale you have
-       to do arithmetic against is not a scale. Snapped to a round step, the
-       same chart reads 190, 200, 210 and a dot has a value you can see.
-
-       Only on auto. A range he set by hand is his and is left alone. */
-    const STEPS = [0.5, 1, 2, 5, 10, 20, 25, 50, 100];
-    const step = STEPS.filter(x => (hi - lo) / x <= 5)[0] || 100;
-    lo = Math.floor(lo / step) * step;
-    hi = Math.ceil(hi / step) * step;
-  }
-  const Y = v => PT + (1 - (v - lo) / Math.max(.001, hi - lo)) * (H - PT - PB);
-  const clamp = v => Math.max(PT, Math.min(H - PB, Y(v)));
-  const inView = v => v >= lo && v <= hi;
-
-  /* ── gridlines and their labels ──
-     One line per round step where the scale is automatic, so every label is a
-     number you recognise. A hand-set range keeps the old five slices, because
-     his numbers are his and quartering them is the only honest thing to do
-     with a range somebody chose. */
-  const fixed = (fixLo != null && fixHi != null && fixHi > fixLo);
-  const GSTEPS = [0.5, 1, 2, 5, 10, 20, 25, 50, 100];
-  const gstep = GSTEPS.filter(x => (hi - lo) / x <= 6)[0] || 100;
-  const ticks = fixed ? [0, .25, .5, .75, 1]
-    : (() => { const out = []; for (let v = hi; v >= lo - 0.0001; v -= gstep) out.push((hi - v) / (hi - lo)); return out; })();
-  ticks.forEach(t => {
-    const y = PT + t * (H - PT - PB);
-    add('line', { x1: PL, y1: y, x2: W - PR, y2: y }, 'gl');
-    const lab = add('text', { x: PL - 4, y: y + 3, 'text-anchor': 'end' }, 'lab');
-    const val = hi - t * (hi - lo);
-    lab.textContent = gstep < 1 ? val.toFixed(1) : Math.round(val);
-  });
-
-  /* today, when the chart runs past it */
-  if (aheadDays > 0) {
-    add('line', { x1: X(today), y1: PT, x2: X(today), y2: H - PB }, 'now');
-    const nl = add('text', { x: X(today), y: H - 5, 'text-anchor': 'middle' }, 'lab');
-    nl.textContent = 'today';
-  }
-
-  /* the goal weight, as a level */
-  if (goal != null && inView(goal)) {
-    add('line', { x1: PL, y1: Y(goal), x2: W - PR, y2: Y(goal) }, 'goal');
-  } else if (goal != null) {
-    /* off the top or bottom: say so at the edge rather than distorting the axis */
-    const y = clamp(goal);
-    const t = add('text', { x: W - PR, y: goal < lo ? y - 3 : y + 9, 'text-anchor': 'end' }, 'lab');
-    t.textContent = 'goal ' + r1(goal);
-  }
-
-  /* ── the line of reality ── */
+  const fixed = fixLo != null && fixHi != null && fixHi > fixLo;
+  const unit = TD.unit();
   const nowW = roll.length ? roll[roll.length - 1].y : pts[pts.length - 1].w;
-  if (goal != null && aheadDays > 0 && nowW != null) {
-    add('line', { x1: X(today), y1: clamp(nowW), x2: X(goalOn), y2: clamp(goal) }, 'reality');
-  }
 
-  /* ══════════════ THE THREE LINES AHEAD ══════════════
-     Tom, 2026-09-05, asked for three projections and he is right that they are
-     three different questions:
+  /* ── the answer on top ──
+     Tom, 2026-09-14: "Graphs must be useful and feel cool, they must convey
+     data quick." The seven-day average now, and how far it has moved across
+     the chart, in words. Drag along the line and both follow the day under the
+     finger; let go and they come back to today. On shared/chart.js. */
+  const avg = roll.map(p => [dateAt(p.i), p.y]);
+  const line = avg.length > 1 ? avg : pts.map(p => [dateAt(ser.indexOf(p)), p.w]);
+  const from = line[0];
+  const moved = (v, d) => {
+    const n = Day.diff(d, from[0]), m = v - from[1];
+    if (!n) return 'the start of the chart';
+    return (Math.abs(m) < 0.05 ? 'no change' : (m < 0 ? 'down ' : 'up ') + r1(Math.abs(m)) + ' ' + unit) + ' in ' + n + ' days';
+  };
+  const said = d => (avg.length > 1 ? '7-day average, ' : '') + (d === today ? 'today' : Day.label(d));
+  const lastPt = line[line.length - 1];
+  const head = Chart.header({ value: r1(lastPt[1]), unit: unit, sub: moved(lastPt[1], lastPt[0]), when: said(lastPt[0]) });
+  wrap.appendChild(head.el);
 
-       REALITY   where you have to travel to arrive on time. A straight line
-                 from today to the goal weight on the goal date. It is not a
-                 prediction, it is the deadline.
-       TARGET    where you land if you eat the calorie target you set. This is
-                 the plan working.
-       ACTUAL    where you land if you keep eating what you have ACTUALLY been
-                 eating. This is the plan as lived, and the gap between it and
-                 TARGET is the whole coaching conversation.
+  const box = el('div');
+  wrap.appendChild(box);
+  Chart.mount(box, { h: 190, cls: 'chart', label: 'Weight' }, c => {
+    const shown = { reality: false, target: false, actual: false, cone: false };
+    c.xTime(startDate, aheadDays > 0 ? goalOn : histEnd);
 
-     ACTUAL comes with a cone, because it is the only one built on measurement
-     and measurement has a give-or-take. The cone is the same projection run at
-     the top and bottom of the TDEE error band, so it opens with time exactly
-     as the uncertainty does. A single confident line off an estimate that is
-     itself ±200 kcal is a lie with a nice slope.
+    /* The scale. A range he set by hand is his. On auto it fits the weigh-ins
+       and takes in the goal only while that does not crush them: past about
+       double the data's own range it stops being a chart of your weight and
+       becomes a chart of the gap. */
+    if (fixed) c.ySet(fixLo, fixHi);
+    else {
+      const ws = pts.map(p => p.w), lo = Math.min.apply(null, ws), hi = Math.max.apply(null, ws);
+      const span = Math.max(1, hi - lo);
+      c.yFit(goal != null && goal >= lo - span && goal <= hi + span ? ws.concat([goal]) : ws);
+    }
+    c.grid(v => c.step < 1 ? v.toFixed(1) : String(Math.round(v)));
+    c.timeAxis();
 
-     Drawn as soon as there is a weight to start from. Bodyweight x 13 is a
-     serviceable opening guess and the estimator moves off it within days of
-     real logging, so withholding these hid a useful answer for two months to
-     avoid overstating it by a few per cent. */
-  const pathOf = pr => pr && pr.pts.length > 1
-    ? pr.pts.map((q, i) => (i ? 'L' : 'M') + X(Day.shift(today, q.i)) + ' ' + clamp(q.w)).join(' ')
-    : null;
+    if (goal != null && goal >= c.lo && goal <= c.hi) c.rule(goal, 'goal ' + r1(goal), 'goal');
+    else if (goal != null) c.note('goal ' + r1(goal) + (goal < c.lo ? ', below' : ', above'));
+    if (aheadDays > 0) c.add('line', { x1: c.X(today), y1: c.P.t, x2: c.X(today), y2: c.H - c.P.b }, 'now');
 
-  const shown = { reality: false, target: false, actual: false, cone: false };
-  if (aheadDays > 0 && nowW != null) {
-    const est = TD.estimate();
-    const baseT = est.predicted != null ? est.predicted : est.tdee;
-    const eaten = est.intake;
-    const err = est.err;
-
-    /* the cone first, so both lines sit on top of it */
-    if (eaten != null && baseT && err) {
-      const hiP = predictWeight(nowW, aheadDays, eaten, baseT - err);   /* burning less -> heavier */
-      const loP = predictWeight(nowW, aheadDays, eaten, baseT + err);
-      if (hiP && loP && hiP.pts.length > 1 && loP.pts.length === hiP.pts.length) {
-        const top = hiP.pts.map((q, i) => (i ? 'L' : 'M') + X(Day.shift(today, q.i)) + ' ' + clamp(q.w));
-        const bot = loP.pts.slice().reverse().map(q => 'L' + X(Day.shift(today, q.i)) + ' ' + clamp(q.w));
-        add('path', { d: top.concat(bot).join(' ') + ' Z' }, 'cone');
-        shown.cone = true;
+    /* ══════════════ THE THREE LINES AHEAD ══════════════
+       Tom, 2026-09-05. REALITY is where you have to travel to arrive on time,
+       a straight line to the goal on the goal date: the deadline, not a
+       prediction. TARGET is where you land eating the calorie target you set.
+       ACTUAL is where you land eating what you have actually been eating, with
+       a cone for its give-or-take: the same projection run at both ends of the
+       TDEE error band, so it opens with time as the uncertainty does. Drawn as
+       soon as there is a weight to start from. */
+    const ahead = pr => pr && pr.pts.length > 1 ? pr.pts.map(q => [Day.shift(today, q.i), q.w]) : null;
+    if (aheadDays > 0 && nowW != null) {
+      const est = TD.estimate();
+      const baseT = est.predicted != null ? est.predicted : est.tdee;
+      const eaten = est.intake, err = est.err;
+      if (eaten != null && baseT && err) {
+        const hiP = predictWeight(nowW, aheadDays, eaten, baseT - err);   /* burning less, heavier */
+        const loP = predictWeight(nowW, aheadDays, eaten, baseT + err);
+        if (hiP && loP && hiP.pts.length > 1 && loP.pts.length === hiP.pts.length) {
+          c.band(ahead(hiP), ahead(loP), 'cone');
+          shown.cone = true;
+        }
       }
+      if (eaten != null) {
+        const a = ahead(predictWeight(nowW, aheadDays, eaten));
+        if (a) { c.line(a, 'actual'); shown.actual = true; }
+      }
+      const t = ahead(predictWeight(nowW, aheadDays));
+      if (t) { c.line(t, 'predict'); shown.target = true; }
+      if (goal != null) { c.line([[today, nowW], [goalOn, goal]], 'reality'); shown.reality = true; }
     }
 
-    /* what you have actually been eating */
-    if (eaten != null) {
-      const d = pathOf(predictWeight(nowW, aheadDays, eaten));
-      if (d) { add('path', { d: d }, 'actual'); shown.actual = true; }
-    }
-
-    /* what you said you would eat */
-    const dt = pathOf(predictWeight(nowW, aheadDays));
-    if (dt) { add('path', { d: dt }, 'predict'); shown.target = true; }
-  }
-  shown.reality = !!(goal != null && aheadDays > 0 && nowW != null);
-  svg.dataset.shown = JSON.stringify(shown);
-
-  /* raw weigh-ins. Thinned once they would overlap, or they smear into a grey
-     band that hides the average line the chart exists to show. */
-  const step = Math.max(1, Math.ceil(pts.length / 60));
-  pts.forEach((p, i) => {
-    if (i % step && i !== pts.length - 1) return;
-    add('circle', { cx: Xi(ser.indexOf(p)), cy: Y(p.w), r: 1.9 }, 'raw');
+    /* Every weigh-in, quiet, and thinned once they would overlap; the average
+       through them in the accent with a wash beneath, its latest value marked. */
+    const step = Math.max(1, Math.ceil(pts.length / 60));
+    c.dots(pts.filter((p, i) => !(i % step) || i === pts.length - 1).map(p => {
+      const d = dateAt(ser.indexOf(p));
+      return [d, p.w, Day.label(d) + ' · ' + r1(p.w) + ' ' + unit];
+    }), 'raw', 2);
+    c.area(line);
+    c.line(line);
+    c.end(lastPt, r1(lastPt[1]));
+    c.scrub(line, { onMove: p => head.set(r1(p[1]), moved(p[1], p[0]), said(p[0])), onLeave: head.reset });
+    wrap.dataset.shown = JSON.stringify(shown);
   });
-  if (roll.length > 1) {
-    add('path', { d: roll.map((p, i) => (i ? 'L' : 'M') + Xi(p.i) + ' ' + Y(p.y)).join(' ') }, 'avg');
-  }
-  return svg;
+  return wrap;
 }
 
 /* ── swipe the day ──
@@ -5677,7 +5438,9 @@ function fieldRow(pane, label, key, val, hint) {
 
 function openSettings() {
   UI.settings(APP.id, [
-    { id: 'quests', name: 'QUESTS', draw: drawQuestsTab },
+    /* It holds what each letter needs, so it says so. The id stays `quests`,
+       which drawSettingsPane and the tab order use. Tom, 2026-09-15. */
+    { id: 'quests', name: 'GRADES', draw: drawQuestsTab },
     { id: 'track', name: 'TRACK', draw: drawTrackTab },
     { id: 'goals', name: 'GOALS', draw: drawGoalsTab },
   ], {
@@ -5685,6 +5448,8 @@ function openSettings() {
     /* the sheet mirror is a way of getting data out, so it belongs under DATA
        with the backup and the export rather than in a tab of its own */
     append: { data: drawSyncTab },
+    /* STATUS draws the whole sheet setup itself, so not the short one as well */
+    sync: false,
   });
 }
 
@@ -5916,7 +5681,7 @@ function drawTrackTab(pane) {
     x.onclick = e => { e.stopPropagation(); removeAcct(a); };
     r.appendChild(x);
     r.onclick = () => renameAcct(a);
-    Mobile.hold(r, () => UI.menu(0, 0, [
+    Mobile.hold(r, e => UI.menu(e.clientX, e.clientY, [
       { label: 'Rename', icon: '✎', fn: () => renameAcct(a) },
       i > 0 ? { label: 'Move up', icon: '↑', fn: () => moveAcct(i, -1) } : null,
       i < all.length - 1 ? { label: 'Move down', icon: '↓', fn: () => moveAcct(i, 1) } : null,
@@ -6574,32 +6339,36 @@ function drawGoalsTab(pane) {
   pane.appendChild(el('div', 'note',
     'Blank fits the data'));
 
-  pane.appendChild(el('label', 'fl', 'The estimator'));
-  pane.appendChild(el('div', 'note', 'Backtest before changing these'));
-  fieldRow(pane, 'Half-life (days)', 'halfLife', S.get('halfLife', 21), 'How fast old data stops counting');
-  fieldRow(pane, 'Adaptation rate', 'alpha', TD.alpha(), 'How far the estimate moves toward each new reading');
-  fieldRow(pane, 'Trend window (days)', 'win', TD.win(), 'How far back the weight trend line looks');
+  /* The estimator's own numbers, folded away. Tom, 2026-09-15: settings a
+     client opens are intuitive and never overwhelming, and "Brake (kcal)" is
+     neither. All of it is still here for whoever opens the fold. */
+  pane.appendChild(UI.more('The estimator', box => {
+    box.appendChild(el('div', 'note', 'Backtest before changing these'));
+    fieldRow(box, 'Half-life (days)', 'halfLife', S.get('halfLife', 21), 'How fast old data stops counting');
+    fieldRow(box, 'Adaptation rate', 'alpha', TD.alpha(), 'How far the estimate moves toward each new reading');
+    fieldRow(box, 'Trend window (days)', 'win', TD.win(), 'How far back the weight trend line looks');
 
-  /* "History read" used to be here. It is on the weight chart on Trends now,
-     which is the only place anybody wants it, and it is the same setting
-     rather than a second one. */
+    /* "History read" used to be here. It is on the weight chart on Trends now,
+       which is the only place anybody wants it, and it is the same setting
+       rather than a second one. */
 
-  /* Still stated per pound, because that is what the number IS and changing
-     its meaning per user would make one saved setting mean two things. What it
-     says underneath is the sum she will actually see. */
-  fieldRow(pane, 'Starting guess (kcal per lb)', 'perLb', TD.perLb(),
-    TD.lbPer() === 1 ? 'Before there is data: weight × this'
-      : 'Before there is data. You log in ' + esc(TD.unit()) + ', so that is weight × ' + r1(TD.perUnit()));
-  fieldRow(pane, 'Brake (kcal)', 'guard', TD.guard(), 'The most one update may move the estimate');
+    /* Still stated per pound, because that is what the number IS and changing
+       its meaning per user would make one saved setting mean two things. What it
+       says underneath is the sum she will actually see. */
+    fieldRow(box, 'Starting guess (kcal per lb)', 'perLb', TD.perLb(),
+      TD.lbPer() === 1 ? 'Before there is data: weight × this'
+        : 'Before there is data. You log in ' + esc(TD.unit()) + ', so that is weight × ' + r1(TD.perUnit()));
+    fieldRow(box, 'Brake (kcal)', 'guard', TD.guard(), 'The most one update may move the estimate');
 
-  const bt = el('button', 'btn wide', 'Backtest the settings');
-  bt.style.marginTop = 'var(--s-3)';
-  bt.onclick = () => runBacktest();
-  pane.appendChild(bt);
+    const bt = el('button', 'btn wide', 'Backtest the settings');
+    bt.style.marginTop = 'var(--s-3)';
+    bt.onclick = () => runBacktest();
+    box.appendChild(bt);
 
-  const rc = el('button', 'btn wide quiet', 'Recalculate from scratch');
-  rc.onclick = () => { S.set('tdeeState', null); TD._dirty = true; TD.tick(); draw(); drawSettingsPane('goals'); UI.toast('Recalculated'); };
-  pane.appendChild(rc);
+    const rc = el('button', 'btn wide quiet', 'Recalculate from scratch');
+    rc.onclick = () => { S.set('tdeeState', null); TD._dirty = true; TD.tick(); draw(); drawSettingsPane('goals'); UI.toast('Recalculated'); };
+    box.appendChild(rc);
+  }, 'status-estimator'));
 }
 
 /* score the current settings against history, then sweep for better ones */
@@ -6804,6 +6573,9 @@ function drawSettingsPane(which) {
   pane.innerHTML = '';
   if (which === 'track') drawTrackTab(pane);
   else if (which === 'goals') drawGoalsTab(pane);
+  /* Missing until 2026-09-15, so choosing how a calorie miss counts or the
+     sessions a week redrew the grades tab as the sheet setup. */
+  else if (which === 'quests') drawQuestsTab(pane);
   else drawSyncTab(pane);
 }
 
@@ -7012,7 +6784,17 @@ Rec.onfull = () => UI.toast('<b>Storage is full.</b> Photos are not being saved.
    and those are different paths rather than a different colour. */
 if (window.Icons) Icons.paint();
 
+/* ── the first paint does not wait for the store ──
+   Rec.ready waits for the big half of the store, IndexedDB, which can take up
+   to 2.5 seconds before the store gives up on it, and STATUS showed nothing
+   until then. Fields, readings and the journal are small rows, already here
+   from localStorage. So if the store has not answered in a moment and there
+   is anything to show, show it. Seeding still waits: it must see every row,
+   or it would add fields a slow store was about to hand over. */
+let booted = false;
+setTimeout(() => { if (!booted && Rec.count('field')) draw(); }, 300);
 Rec.ready(() => {
+  booted = true;
   seedFields();
   linkNutrients();
   fixSeedFields();

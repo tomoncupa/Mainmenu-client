@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-built="90a8fdfb">
+<html lang="en" data-built="105533b9">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mb-version" content="1.0.7, 2026-09-15">
 <title>MAIN MENU</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>">
+<!-- the icon on an iPhone's home screen. Every app gets one from mobile.js;
+     the root names its own, because from a folder this file's folder is not
+     an app id -->
+<link rel="apple-touch-icon" href="shared/icons/home.png" data-mb-app="home" data-mb-dir="shared/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="theme-color" content="#0B0E14">
@@ -15,15 +20,17 @@
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=90a8fdfb"></script>
-<script src="shared/day.js?v=90a8fdfb"></script>
-<script src="shared/records.js?v=90a8fdfb"></script>
-<script src="shared/chart.js?v=90a8fdfb"></script>
-<script src="shared/mobile.js?v=90a8fdfb"></script>
-<script src="shared/sound.js?v=90a8fdfb"></script>
-<script src="shared/ui.js?v=90a8fdfb"></script>
-<script src="shared/io.js?v=90a8fdfb"></script>
-<script src="shared/icons.js?v=90a8fdfb"></script>
+<script src="shared/skins.js?v=105533b9"></script>
+<script src="shared/day.js?v=105533b9"></script>
+<script src="shared/records.js?v=105533b9"></script>
+<script src="shared/journal.js?v=105533b9"></script>
+<script src="shared/chart.js?v=105533b9"></script>
+<script src="shared/mobile.js?v=105533b9"></script>
+<script src="shared/sound.js?v=105533b9"></script>
+<script src="shared/ui.js?v=105533b9"></script>
+<script src="shared/io.js?v=105533b9"></script>
+<script src="shared/icons.js?v=105533b9"></script>
+<script src="shared/import.js?v=105533b9"></script>
 <style>
 :root{
   /* ── the bridge ──
@@ -78,21 +85,36 @@ header{
 .logo{font-family:var(--f1);font-weight:700;font-size:17px;letter-spacing:.2em;display:flex;align-items:center;gap:9px;cursor:pointer}
 .logo b{color:var(--acc)}
 .logo .mark{color:var(--acc);font-size:15px;filter:drop-shadow(0 0 6px rgba(126,232,250,.5))}
-nav{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#0a1018}
+nav{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#0a1018;
+  min-width:0;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
 nav button{
-  padding:5px 14px;border-radius:6px;font-family:var(--f1);font-size:12px;letter-spacing:.1em;color:var(--dim);
-  display:flex;align-items:center;gap:7px;white-space:nowrap;
+  padding:5px 9px;border-radius:6px;font-family:var(--f1);font-size:12px;letter-spacing:.06em;color:var(--dim);
+  display:flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;
 }
+/* A narrower desktop window keeps the icons and drops the names, which are in
+   the tooltip. Tom, 2026-09-14: "the header now takes up too much space". */
+@media (min-width:821px) and (max-width:1400px){ nav button .nm{display:none} nav button{padding:5px 8px} }
 @media (hover:hover) and (pointer:fine){ nav button:hover{color:var(--txt)} }
-nav button.on{background:color-mix(in srgb,var(--accent) 14%,var(--surface-2));color:var(--acc);box-shadow:0 0 0 1px var(--acc-d)}
+/* Each app has a colour, --c, its slot in the theme's chart ramp: the icon
+   wears it always, and the whole button wears it when the app is open. Tom,
+   2026-09-15: the icons "are currently just plain letters". Drawn a step
+   heavier and a size up as well, in appIco. */
+nav button > span:first-child{display:flex;color:var(--c,var(--dim))}
+nav button.on{background:color-mix(in srgb,var(--c,var(--accent)) 14%,var(--surface-2));color:var(--c,var(--acc));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c,var(--accent)) 34%,var(--bg))}
 nav button .k{font-size:9px;opacity:.5}
-nav button.dead{color:#43535f}
+nav button.dead{color:var(--dim2)}
+nav button.dead > span:first-child{color:var(--dim2)}
 /* dragging the dock into the order you want */
 nav button[draggable]{cursor:grab}
 nav button.dragging{opacity:.4;cursor:grabbing}
 nav button.dropinto{box-shadow:inset 2px 0 0 var(--acc)}
+/* the line in front of Tom's own apps: a line, no words, because the words
+   took more room than the apps they labelled */
+.navsep{flex:0 0 1px;align-self:stretch;margin:var(--s-1);background:var(--line2)}
 .spacer{flex:1}
-.clock{font-family:var(--f1);font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:right;line-height:1.35}
+.clock{font-family:var(--f1);font-size:12px;letter-spacing:.1em;color:var(--dim);text-align:right;line-height:1.35;white-space:nowrap;flex:0 0 auto}
 .clock b{display:block;color:var(--txt);font-size:14px;letter-spacing:.14em}
 .hbtn{
   min-height:var(--tap,44px);padding:0 var(--s-3,12px);border:1px solid var(--line);
@@ -139,14 +161,20 @@ nav button.dropinto{box-shadow:inset 2px 0 0 var(--acc)}
 
 /* ---------- widget grid ---------- */
 #grid{
-  display:grid;grid-template-columns:repeat(12,1fr);gap:var(--gap);
+  /* dense: a widget fills the first hole it fits, so a short card beside a
+     tall one does not leave an empty band under it. Tom, 2026-09-14: "why is
+     there an awkward space between day log and weight?" */
+  display:grid;grid-template-columns:repeat(12,1fr);grid-auto-flow:row dense;gap:var(--gap);
   max-width:1680px;margin:0 auto;align-items:start;
 }
 @media(max-width:820px){ #grid{grid-template-columns:repeat(4,1fr)} }
 .w{
   grid-column:span var(--cw,4);
-  border-radius:var(--radius-lg,14px);background:var(--panel);
-  box-shadow:var(--e-2),var(--rim);
+  /* The material layer (shared/THEMING.md, Material): a card carries
+     `mb-card`, the dark glass BLOCK's lanes are; its rows carry `mb-plate`
+     and --c, the colour of the block or of the app the widget draws for,
+     set in drawHome. No background, border or shadow written here. */
+  border-radius:var(--radius-lg,14px);
   position:relative;overflow:hidden;display:flex;flex-direction:column;
   height:calc(var(--ch,3) * 84px);min-height:120px;
 }
@@ -197,7 +225,9 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
    so, and the chart takes what is left rather than taking what it likes. */
 .w-body{flex:1;padding:0 13px 13px;min-height:0;overflow:visible;
   display:flex;flex-direction:column;gap:8px}
-.w-body > .fits{flex:1 1 auto;min-height:0}
+/* A chart takes the room that is left, but never less than a readable strip:
+   with the answer on top of it, a small widget left it no room at all. */
+.w-body > .fits{flex:1 1 auto;min-height:var(--s-9,96px)}
 .w-body > .fits > svg{width:100%;height:100%;display:block}
 @media (hover:hover) and (pointer:fine){ .w-body{overflow:auto} }
 /* Resize is a mouse affordance and nothing else — a phone card is as wide as
@@ -218,8 +248,10 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
 
 /* ---------- shared widget bits ---------- */
 .rowlist{display:flex;flex-direction:column;gap:5px}
+/* a row is a plate in its own colour, the way a block is in BLOCK: drawHome
+   puts mb-plate on it, and --c is the block's colour or the widget's app's */
 .row{display:flex;align-items:center;gap:10px;padding:8px 9px;min-height:var(--tap,44px);
-  border-radius:var(--radius-md,10px);background:var(--panel2);position:relative}
+  border-radius:var(--radius-md,10px);position:relative}
 @media (hover:hover) and (pointer:fine){ .row:hover{background:var(--surface-3)} }
 .row .bar{position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--acc)}
 .row .t{font-family:var(--f1);font-size:11px;letter-spacing:.06em;color:var(--dim);width:60px;flex:0 0 auto;padding-left:8px}
@@ -263,12 +295,15 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
   display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;
   transition:background-color var(--dur-fast,140ms) var(--ease-out,ease),
     border-color var(--dur-fast,140ms) var(--ease-out,ease),color var(--dur-fast,140ms)}
+/* The circle stays small; the thing a finger or pointer hits is 44px. */
+.chk{position:relative;cursor:pointer;padding:0;background:transparent}
+.chk::after{content:'';position:absolute;inset:calc((var(--tap,44px) - 26px) / -2)}
 @media (hover:hover) and (pointer:fine){ .chk:hover{border-color:var(--acc)} }
 .chk.on{background:var(--acc);border-color:var(--acc);color:var(--accent-fg)}
 .tag{font-size:9px;font-family:var(--f1);letter-spacing:.1em;color:var(--dim2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
 .ringwrap{display:flex;align-items:center;gap:16px;margin-bottom:11px}
 .ring{position:relative;width:70px;height:70px;flex:0 0 auto}
-.ring svg{transform:rotate(-90deg)}
+/* the ring itself comes from shared/chart.js, already turned to start at twelve o'clock */
 .ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--f1);font-size:16px;letter-spacing:.04em;color:var(--acc)}
 .ring .num i{font-style:normal;font-size:9px;color:var(--dim2);letter-spacing:.14em}
 .stats{display:flex;gap:16px;flex-wrap:wrap}
@@ -300,13 +335,13 @@ body.editing .w{box-shadow:var(--e-3),0 0 0 1px var(--acc)}
 .legend{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:10px;color:var(--dim2);font-family:var(--f1);letter-spacing:.1em}
 .legend b{width:10px;height:10px;border-radius:3px;display:block}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
-.tile{border-radius:var(--radius-md,11px);background:var(--panel2);padding:var(--s-3,12px);
+.tile{border-radius:var(--radius-md,11px);padding:var(--s-3,12px);   /* a plate: mb-plate draws it */
   min-height:var(--tap,44px);text-align:left;display:flex;flex-direction:column;gap:4px;
   transition:transform var(--dur-tap,90ms) var(--ease-out,ease),box-shadow var(--dur-fast,140ms)}
 @media (hover:hover) and (pointer:fine){
   .tile:hover{transform:translateY(-2px);box-shadow:var(--e-2)}
 }
-.tile .ic{font-size:17px;line-height:1;color:var(--acc)}
+.tile .ic{font-size:17px;line-height:1;color:var(--c,var(--acc))}
 .tile .nm{font-family:var(--f1);font-size:12px;letter-spacing:.16em}
 .tile .ds{font-size:10px;color:var(--dim2);line-height:1.4}
 .tile.missing{opacity:.45}
@@ -352,6 +387,7 @@ kbd{font-family:var(--f1);font-size:10px;border:1px solid var(--line2);border-ra
 <div id="ghost"></div>
 <div id="modal"></div>
 <input type="file" id="fileIn" accept="application/json" style="display:none">
+<input type="file" id="xlsxIn" accept=".xlsx,.xls,.xlsm" style="display:none">
 
 <script>
 /* ══════════════════════════ LIFEOS KERNEL v2 ══════════════════════════
@@ -569,12 +605,19 @@ IDB.get('doc').then(raw => {
 /* ══════════════ the app roster ══════════════
    Adding an app to LifeOS is one entry here plus (if it wants to share data)
    the kernel block pasted into it. Nothing else in the shell knows their names. */
+/* The order here is the default dock, set by Tom on 2026-09-14. Tom's own
+   apps, flagged `mine`, come last and sit behind a line. */
 const APPS = [
+  /* An app's colour, which of the theme's six chart colours it wears in the
+     dock, on its tile, on its widgets and on its iPhone icon, is APP_SLOT in
+     shared/icons.js: one table, so the dock and the pictures cannot disagree. */
   { id: 'home',   nm: 'HOME',   ic: '◈', file: null,                ds: 'today, streaks, everything at a glance' },
-  { id: 'arc',    nm: 'ARC',    ic: '◇', file: 'arc/index.html',    ds: 'mind canvas — think, map, plan',            solo: 1 },
   { id: 'block',  nm: 'BLOCK',  ic: '▦', file: 'block/index.html',  ds: 'build the day out of blocks',               shares: 'routine + ticks' },
   { id: 'status', nm: 'STATUS', ic: '◐', file: 'status/index.html', ds: 'sleep, weight, mood, food and money',        shares: 'the daily measurements' },
+  { id: 'log',    nm: 'LOG',    ic: '▤', file: 'log/index.html',    ds: 'the journal, the last few weeks at a glance', shares: 'the journal' },
+  { id: 'quest',  nm: 'QUESTS', ic: '◆', file: 'quest/index.html',  ds: 'todos, when they are due, and projects', shares: 'the journal todos' },
   { id: 'train',  nm: 'TRAIN',  ic: '⛭', file: 'train/index.html',  ds: 'the training log — sets, reps, records',     shares: 'the training log + ticks' },
+  { id: 'checkin', nm: 'CHECK IN', ic: '◎', file: 'checkin/index.html', ds: 'photos, weight and how the week went', shares: 'weight, with STATUS' },
   { id: 'style',  nm: 'STYLE',  ic: '◧', file: 'style/index.html',  ds: 'pick, compare, edit and add themes',         shares: 'the themes every app wears' },
 ];
 const app = id => APPS.find(a => a.id === id);
@@ -588,20 +631,28 @@ const app = id => APPS.find(a => a.id === id);
    the roster later appears at the end rather than not at all. That is what
    stops a saved order from quietly hiding a new app.
 
+   Saved under `dockOrder` since 2026-09-14, when Tom set a new default. An
+   order saved before that was the old default rearranged, and left in charge
+   it would have hidden the new one.
+
    The number on each button is its position, not its identity, so the keyboard
    shortcut always matches what you can see: 3 opens the third one along. */
 function dockOrder() {
-  const saved = Rec.setting('lifeos', 'dock') || [];
+  const saved = Rec.setting('lifeos', 'dockOrder') || [];
   const known = {};
   APPS.forEach(a => known[a.id] = a);
   const out = [];
   saved.forEach(id => { if (known[id] && out.indexOf(id) < 0) out.push(id); });
   APPS.forEach(a => { if (out.indexOf(a.id) < 0) out.push(a.id); });
-  return out;
+  /* Tom's own apps, the ones flagged `mine` above, are their own group after
+     the rest (Tom, 2026-09-14). The order he set is kept inside each group
+     and never carries an app across the line. The client build drops every
+     one of them, so a client's dock has one group and no line. */
+  return out.filter(id => !known[id].mine).concat(out.filter(id => known[id].mine));
 }
 const dockApps = () => dockOrder().map(app).filter(Boolean);
 function saveDock(ids) {
-  Rec.setting('lifeos', 'dock', ids);
+  Rec.setting('lifeos', 'dockOrder', ids);
   drawNav();
 }
 /** move one app n places along the dock */
@@ -609,6 +660,7 @@ function moveApp(id, d) {
   const ids = dockOrder();
   const i = ids.indexOf(id), j = i + d;
   if (i < 0 || j < 0 || j >= ids.length) return;
+  if (!!app(ids[i]).mine !== !!app(ids[j]).mine) return;      /* the groups do not mix */
   ids.splice(j, 0, ids.splice(i, 1)[0]);
   saveDock(ids);
   if (typeof Mobile !== 'undefined') Mobile.feedback('select');
@@ -621,8 +673,16 @@ if (typeof Icons !== 'undefined') addEventListener('DOMContentLoaded', () => {
    device, cannot take a colour and vanish when a font does. These are drawn.
    The old glyph stays as the fallback so a missing icons.js is a plain dock
    rather than an empty one. */
+/* A step heavier than a button's icon and a size up from where it was: at
+   16px in a 1.75 stroke a row of app icons read as a row of letters. */
 const appIco = (a, size) => (typeof Icons !== 'undefined' &&
-  Icons.svg('app.' + a.id, { size: size || 18 })) || a.ic;
+  Icons.svg('app.' + a.id, { size: size || 20, weight: 2.1 })) || a.ic;
+/* the app's colour: its slot in the theme's chart ramp, as a CSS value. The
+   table is in shared/icons.js, so the iPhone icons are drawn from the same one. */
+const appTint = a => {
+  const slot = a && typeof Icons !== 'undefined' && Icons.appSlot ? Icons.appSlot(a.id) : 0;
+  return slot ? 'var(--data-' + slot + ')' : '';
+};
 const frames = {};      /* id -> iframe. Built on first visit, then kept alive. */
 const missing = {};     /* id -> true once a HEAD check says the file is not there */
 let view = 'home';
@@ -676,8 +736,11 @@ function drawNav() {
       ? toast('<b>' + esc(a.file) + '</b> is missing from this folder', { bad: true })
       : (Mobile.feedback('select'), go(a.id));
 
-    const b = el('button', state, '<span>' + appIco(a, 16) + '</span>' + a.nm + '<span class="k">' + (i + 1) + '</span>');
-    b.title = missing[a.id] ? a.file + ' is not in this folder' : a.ds;
+    const b = el('button', state, '<span>' + appIco(a, 20) + '</span><span class="nm">' + a.nm + '</span>');
+    if (appTint(a)) b.style.setProperty('--c', appTint(a));
+    /* The number key is in the tooltip rather than on the button. Twelve
+       badges were a good part of a header that had run out of room. */
+    b.title = missing[a.id] ? a.file + ' is not in this folder' : a.nm + ': ' + a.ds + (i < 9 ? ' (key ' + (i + 1) + ')' : '');
     b.onclick = open;
 
     /* ── drag to reorder ──
@@ -712,11 +775,13 @@ function drawNav() {
       saveDock(ids);
     });
     b.oncontextmenu = ev => { ev.preventDefault(); dockMenu(a, i, order.length, ev.clientX, ev.clientY); };
+    if (a.mine && !(order[i - 1] || {}).mine) n.appendChild(el('span', 'navsep'));
     n.appendChild(b);
 
     /* the same button again, for the thumb. Icon over label, because at this
        size the icon is what is actually read. */
     const t = el('button', state + ' mb-press mb-tap', '<span class="g">' + appIco(a, 22) + '</span>' + a.nm);
+    if (appTint(a)) t.style.setProperty('--c', appTint(a));
     t.setAttribute('aria-label', a.nm + ' — ' + a.ds);
     if (view === a.id) t.setAttribute('aria-current', 'page');
     t.onclick = open;
@@ -728,16 +793,20 @@ function drawNav() {
 
 /* Move it, or put the whole dock back the way it shipped. */
 function dockMenu(a, i, total, x, y) {
+  /* the ends of its own group, not of the whole dock */
+  const order = dockApps();
+  const first = i === 0 || !!order[i - 1].mine !== !!a.mine;
+  const last = i === total - 1 || !!order[i + 1].mine !== !!a.mine;
   UI.menu(x, y, [
-    i > 0 ? { label: 'Move left', icon: '\u2190', fn: () => moveApp(a.id, -1) } : null,
-    i < total - 1 ? { label: 'Move right', icon: '\u2192', fn: () => moveApp(a.id, 1) } : null,
-    i > 0 ? { label: 'Move to the front', fn: () => {
+    !first ? { label: 'Move left', icon: '\u2190', fn: () => moveApp(a.id, -1) } : null,
+    !last ? { label: 'Move right', icon: '\u2192', fn: () => moveApp(a.id, 1) } : null,
+    !first ? { label: 'Move to the front', fn: () => {
         const ids = dockOrder();
         ids.splice(0, 0, ids.splice(ids.indexOf(a.id), 1)[0]);
         saveDock(ids);
       } } : null,
     '-',
-    { label: 'Reset the order', fn: () => { Rec.setting('lifeos', 'dock', []); drawNav(); } },
+    { label: 'Reset the order', fn: () => { Rec.setting('lifeos', 'dockOrder', []); drawNav(); } },
   ].filter(Boolean), { title: a.nm });
 }
 /* a tile for a file that is not there should say so, not open a blank frame */
@@ -754,16 +823,83 @@ const DUR = d => d >= 60 ? (d % 60 ? Math.floor(d / 60) + 'h' + String(d % 60).p
 const DLET = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const clock12 = ts => new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
+/* A ring from shared/chart.js, with its number in the middle. */
 function ring(pct, big, small) {
-  const R = 30, C = 2 * Math.PI * R;
   const w = el('div', 'ring');
-  w.innerHTML =
-    '<svg width="70" height="70" viewBox="0 0 70 70">' +
-      '<circle cx="35" cy="35" r="' + R + '" fill="none" stroke="var(--surface-3)" stroke-width="6"></circle>' +
-      '<circle cx="35" cy="35" r="' + R + '" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"' +
-      ' stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - pct)).toFixed(1) + '"></circle>' +
-    '</svg><div class="num">' + esc(big) + '<i>' + esc(small) + '</i></div>';
+  w.appendChild(Chart.ring(pct, { size: 70, stroke: 6 }));
+  w.appendChild(el('div', 'num', esc(big) + '<i>' + esc(small) + '</i>'));
   return w;
+}
+/* The weight widget's line: a reading, when, and how far it has moved since
+   the first reading on the chart. The widget's head shows it for today, and
+   dragging across the chart shows it for any day. */
+function weightSaid(pts, v, d) {
+  const n = Day.diff(d, pts[0].d), m = v - pts[0].v;
+  const move = !n ? '' : ', ' + (Math.abs(m) < 0.05 ? 'no change' : (m < 0 ? 'down ' : 'up ') + Math.abs(m).toFixed(1)) + ' in ' + n + ' days';
+  return v.toFixed(1) + ' ' + (d === LifeOS.day() ? 'today' : Day.label(d)) + move;
+}
+/* ── the cut's plan ──
+   {from, to, goal, start} in the setting lifeos.weightPlan. A blank start is
+   the weigh-in nearest the start day, within a fortnight either side, read
+   at draw time and never saved as though it had been typed (DOCTRINE, law 4). */
+function weightPlan() {
+  const p = Rec.setting('lifeos', 'weightPlan');
+  if (!p || !p.from || !p.to || !(Number(p.goal) > 0) || p.to <= p.from) return null;
+  let start = Number(p.start) > 0 ? Number(p.start) : null;
+  for (let i = 0; i <= 14 && start == null; i++) {
+    const before = evValue(LifeOS.shift(p.from, -i), 'weight');
+    start = before != null ? before : (i ? evValue(LifeOS.shift(p.from, i), 'weight') : null);
+  }
+  return start == null ? null : { from: p.from, to: p.to, goal: Number(p.goal), start: start };
+}
+const planAt = (p, d) => d <= p.from ? p.start : d >= p.to ? p.goal
+  : p.start + (p.goal - p.start) * Day.diff(d, p.from) / Day.diff(p.to, p.from);
+function planSaid(p) {
+  const t = LifeOS.day();
+  if (t < p.from) return ' · plan starts ' + Day.short(p.from);
+  if (t > p.to) return ' · plan ended ' + Day.short(p.to) + ' at ' + p.goal.toFixed(1);
+  return ' · plan ' + planAt(p, t).toFixed(1) + ' today, ' + p.goal.toFixed(1) + ' by ' + Day.short(p.to);
+}
+function weightPlanSheet() {
+  const was = Rec.setting('lifeos', 'weightPlan') || {};
+  const dateBox = v => { const i = document.createElement('input'); i.type = 'date'; i.className = 'mb-input'; i.value = v || ''; return i; };
+  let goal, to, from, start;
+  UI.dialog({
+    title: 'PLAN A CUT', width: 440,
+    body: b => {
+      goal = UI.field('decimal', { placeholder: 'e.g. 180', value: was.goal != null ? was.goal : '' });
+      to = dateBox(was.to);
+      from = dateBox(was.from || LifeOS.day());
+      start = UI.field('decimal', { placeholder: 'the weigh-in nearest the start day', value: was.start != null ? was.start : '' });
+      b.appendChild(UI.row('Goal weight', 'Same unit as your weigh-ins', goal));
+      b.appendChild(UI.row('By', 'The day the plan ends', to));
+      b.appendChild(UI.row('Starting', 'The day the plan starts', from));
+      b.appendChild(UI.row('Starting weight', 'Blank uses the weigh-in nearest the start day', start));
+    },
+    actions: [
+      { label: 'CANCEL' },
+      { label: 'SAVE', kind: 'go', fn: () => {
+        const g = parseFloat(goal.value), s = start.value.trim() === '' ? null : parseFloat(start.value);
+        if (!(g > 0)) { UI.toast('Needs a goal weight', { bad: true }); return false; }
+        if (!to.value || !from.value || to.value <= from.value) { UI.toast('The end has to be after the start', { bad: true }); return false; }
+        if (s != null && !(s > 0)) { UI.toast('Starting weight is not a number', { bad: true }); return false; }
+        const next = { goal: g, to: to.value, from: from.value };
+        if (s != null) next.start = s;
+        Rec.setting('lifeos', 'weightPlan', next);
+        drawHome();
+        if (!weightPlan()) UI.toast('No weigh-in near the start day. Add a starting weight.', { bad: true });
+      } },
+    ],
+  });
+}
+
+/* The sleep widget's line: the average night this week, and how many met the target. */
+function sleepSaid() {
+  const f = Rec.map('field').sleep, target = f && f.target ? Number(f.target) : 0, got = [];
+  for (let i = 6; i >= 0; i--) { const v = evValue(LifeOS.shift(LifeOS.day(), -i), 'sleep'); if (v != null) got.push(v); }
+  if (!got.length) return 'last 7 nights';
+  const mean = got.reduce((a, v) => a + v, 0) / got.length;
+  return mean.toFixed(1) + ' hrs a night' + (target ? ', ' + got.filter(v => v >= target).length + ' of ' + got.length + ' on target' : '');
 }
 function cadenceText(c) {
   if (!c) return 'daily';
@@ -846,14 +982,8 @@ function macroWidget(body, key, unit, label) {
   const pct = Math.max(0, Math.min(100, Math.round((got / target) * 100)));
   const wrap = el('div', 'ringwrap');
   const ring = el('div', 'ring');
-  const C = 2 * Math.PI * 30;
-  ring.innerHTML =
-    '<svg width="70" height="70" viewBox="0 0 70 70">' +
-    '<circle cx="35" cy="35" r="30" fill="none" stroke="var(--panel2)" stroke-width="7"/>' +
-    '<circle cx="35" cy="35" r="30" fill="none" stroke="var(--acc)" stroke-width="7" ' +
-    'stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" ' +
-    'stroke-dashoffset="' + (C * (1 - pct / 100)).toFixed(1) + '"/></svg>' +
-    '<div class="num">' + pct + '<i>%</i></div>';
+  ring.appendChild(Chart.ring(pct / 100, { size: 70, stroke: 7 }));
+  ring.appendChild(el('div', 'num', pct + '<i>%</i>'));
   wrap.appendChild(ring);
   const st = el('div', 'stats');
   st.appendChild(el('div', 'stat acc', '<b>' + Math.round(got) + unit + '</b><span>SO FAR</span>'));
@@ -865,12 +995,24 @@ function macroWidget(body, key, unit, label) {
 /* ── the journal ── */
 const noteRows = () => Rec.all('note');
 
-/** open todos, oldest first, so the thing you keep putting off is at the top */
+/** open todos, oldest first, so the thing you keep putting off is at the top.
+    A todo QUESTS has dated for later is not open yet; one with No date sorts
+    last. */
+const todoFrom = r => r.payload.due === undefined ? r.date : (r.payload.due || '');
 function openTodos() {
+  const today = LifeOS.day();
   return noteRows()
-    .filter(r => r.payload.kind === 'todo' && !r.payload.done && !r.payload.cancelled)
-    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    .filter(r => r.payload.kind === 'todo' && !r.payload.done && !r.payload.cancelled &&
+      !(r.payload.due && r.payload.due > today))
+    .sort((a, b) => String(todoFrom(a) || '9999').localeCompare(String(todoFrom(b) || '9999')));
 }
+
+/* Which day a journal line shows on, and ticking a todo, are shared/journal.js:
+   the same rules STATUS, LOG and QUESTS read. A todo with a `due` shows from
+   its due day; a repeating todo does a round instead of finishing. The home
+   screen leaves the journal counters to STATUS and QUESTS, as it always has. */
+function noteOnDay(r, day) { return Journal.onDay(r, day); }
+function tickTodo(r) { Journal.tick(r.date, r.key, { day: LifeOS.day(), publish: false }); }
 const notesOfKind = k => noteRows()
   .filter(r => r.payload.kind === k)
   .sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -925,35 +1067,17 @@ function todayItems() {
     const n = r.payload;
     if (!n || n.cancelled) return;
     const isTodo = n.kind === 'todo';
-    if (r.date !== today) {
-      if (!r.date || !isTodo) return;
-      const carried = !n.done && r.date < today;
-      const finishedToday = n.done && n.doneOn === today;
-      if (!carried && !finishedToday) return;
-    }
-    /* A finished task's clock is when you ticked it. An open one's is when you
-       said you would start. */
-    const clock = (isTodo && n.done && n.doneAt) ? n.doneAt : n.at;
+    if (!noteOnDay(r, today)) return;
+    /* A line's clock is its start; a ticked todo with no start, when it was
+       ticked. The time order STATUS and LOG use (Tom, 2026-09-14). */
+    const clock = n.at || (isTodo && n.done ? n.doneAt : null) || null;
     const mins = clock ? (+String(clock).split(':')[0] * 60 + +String(clock).split(':')[1]) : null;
     out.push({
       kind: n.kind, name: n.text || '', at: mins,
       dur: n.dur || 0, tag: '', colour: '', done: !!n.done, todo: isTodo,
       /* Only a todo has something to tick. An entry is a record of a thing
          that already happened and there is nothing to say about it. */
-      tick: !isTodo ? null : () => {
-        const now = new Date();
-        const stamp = String(now.getHours()).padStart(2, '0') + ':' +
-                      String(now.getMinutes()).padStart(2, '0');
-        Rec.set('note', r.date, r.key, Object.assign({}, n, {
-          /* `by` is STATUS's Done field and the tick fills it, so the home
-             screen has to write the same thing or the two disagree. */
-          done: n.done ? 0 : 1, doneAt: n.done ? null : stamp,
-          by: n.done ? null : stamp,
-          /* the day you ticked it, so STATUS can show it on that day */
-          doneOn: n.done ? null : today,
-        }));
-        drawHome();
-      },
+      tick: !isTodo ? null : () => { tickTodo(r); drawHome(); },
     });
   });
 
@@ -1087,7 +1211,7 @@ const WIDGETS = {
      because an unscheduled task is still a task and an entry is a note about
      something that already happened. */
   today: {
-    nm: 'TODAY', w: 5, h: 5,
+    nm: 'TODAY', w: 5, h: 5,          /* spans every app, so it wears the accent: the board's one hero card */
     sub: () => {
       const it = todayItems();
       if (!it.length) return 'nothing scheduled';
@@ -1127,8 +1251,9 @@ const WIDGETS = {
           /* The band is the tick target too, so following the day never means
              hunting for the right row in the list under it. */
           if (nn.it.tick) {
-            const go = el('button', 'nchk', '✓');
+            const go = el('button', 'nchk', (typeof Icons !== 'undefined' && Icons.svg('done', { size: 18 })) || '✓');
             go.title = 'tick it off';
+            go.setAttribute('aria-label', 'Tick it off');
             go.onclick = nn.it.tick;
             band.appendChild(go);
           }
@@ -1186,7 +1311,9 @@ const WIDGETS = {
         const r = el('div', 'row' + (x.done ? ' done' : '') +
           (x === mark ? ' here' : '') + (late ? ' late' : ''));
         if (x === mark) here = r;
-        if (x.colour) { const bar = el('div', 'bar'); bar.style.background = x.colour; r.appendChild(bar); }
+        /* the block's own colour is the row's plate, the way it is in BLOCK;
+           a bullet has none and takes the widget's */
+        if (x.colour) r.style.setProperty('--c', x.colour);
         r.appendChild(el('div', 't', x.at == null ? '' : MIN2(x.at)));
         /* Two targets, two meanings, the same split as everywhere else: the
            box ticks it, the words take you to the thing. */
@@ -1198,8 +1325,9 @@ const WIDGETS = {
         if (x.tag) r.appendChild(el('div', 'tag', esc(x.tag)));
         if (x.dur) r.appendChild(el('div', 'd', DUR(x.dur)));
         if (x.tick) {
-          const ck = el('button', 'chk' + (x.done ? ' on' : ''), '✓');
+          const ck = el('button', 'chk' + (x.done ? ' on' : ''), (typeof Icons !== 'undefined' && Icons.svg('done', { size: 14 })) || '✓');
           ck.title = x.done ? 'done — click to undo' : 'check it off';
+          ck.setAttribute('aria-label', x.done ? 'Mark not done' : 'Tick it off');
           ck.onclick = x.tick;
           r.appendChild(ck);
         }
@@ -1225,6 +1353,117 @@ const WIDGETS = {
       if (here && list.scrollHeight > list.clientHeight) {
         list.scrollTop = Math.max(0, here.offsetTop - 6);
       }
+    },
+  },
+
+  /* ══════════════ BESIDE ══════════════
+     Two or three measures on one date axis. Tom, 2026-09-15: "the
+     synthesizing of data and the interaction between modules is where the
+     suite will shine", and, on the review's joining widget: "what about
+     joining 3 things". So up to three strips, one under the other, sharing
+     the same days across the bottom and each on its own scale, because two
+     scales on one plot invent a relationship and chart.js refuses to draw
+     one. Nothing here says what one line did to another (root brief, "Never
+     tell him what a behaviour did to a number"). It puts them beside each
+     other and he joins them.
+
+     The measures are STATUS's fields, the day's training volume from
+     TRAIN's sets, the day's spending, and how much got logged at all. Picked
+     from the widget's own menu; a fourth pick drops the oldest. */
+  beside: {
+    nm: 'BESIDE', w: 6, h: 4,
+    nmFor: cfg => cfg.nm || 'BESIDE',
+    /* Offered in ADD A WIDGET as a ready-made BESIDE. Tom, 2026-09-15: "Put
+       sleep, mood and energy on one screen." His protocol watches sleep
+       falling while mood rises, and these three strips are that picture. */
+    presets: [{ nm: 'SLEEP · MOOD · ENERGY', note: 'three strips on one date axis', cfg: { nm: 'SLEEP · MOOD · ENERGY', m: ['sleep', 'mood', 'energy'], days: 30, w: 12, h: 5 } }],
+    days: [[30, '30 days'], [90, '90 days'], [365, 'a year']],
+    measures() {
+      const fields = Rec.map('field'), seen = {}, out = [];
+      const put = (id, label, unit, kind, read) => { if (!seen[id]) { seen[id] = 1; out.push({ id: id, label: label, unit: unit, kind: kind, read: read }); } };
+      /* every field with a row, and every field that has ever been logged,
+         so a fresh install with no field rows still finds its weight */
+      const ids = Object.keys(fields).filter(k => fields[k].on !== 0);
+      Rec.all('ev').forEach(r => { if (ids.indexOf(r.key) < 0) ids.push(r.key); });
+      ids.forEach(id => {
+        const f = fields[id] || {};
+        put(id, f.label || id.charAt(0).toUpperCase() + id.slice(1), f.unit || '', 'line', d => evValue(d, id));
+      });
+      put('trainvol', 'Training volume', 'kg', 'bar', d => {
+        const rows = Rec.all('set', { date: d });
+        return rows.length ? Math.round(rows.reduce((a, r) => a + (r.payload.kg || 0) * (r.payload.r || 0), 0)) : null;
+      });
+      put('spend', 'Spending', '', 'bar', d => {
+        const rows = Rec.all('spend', { date: d });
+        return rows.length ? Math.round(rows.reduce((a, r) => a + (Number(r.payload.amt) || 0), 0)) : null;
+      });
+      put('logged', 'Logged', '', 'bar', d => Rec.all('tick', { date: d }).length || null);
+      return out;
+    },
+    chosen(cfg) {
+      const all = WIDGETS.beside.measures(), have = all.map(m => m.id);
+      const want = (cfg.m && cfg.m.length ? cfg.m : ['sleep', 'trainvol']).filter(id => have.indexOf(id) >= 0).slice(0, 3);
+      return want.map(id => all.filter(m => m.id === id)[0]);
+    },
+    sub: cfg => {
+      const names = WIDGETS.beside.chosen(cfg || {}).map(m => m.label.toLowerCase());
+      if (!names.length) return 'pick measures from the menu';
+      return names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names.slice(-1) : names[0];
+    },
+    menu(cfg, redraw) {
+      const on = cfg.m && cfg.m.length ? cfg.m : ['sleep', 'trainvol'];
+      return [{ label: 'Measures', sub: WIDGETS.beside.measures().map(m => ({
+        label: m.label, check: on.indexOf(m.id) >= 0,
+        fn: () => {
+          let next = on.slice();
+          if (next.indexOf(m.id) >= 0) next = next.filter(x => x !== m.id);
+          else { next.push(m.id); if (next.length > 3) next.shift(); }
+          cfg.m = next; redraw();
+        } })) }];
+    },
+    draw(body, cfg) {
+      cfg = cfg || {};
+      const days = cfg.days || 30, today = LifeOS.day(), from = LifeOS.shift(today, -(days - 1));
+      const picked = WIDGETS.beside.chosen(cfg);
+      if (!picked.length) {
+        body.appendChild(el('div', 'empty', 'Nothing to show yet. Log in <span class="link" onclick="go(\'status\')">STATUS</span> or ' +
+          '<span class="link" onclick="go(\'train\')">TRAIN</span>, then pick measures from this widget\'s menu.'));
+        return;
+      }
+      body.style.gap = '0';
+      const fmt = v => Number(v).toLocaleString(undefined, { maximumFractionDigits: 1 });
+      const when = d => d === today ? 'today' : Day.short(d);
+      picked.forEach((m, i) => {
+        const pts = [];
+        for (let k = 0; k < days; k++) { const d = LifeOS.shift(from, k); const v = m.read(d); if (v != null) pts.push([d, v]); }
+        const strip = el('div', 'strip');
+        /* a real floor, because on a phone the card is as tall as its
+           contents and three strips sharing nothing would be three lines */
+        strip.style.cssText = 'flex:1 1 0;min-height:112px;display:flex;flex-direction:column;min-width:0';
+        const last = pts.length ? pts[pts.length - 1] : null;
+        const head = Chart.header({ size: 'sm', label: m.label, value: last ? fmt(last[1]) : '—', unit: m.unit,
+          when: last ? when(last[0]) : 'nothing in ' + days + ' days' });
+        strip.appendChild(head.el);
+        const box = el('div', 'fits');
+        box.style.cssText = 'flex:1 1 auto;min-height:72px';
+        strip.appendChild(box);
+        body.appendChild(strip);
+        if (pts.length < 2) return;
+        const lastStrip = i === picked.length - 1;
+        /* the same left margin on every strip, so the days line up */
+        Chart.mount(box, { pad: { l: 46, r: 12, t: 8, b: lastStrip ? 22 : 6 }, label: m.label + ', ' + days + ' days' }, c => {
+          c.xTime(from, today);
+          c.yFit(pts.map(p => p[1]), m.kind === 'bar' ? { min: 0, lines: 2 } : { lines: 2 });
+          c.grid();
+          if (lastStrip) c.timeAxis();
+          if (m.kind === 'bar') {
+            /* a bar a day wide, whatever days are missing */
+            const bw = Math.max(2, Math.min(24, ((c.W - c.P.l - c.P.r) / days) * .62));
+            c.bars(pts, null, bw, { highlight: 'last' });
+          } else { c.area(pts); c.line(pts); c.end(pts[pts.length - 1]); }
+          c.scrub(pts, { onMove: p => head.set(fmt(p[1]), '', when(p[0])), onLeave: head.reset });
+        });
+      });
     },
   },
 
@@ -1290,7 +1529,7 @@ const WIDGETS = {
      and `session`; nothing here writes any of them, which is what lets the
      home screen show the training log without becoming a second author of it. */
   training: {
-    nm: 'TRAINING', w: 5, h: 3,
+    nm: 'TRAINING', w: 5, h: 3, app: 'train',
     sub: () => {
       const d = trainLastDay();
       if (!d) return 'nothing logged yet';
@@ -1335,7 +1574,7 @@ const WIDGETS = {
   },
 
   trainvol: {
-    nm: 'TRAINING VOLUME', w: 4, h: 2,
+    nm: 'TRAINING VOLUME', w: 4, h: 2, app: 'train',
     sub: () => 'last 8 weeks',
     draw(body) {
       const weeks = 8, bars = [];
@@ -1376,7 +1615,7 @@ const WIDGETS = {
      one: STATUS owns every measurement and this screen only looks at them. */
 
   weight: {
-    nm: 'WEIGHT', w: 5, h: 3,
+    nm: 'WEIGHT', w: 5, h: 3, app: 'status',
     /* ── the range is a property of THIS widget ──
        Tom, 2026-09-05: "I'd rather have different charts if we're in Main
        Menu and different tabs if we're in STATUS." Right, and it follows from
@@ -1389,14 +1628,34 @@ const WIDGETS = {
     nmFor: cfg => 'WEIGHT · ' + (WIDGETS.weight.days.filter(d => d[0] === (cfg.days || 90))[0] || [0, ''])[1],
     sub: cfg => {
       const r = weightSeries((cfg && cfg.days) || 90);
-      if (!r.length) return 'nothing logged yet';
+      const plan = weightPlan();
+      const said = plan ? planSaid(plan) : (Rec.setting('lifeos', 'weightPlan') ? ' · plan needs a starting weight' : '');
+      if (!r.length) return said ? said.replace(/^ · /, '') : 'nothing logged yet';
       const last = r[r.length - 1];
-      return last.v.toFixed(1) + ' on ' + (last.d === LifeOS.day() ? 'today' : esc(last.d));
+      return weightSaid(r, last.v, last.d) + said;
+    },
+    /* ── the cut ──
+       Tom, 2026-09-15: "Yes chart the cut". A plan is a start, a goal and
+       two dates, drawn as a dashed line from one to the other under the
+       weigh-ins. It is a setting rather than part of the layout, so it is in
+       the backup and on every device, and every WEIGHT widget shows the same
+       one. The line says what the plan says on a day; nothing here says
+       whether a weigh-in is good. */
+    menu(cfg, redraw) {
+      const has = !!Rec.setting('lifeos', 'weightPlan');
+      return ['-', { label: has ? 'Change the plan' : 'Plan a cut', fn: weightPlanSheet },
+        has ? { label: 'Clear the plan', fn: () => {
+          const was = Rec.setting('lifeos', 'weightPlan');
+          Rec.setting('lifeos', 'weightPlan', null); redraw();
+          UI.undo('Plan cleared', () => { Rec.setting('lifeos', 'weightPlan', was); redraw(); });
+        } } : null];
     },
     draw(body, cfg) {
       cfg = cfg || {};
-      const pts = weightSeries(cfg.days || 90);
-      if (pts.length < 2) {
+      const today = LifeOS.day(), plan = weightPlan();
+      const back = plan ? Math.max(cfg.days || 90, Day.diff(today, plan.from)) : (cfg.days || 90);
+      const pts = weightSeries(back);
+      if (pts.length < 2 && !plan) {
         body.appendChild(el('div', 'empty',
           'Log a weight in <span class="link" onclick="go(\'status\')">STATUS</span> twice and the line starts.'));
         return;
@@ -1417,47 +1676,49 @@ const WIDGETS = {
          through them is the seven-day average - the dots are kept because a
          daily weight jumps around for reasons that are not fat, and hiding
          that behind a smooth line is its own kind of lie. */
-      const avg = pts.map((p, i) => {
-        let a = 0, n = 0;
-        for (let j = Math.max(0, i - 6); j <= i; j++) { a += pts[j].v; n++; }
-        return a / n;
+      /* \u2500\u2500 the weigh-ins, joined \u2500\u2500
+         Tom, 2026-09-14: "I'd rather have a graph that indicates my actual
+         data than trends." The line goes through every reading as it was
+         taken, and there is no average on the chart. Supersedes the seven-day
+         average line described above. */
+      /* ── answer first ──
+         Tom, 2026-09-14: "Graphs must be useful and feel cool, they must convey
+         data quick." The answer is the widget's own line at the top: the latest
+         weigh-in and how far it has moved. Drag across the chart and that line
+         follows the day under the finger. A second header inside the widget
+         left a small one no room for the chart. The line goes through every
+         reading as it was taken, with no average. */
+      const last = pts.length ? pts[pts.length - 1].v : null, lastD = pts.length ? pts[pts.length - 1].d : today;
+      const subOf = () => { const w = body.closest('.w'); return w && w.querySelector('.w-head .sub'); };
+      let kept = null;
+      const box = el('div', 'fits');
+      body.appendChild(box);
+      const line = pts.map(p => [p.d, p.v]);
+      const from = plan ? (pts.length && pts[0].d < plan.from ? pts[0].d : plan.from) : pts[0].d;
+      const to = plan && plan.to > lastD ? plan.to : lastD;
+      Chart.mount(box, { label: 'Weight, ' + pts.length + ' weigh-ins' + (plan ? ', and a plan to ' + plan.goal + ' by ' + plan.to : '') }, c => {
+        c.xTime(from, to);
+        c.yFit(pts.map(p => p.v).concat(plan ? [plan.start, plan.goal] : []));
+        c.grid();
+        c.timeAxis();
+        if (plan) {
+          c.line([[plan.from, plan.start], [plan.to, plan.goal]], 'mb-rule');
+          const gl = c.add('text', { x: c.X(plan.to) - 4, y: c.Y(plan.goal) + 16, 'text-anchor': 'end' }, 'mb-lab');
+          gl.textContent = plan.goal.toFixed(1);
+        }
+        if (line.length > 1) { c.area(line); c.line(line); } else if (line.length) c.dots(line);
+        if (line.length) c.end(line[line.length - 1], last.toFixed(1));
+        c.scrub(line, {
+          onMove: p => { const s = subOf(); if (!s) return; if (kept == null) kept = s.textContent;
+            s.textContent = weightSaid(pts, p[1], p[0]) + (plan && p[0] >= plan.from && p[0] <= plan.to ? ' · plan ' + planAt(plan, p[0]).toFixed(1) : ''); },
+          onLeave: () => { const s = subOf(); if (s && kept != null) s.textContent = kept; kept = null; },
+        });
       });
-
-      const c = Chart.make({ w: 320, h: 132 });
-      c.xTime(pts[0].d, pts[pts.length - 1].d);
-      c.yFit(pts.map(p => p.v));
-      c.grid();
-      c.timeAxis();
-      c.dots(pts.map(p => [p.d, p.v, p.d + ' \u00b7 ' + p.v.toFixed(1)]), 'mb-dot', 1.8);
-      c.line(avg.map((v, i) => [pts[i].d, v]));
-
-      const svg = el('div', 'fits');
-      svg.appendChild(c.el);
-      body.appendChild(svg);
-
-      /* ── what the two numbers are for ──
-         The dots are every time you stood on the scale and they jump around
-         for reasons that are not fat. The LINE is the seven-day average, which
-         is the only one of the two you can act on, so the big number is that
-         and not today's reading.
-
-         Beside it, how far the average has actually moved. It used to say
-         "over 91 readings", which is not a length of time anybody thinks in -
-         it is the count of times he weighed himself. Days, and the days are
-         the ones on the chart. */
-      const st = el('div', 'stats');
-      const first = avg[0], last = avg[avg.length - 1], move = last - first;
-      /* `span` is taken in this scope by the chart's y-range. */
-      const overDays = Day.diff(pts[pts.length - 1].d, pts[0].d) + 1;
-      st.appendChild(el('div', 'stat acc', '<b>' + last.toFixed(1) + '</b><span>7 DAY AVG</span>'));
-      st.appendChild(el('div', 'stat', '<b>' + (move >= 0 ? '+' : '') + move.toFixed(1) +
-        '</b><span>IN ' + overDays + ' DAYS</span>'));
-      body.appendChild(st);
     },
   },
 
   protein: {
-    nm: 'PROTEIN', w: 3, h: 2,
+    nm: 'PROTEIN', w: 3, h: 2, app: 'status',
     sub: () => {
       const t = statusTargets();
       return t.p ? 'target ' + Math.round(t.p) + 'g' : 'no target set';
@@ -1466,7 +1727,7 @@ const WIDGETS = {
   },
 
   calories: {
-    nm: 'CALORIES', w: 3, h: 2,
+    nm: 'CALORIES', w: 3, h: 2, app: 'status',
     sub: () => {
       const t = statusTargets();
       return t.kcal ? 'target ' + Math.round(t.kcal) : 'no target set';
@@ -1475,8 +1736,9 @@ const WIDGETS = {
   },
 
   sleep: {
-    nm: 'SLEEP', w: 4, h: 2,
-    sub: () => 'last 7 nights',
+    nm: 'SLEEP', w: 4, h: 2, app: 'status',
+    /* the answer, in the widget's own line: the average night and nights on target */
+    sub: () => sleepSaid(),
     draw(body) {
       const f = Rec.map('field').sleep;
       const target = f && f.target ? Number(f.target) : 0;
@@ -1487,36 +1749,35 @@ const WIDGETS = {
       }
       if (!days.some(x => x.v != null)) {
         body.appendChild(el('div', 'empty',
-          'No sleep logged. It is one of the five things the rank is built on.'));
+          'No sleep logged'));
         return;
       }
-      const max = Math.max(target || 0, ...days.map(x => x.v || 0)) || 1;
-      const wrap = el('div');
-      wrap.style.cssText = 'display:flex;align-items:flex-end;gap:6px;height:70px;padding-top:4px';
-      days.forEach(x => {
-        const col = el('div');
-        col.style.cssText = 'flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%';
-        const bar = el('div');
-        const hit = target && x.v != null && x.v >= target;
-        bar.style.cssText = 'width:100%;border-radius:3px;min-height:3px;background:' +
-          (x.v == null ? 'var(--panel2)' : hit ? 'var(--acc)' : 'var(--dim2)') +
-          ';height:' + Math.round(((x.v || 0) / max) * 100) + '%';
-        bar.title = x.d + (x.v == null ? ' · nothing logged' : ' · ' + x.v + ' hrs');
-        col.appendChild(bar); wrap.appendChild(col);
-      });
-      body.appendChild(wrap);
+      /* On shared/chart.js: the week's average on top, a bar a night with the
+         nights that met the target lit, the target as a line, and a drag to
+         read any night. */
       const got = days.filter(x => x.v != null);
-      const mean = got.length ? got.reduce((a, x) => a + x.v, 0) / got.length : 0;
-      const st = el('div', 'stats');
-      st.appendChild(el('div', 'stat acc', '<b>' + mean.toFixed(1) + '</b><span>AVERAGE HRS</span>'));
-      if (target) st.appendChild(el('div', 'stat',
-        '<b>' + got.filter(x => x.v >= target).length + '/' + got.length + '</b><span>ON TARGET</span>'));
-      body.appendChild(st);
+      const subOf = () => { const w = body.closest('.w'); return w && w.querySelector('.w-head .sub'); };
+      let kept = null;
+      const box = el('div', 'fits');
+      body.appendChild(box);
+      const bars = days.map((x, i) => [i, x.v, Day.label(x.d) + (x.v == null ? ', nothing logged' : ', ' + x.v + ' hrs')]);
+      Chart.mount(box, { label: 'Sleep, the last 7 nights' }, c => {
+        c.xLinear(-0.5, 6.5);
+        c.yFit(got.map(x => x.v).concat(target ? [target] : []), { min: 0 });
+        c.grid();
+        c.labels(days.map((x, i) => [i, DLET[new Date(x.d + 'T12:00:00').getDay()], i === 6]));
+        c.bars(bars, null, null, { highlight: target ? (p => p[1] != null && p[1] >= target) : 'last' });
+        if (target) c.rule(target);
+        c.scrub(bars.filter(b => b[1] != null), {
+          onMove: p => { const s = subOf(); if (!s) return; if (kept == null) kept = s.textContent; s.textContent = Number(p[1]).toFixed(1) + ' hrs, ' + Day.label(days[p[0]].d); },
+          onLeave: () => { const s = subOf(); if (s && kept != null) s.textContent = kept; kept = null; },
+        });
+      });
     },
   },
 
   spend: {
-    nm: 'SPEND', w: 4, h: 3,
+    nm: 'SPEND', w: 4, h: 3, app: 'status',
     sub: () => 'this week against last',
     draw(body) {
       const week = start => {
@@ -1536,31 +1797,16 @@ const WIDGETS = {
         body.appendChild(el('div', 'empty', 'Nothing spent in the last two weeks.'));
         return;
       }
+      /* On shared/chart.js: this week's total and how it compares on top, in
+         words, and where it went ranked underneath, each bar against the
+         biggest. */
       const diff = now.total - prev.total;
-      const st = el('div', 'stats');
-      st.appendChild(el('div', 'stat acc', '<b>' + Math.round(now.total).toLocaleString() + '</b><span>THIS WEEK</span>'));
-      st.appendChild(el('div', 'stat', '<b>' + Math.round(prev.total).toLocaleString() + '</b><span>LAST WEEK</span>'));
-      st.appendChild(el('div', 'stat', '<b>' + (diff >= 0 ? '+' : '') + Math.round(diff).toLocaleString() +
-        '</b><span>DIFFERENCE</span>'));
-      body.appendChild(st);
-
+      body.appendChild(Chart.header({ size: 'sm', value: Math.round(now.total).toLocaleString(), unit: 'this week',
+        sub: Math.abs(diff) < 1 ? 'the same as last week'
+          : Math.round(Math.abs(diff)).toLocaleString() + (diff > 0 ? ' more' : ' less') + ' than last week' }).el);
       const accts = Rec.map('acct');
-      const rows = Object.keys(now.by).sort((a, b) => now.by[b] - now.by[a]).slice(0, 5);
-      if (!rows.length) return;
-      const max = now.by[rows[0]] || 1;
-      const list = el('div', 'rowlist');
-      rows.forEach(k => {
-        const r = el('div', 'row');
-        const pct = Math.round((now.by[k] / max) * 100);
-        r.innerHTML = '<span class="n">' + esc(accts[k] ? accts[k].name : k) + '</span>' +
-          '<span class="d">' + Math.round(now.by[k]).toLocaleString() + '</span>';
-        const bar = el('div', 'bar');
-        bar.style.width = Math.max(2, pct) + '%';
-        bar.style.cssText += ';top:auto;bottom:2px;height:2px;opacity:.5';
-        r.appendChild(bar);
-        list.appendChild(r);
-      });
-      body.appendChild(list);
+      const rows = Object.keys(now.by).map(k => ({ name: accts[k] ? accts[k].name : k, amt: now.by[k] }));
+      if (rows.length) body.appendChild(Chart.shares(rows, { max: 5, total: now.total }));
     },
   },
 
@@ -1570,7 +1816,7 @@ const WIDGETS = {
      a todo and what you want from an idea are different questions. */
 
   todo: {
-    nm: 'TODO', w: 4, h: 4,
+    nm: 'TODO', w: 4, h: 4, app: 'quest',
     sub: () => {
       const n = openTodos().length;
       return n ? n + ' open' : 'nothing open';
@@ -1584,15 +1830,13 @@ const WIDGETS = {
       const wrap = el('div', 'rowlist');
       list.slice(0, 12).forEach(x => {
         const r = el('div', 'row');
-        const age = daysBetween(x.date, LifeOS.day());
+        const age = todoFrom(x) ? daysBetween(todoFrom(x), LifeOS.day()) : 0;
         r.innerHTML =
           '<span class="n">' + esc(x.payload.text || '') + '</span>' +
           (age > 0 ? '<span class="d">' + age + 'd</span>' : '');
-        const ck = el('button', 'chk', '✓');
-        ck.onclick = () => {
-          Rec.set('note', x.date, x.key, Object.assign({}, x.payload, { done: 1 }));
-          drawHome();
-        };
+        const ck = el('button', 'chk', (typeof Icons !== 'undefined' && Icons.svg('done', { size: 14 })) || '✓');
+        ck.setAttribute('aria-label', 'Tick it off');
+        ck.onclick = () => { tickTodo(x); drawHome(); };
         r.insertBefore(ck, r.firstChild);
         wrap.appendChild(r);
       });
@@ -1601,13 +1845,13 @@ const WIDGETS = {
   },
 
   ideas: {
-    nm: 'IDEAS', w: 4, h: 3,
+    nm: 'IDEAS', w: 4, h: 3, app: 'status',
     sub: () => notesOfKind('idea').length + ' kept',
     draw(body) { bulletList(body, 'idea', 'No ideas yet. They are the <b>!</b> lines in STATUS.'); },
   },
 
   events: {
-    nm: 'EVENTS', w: 4, h: 3,
+    nm: 'EVENTS', w: 4, h: 3, app: 'status',
     sub: () => 'what happened',
     draw(body) { bulletList(body, 'event', 'Nothing logged. They are the <b>–</b> lines in STATUS.'); },
   },
@@ -1634,7 +1878,7 @@ const WIDGETS = {
         .map(id => ({ name: (acts[id] && acts[id].name) || id, n: tickStreak(id) }))
         .filter(x => x.n > 0).sort((a, b) => b.n - a.n);
       if (!runs.length) {
-        body.appendChild(el('div', 'empty', 'No streak running. One tick starts one.'));
+        body.appendChild(el('div', 'empty', 'No streak data'));
         return;
       }
       runs.slice(0, 8).forEach(x => {
@@ -1797,8 +2041,9 @@ const WIDGETS = {
     draw(body) {
       const tiles = el('div', 'tiles');
       APPS.filter(a => a.file).forEach(a => {
-        const b = el('button', 'tile' + (missing[a.id] ? ' missing' : ''));
-        b.innerHTML = '<span class="ic">' + appIco(a, 18) + '</span><span class="nm">' + a.nm + '</span><span class="ds">' +
+        const b = el('button', 'tile mb-plate' + (missing[a.id] ? ' missing' : ''));
+        if (appTint(a)) b.style.setProperty('--c', appTint(a));
+        b.innerHTML = '<span class="ic">' + appIco(a, 22) + '</span><span class="nm">' + a.nm + '</span><span class="ds">' +
           (missing[a.id] ? '<span style="color:var(--bad)">' + esc(a.file) + ' not found</span>' : esc(a.ds)) + '</span>';
         b.onclick = () => missing[a.id] ? toast('<b>' + esc(a.file) + '</b> is missing') : go(a.id);
         tiles.appendChild(b);
@@ -1885,6 +2130,8 @@ function widgetMenu(i, x, y) {
     W.days ? { label: 'Show', sub: W.days.map(d => ({
         label: d[1], check: (cfg.days || 90) === d[0],
         fn: () => { cfg.days = d[0]; saveLayout(); drawHome(); } })) } : null,
+    /* a widget with choices of its own puts them here, the same menu */
+    ...(W.menu ? W.menu(cfg, () => { saveLayout(); drawHome(); }) : []),
     '-',
     { label: 'Add another widget', icon: '+', fn: widgetPicker },
     { label: 'Remove', icon: '\u2715', kind: 'bad', fn: () => {
@@ -1901,9 +2148,14 @@ function drawHome() {
   document.body.classList.toggle('editing', editing);
   layout.forEach((cfg, i) => {
     const W = WIDGETS[cfg.t]; if (!W) return;
-    const n = el('div', 'w');
+    const n = el('div', 'w mb-card');
     n.style.setProperty('--cw', cfg.w); n.style.setProperty('--ch', cfg.h);
     n.dataset.i = i;
+    /* the widget wears the colour of the app it draws for, which is what
+       ties a card to an app without a label; a widget with no app wears the
+       accent, which is what the material layer does with no --c */
+    const tint = W.app ? appTint(app(W.app)) : '';
+    if (tint) n.style.setProperty('--c', tint);
 
     const head = el('div', 'w-head');
     const title = W.title ? W.title() : '';
@@ -1948,6 +2200,10 @@ function drawHome() {
 
     const body = el('div', 'w-body');
     try { W.draw(body, cfg); } catch (e) { body.appendChild(el('div', 'empty', 'widget error: ' + esc(e.message))); }
+    /* the rows inside are the plates, in their own colour or the widget's.
+       Only the card-shaped rows: a ruled list line (.hrow, .logline) is a
+       line, and a plate on it would be a border on a border. */
+    body.querySelectorAll('.row').forEach(r => r.classList.add('mb-plate'));
     n.appendChild(body);
 
     /* Right click with a mouse, hold with a thumb, same menu either way. */
@@ -2050,6 +2306,13 @@ function widgetPicker() {
       (n ? 'already on the home screen — add another' : 'not on the home screen') + '</span></span>';
     b.onclick = () => { layout.push({ t: k, w: W.w, h: W.h }); saveLayout(); closeModal(); drawHome(); toast('<b>' + esc(W.nm) + '</b> added'); };
     mo.appendChild(b);
+    /* a widget may offer ready-made versions of itself */
+    (W.presets || []).forEach(ps => {
+      const pb = el('button', 'opt');
+      pb.innerHTML = '<span class="ic">▤</span><span class="t"><b>' + esc(ps.nm) + '</b><span>' + esc(ps.note || '') + '</span></span>';
+      pb.onclick = () => { layout.push(Object.assign({ t: k, w: W.w, h: W.h }, ps.cfg)); saveLayout(); closeModal(); drawHome(); toast('<b>' + esc(ps.nm) + '</b> added'); };
+      mo.appendChild(pb);
+    });
   });
   mo.appendChild(el('div', 'mgroup', 'LAYOUT'));
   if (!FINE) {
@@ -2301,7 +2564,7 @@ function copyMirrorScript() {
 /* the sheet's half of the DATA panel */
 function mirrorSection(mo) {
   const cfg = IO.mirror.adopt('lifeos');
-  mo.appendChild(el('div', 'mgroup', 'GOOGLE SHEET — THE OTHER PLACE YOU CAN EDIT'));
+  mo.appendChild(el('div', 'mgroup', 'SYNC'));
   mo.appendChild(el('div', 'lede',
     'One sheet you own, holding a copy of every app, and what you type in it comes back. ' +
     'This is where mass edits belong: a real keyboard and forty rows at a time. ' +
@@ -2335,6 +2598,51 @@ function mirrorSection(mo) {
   });
 }
 
+/* ══════════════ bringing in an old spreadsheet ══════════════
+   shared/import.js reads it; this asks which parts to bring in. Nothing is
+   written until BRING IN, and the undo takes back exactly what came in. */
+function importSheet(file) {
+  if (typeof Import === 'undefined') return toast('<b>import.js</b> is missing', { bad: true });
+  toast('Reading <b>' + esc(file.name) + '</b>');
+  Import.read(file).then(sheets => {
+    const p = Import.plan(sheets);
+    const unit = ((Rec.map('field').weight || {}).unit) || '';
+    const kinds = [
+      ['weights', 'Weigh-ins', unit ? 'Read as ' + unit : ''],
+      ['ticks', 'Daily ticks', ''],
+      ['foods', 'Foods', ''],
+      ['spends', 'Spending', 'Money out only'],
+    ];
+    const pick = {};
+    UI.dialog({
+      title: 'BRING IN A SPREADSHEET', width: 520,
+      body: b => {
+        b.appendChild(el('p', null, esc(file.name)));
+        kinds.forEach(([k, label, extra]) => {
+          const n = p[k].length, kept = p.kept[k];
+          pick[k] = n > 0;
+          const note = (n ? n.toLocaleString() + ' new' + (p.span[k] ? ', ' + p.span[k] : '') : (kept ? 'All already here' : 'None found')) +
+            (n && kept ? '. ' + kept.toLocaleString() + ' already here, left alone' : '') + (extra && n ? '. ' + extra : '');
+          const t = UI.toggle(pick[k], on => { pick[k] = on; });
+          if (!n) t.disabled = true;
+          b.appendChild(UI.row(label, esc(note), t));
+        });
+        if (p.odd) b.appendChild(el('p', null, esc(p.odd.toLocaleString() + ' dated years away from the rest of their sheet, left out.')));
+        if (p.skipped.length) b.appendChild(el('p', null, 'Not read: ' + esc(p.skipped.join(', '))));
+      },
+      actions: [
+        { label: 'CANCEL' },
+        { label: 'BRING IN', kind: 'go', fn: () => {
+          const done = Import.apply(p, pick);
+          if (!done.total) { toast('Nothing brought in'); return; }
+          drawHome();
+          UI.undo('<b>' + done.total.toLocaleString() + '</b> rows brought in', () => { done.undo(); drawHome(); });
+        } },
+      ],
+    });
+  }, e => toast(esc((e && e.message) || 'Could not read that file'), { bad: true }));
+}
+
 function dataPanel() {
   const mo = $('#modal'); mo.innerHTML = '';
   const n = daysSinceBackup();
@@ -2344,10 +2652,11 @@ function dataPanel() {
     (n === null ? '' :
      n === 0 ? 'Last backup: <b>today</b>.' : 'Last backup: <b>' + n + ' day' + (n === 1 ? '' : 's') + ' ago</b>.')));
 
-  mo.appendChild(el('div', 'mgroup', 'SAFETY NET'));
+  /* Export, import, sync, in that order, like every app's DATA tab. Tom,
+     2026-09-15: "simply the data screen. Export, import, Sync". */
+  mo.appendChild(el('div', 'mgroup', 'EXPORT'));
   const opts = [
     ['⭳', 'Back up everything', 'One JSON file: your ticks, routines and every app’s own storage. This is the one that can be restored.', backupAll],
-    ['⭱', 'Restore from a backup', 'Replaces everything on this device with the contents of a backup file.', () => $('#fileIn').click()],
   ];
   opts.forEach(([ic, t, d, fn]) => {
     const b = el('button', 'opt');
@@ -2355,9 +2664,6 @@ function dataPanel() {
     b.onclick = fn; mo.appendChild(b);
   });
 
-  mirrorSection(mo);
-
-  mo.appendChild(el('div', 'mgroup', 'EXPORTS — READABLE, NOT RESTORABLE'));
   [
     ['▤', 'Tick log as CSV', 'Every tick ever: date, activity, when and which app. Opens in a spreadsheet.', exportLogCSV],
     ['◇', 'Activities as CSV', 'The shared vocabulary — everything the apps know how to do.', exportActivitiesCSV],
@@ -2368,10 +2674,25 @@ function dataPanel() {
     b.onclick = fn; mo.appendChild(b);
   });
 
+  mo.appendChild(el('div', 'mgroup', 'IMPORT'));
+  const rs = el('button', 'opt');
+  rs.innerHTML = '<span class="ic">⭱</span><span class="t"><b>Restore from a backup</b><span>Replaces everything on this device with the contents of a backup file.</span></span>';
+  rs.onclick = () => $('#fileIn').click();
+  mo.appendChild(rs);
+  const im = el('button', 'opt');
+  im.innerHTML = '<span class="ic">▦</span><span class="t"><b>Bring in an old spreadsheet</b><span>Weigh-ins, daily ticks, foods and spending from a workbook.</span></span>';
+  im.onclick = () => $('#xlsxIn').click();
+  mo.appendChild(im);
+
+  mirrorSection(mo);
+
   mo.appendChild(el('div', 'mgroup', 'DANGER'));
   const w = el('button', 'opt danger');
   w.innerHTML = '<span class="ic">⌫</span><span class="t"><b>Delete everything on this device</b><span>Every app’s data, gone. Back up first.</span></span>';
   w.onclick = wipeAll; mo.appendChild(w);
+  /* which version of the home screen this is; every app says the same in its settings */
+  const ver = UI.version();
+  if (ver) mo.appendChild(el('div', 'lede', 'MAIN MENU ' + ver.v + (ver.dateText ? ', updated ' + ver.dateText : '')));
   openModal();
 }
 
@@ -2407,6 +2728,7 @@ function clock() {
 $('#btnData').onclick = dataPanel;
 $('#btnWidget').onclick = widgetPicker;
 $('#fileIn').onchange = e => { if (e.target.files[0]) restore(e.target.files[0]); e.target.value = ''; };
+$('#xlsxIn').onchange = e => { if (e.target.files[0]) importSheet(e.target.files[0]); e.target.value = ''; };
 window.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea,[contenteditable]')) return;
   /* ui.js closes its own sheet on Escape, so by the time this runs there is

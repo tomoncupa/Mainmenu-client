@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="90a8fdfb">
+<html lang="en" data-built="105533b9">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mb-version" content="1.0.4, 2026-09-15">
 <title>BLOCK — routine scheduler</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='28' y='20' width='17' height='20' rx='5' fill='%237EE8FA'/><rect x='55' y='20' width='17' height='20' rx='5' fill='%237EE8FA'/><rect x='16' y='34' width='68' height='46' rx='9' fill='%237EE8FA'/></svg>">
 <!-- No font link. skins.js fetches the face the chosen theme asks for and
@@ -214,6 +215,25 @@ main{display:flex;flex:1;min-height:0}
 }
 .lane-row input[type=time]:focus{border-color:var(--acc-d)}
 .lane-row .end{font-family:var(--f1);color:var(--txt)}
+/* The start time. UI.timeField draws a box and an AM/PM button at the shared
+   size; here they are one small box, the size the time input always was.
+   Tom, 2026-09-15: "the old block size was perfect. Also the new button
+   doesnt match the look." BLOCK is desktop only, so the 44px a thumb needs
+   is not needed here. */
+.lane-row .mb-timefield{flex:none;gap:0;align-items:stretch}
+.lane-row .mb-timefield input.mb-input{
+  width:4.2em;min-width:0;min-height:0;height:auto;margin:0;box-shadow:none;
+  background:var(--surface-1);border:1px solid var(--line);border-right:0;border-radius:5px 0 0 5px;
+  padding:2px 2px 2px 5px;font-family:var(--f1);font-size:11.5px;color:var(--acc);outline:none;
+}
+.lane-row .mb-timefield .mb-ampm{
+  min-width:0;min-height:0;margin:0;padding:2px 5px 2px 2px;
+  background:var(--surface-1);border:1px solid var(--line);border-left:0;border-radius:0 5px 5px 0;
+  font-family:var(--f1);font-size:11.5px;letter-spacing:0;color:var(--acc);
+}
+.lane-row .mb-timefield .mb-ampm:hover{color:var(--txt)}
+.lane-row .mb-timefield:focus-within input.mb-input,
+.lane-row .mb-timefield:focus-within .mb-ampm{border-color:var(--acc-d)}
 /* Sizes here were 10.5px type, a 5px gap, 1px/5px padding and a 4px radius:
    four values, none of them on any scale, chosen one at a time. On the scale
    the type is a step larger, which is why deleting a row mattered more than
@@ -402,8 +422,52 @@ main{display:flex;flex:1;min-height:0}
 /* ---------- week ---------- */
 #week{flex:1;overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:10px;align-content:start}
 .weekbar{grid-column:1/-1;display:flex;align-items:center;gap:7px;margin-bottom:2px}
-#pri,#sum{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:14px;max-width:920px}
-#pri.hide,#sum.hide{display:none}
+#pri,#sum,#every,#anytime{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:14px;max-width:920px}
+#pri.hide,#sum.hide,#every.hide,#anytime.hide{display:none}
+/* ---------- every and anytime ---------- */
+.views .vbadge{margin-left:var(--s-1);color:var(--warn);font-size:var(--f-1)}
+.rhadd{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;padding:var(--s-3);
+  border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel)}
+.rhadd .rhname{flex:1 1 220px;min-width:0}
+.rhadd input[type=number]{width:4.5em}
+.rhword{color:var(--text-muted);font-size:var(--f-1)}
+.rhsec{display:flex;flex-direction:column;gap:var(--s-1)}
+.rhsec .sumh{margin-bottom:var(--s-1)}
+.rhrow{display:flex;align-items:center;gap:var(--s-3);min-height:var(--tap);padding:0 var(--s-2);
+  border:1px solid var(--line);border-left:3px solid var(--c);border-radius:var(--radius-sm);background:var(--panel)}
+.rhrow:hover{background:var(--panel2)}
+.rhn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rhm,.rhs{color:var(--text-muted);font-size:var(--f-1);white-space:nowrap}
+.rhs.owed{color:var(--warn)}
+.rhs.due{color:var(--acc)}
+.rhrow.isdone .rhn,.rhrow.met .rhn{color:var(--text-muted)}
+.rhck{flex:0 0 auto;width:var(--tap);height:var(--tap);display:flex;align-items:center;justify-content:center;
+  background:none;border:0;cursor:pointer}
+.rhbox{width:var(--s-4);height:var(--s-4);border-radius:var(--radius-sm);border:1.5px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;color:var(--bg)}
+.rhmore{min-width:var(--tap);min-height:var(--tap);display:flex;align-items:center;justify-content:center}
+.rhck:hover .rhbox{border-color:var(--good)}
+.rhck.on .rhbox{background:var(--good);border-color:var(--good)}
+.rhdots{display:flex;gap:var(--s-1)}
+.rhdots i{width:var(--s-2);height:var(--s-2);border-radius:50%;border:1px solid var(--line2)}
+.rhdots i.on{background:var(--good);border-color:var(--good)}
+/* the Day's column for Every and Anytime: not a routine, so dashed and not draggable */
+.alsoday{flex:0 0 264px;align-self:flex-start;display:flex;flex-direction:column;gap:var(--s-1);
+  padding:var(--s-2);border:1px dashed var(--line);border-radius:var(--radius-sm);background:var(--panel)}
+.also-head{display:flex;flex-direction:column;padding:var(--s-1) var(--s-2) var(--s-2)}
+.also-head b{font-family:var(--f1);letter-spacing:.05em}
+.also-head span{color:var(--text-muted);font-size:var(--f-1)}
+.also-row{display:flex;align-items:center;gap:var(--s-1);min-height:var(--tap);padding-right:var(--s-2);
+  border-left:3px solid var(--c);border-radius:var(--radius-sm);background:var(--surface-1)}
+.also-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.also-txt .rhs{overflow:hidden;text-overflow:ellipsis}
+.also-row.isdone .rhn{color:var(--text-muted)}
+/* export, for someone else: one tickable line per thing to hand over */
+.shr{display:flex;align-items:center;gap:var(--s-2);min-height:var(--tap);padding:0 var(--s-2);margin-bottom:var(--s-1);
+  border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel);cursor:pointer}
+.shr input{width:auto;flex:0 0 auto}
+.shr span{margin-left:auto;color:var(--text-muted);font-size:var(--f-1)}
+#shWho{flex:1;min-width:0}
 .sumcards{display:flex;gap:10px;flex-wrap:wrap}
 .freshrow{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;
   margin-top:var(--s-4)}
@@ -601,18 +665,20 @@ footer .sp{flex:1}
 <!-- The touch layer. One line, and this app gets safe areas, real tap
      targets, no zoom-on-focus, contained overscroll, keyboard handling
      and the back gesture closing what is open. -->
-<script src="../shared/skins.js?v=90a8fdfb"></script>
-<script src="../shared/icons.js?v=90a8fdfb"></script>
-<script src="../shared/mobile.js?v=90a8fdfb"></script>
-<script src="../shared/ui.js?v=90a8fdfb"></script>
+<script src="../shared/skins.js?v=105533b9"></script>
+<script src="../shared/icons.js?v=105533b9"></script>
+<script src="../shared/mobile.js?v=105533b9"></script>
+<script src="../shared/ui.js?v=105533b9"></script>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="logo">BLO<b>CK</b></div>
+    <div class="logo"><span>BLO<b>CK</b></span></div>
     <div class="views">
       <button id="vDay" class="on" data-tip="<b>Day</b> — build one routine out of blocks">Day</button>
       <button id="vWeek" data-tip="<b>Week</b> — which <b>day</b> runs on which weekday">Week</button>
+      <button id="vEvery" data-tip="<b>Every</b>: blocks that come round every few days, weeks or months">Every</button>
+      <button id="vAny" data-tip="<b>Anytime</b>: habits done a few times a week, on any day">Anytime</button>
       <button id="vSum" data-tip="<b>Summary</b> — what actually gets done, and what to do about it">Summary</button>
     </div>
     <div id="datebar"></div>
@@ -671,6 +737,8 @@ footer .sp{flex:1}
     <div id="board"></div>
     <div id="week" class="hide"></div>
     <div id="sum" class="hide"></div>
+    <div id="every" class="hide"></div>
+    <div id="anytime" class="hide"></div>
   </main>
 
   <footer>
@@ -688,7 +756,7 @@ footer .sp{flex:1}
 <div id="toast"></div>
 <div id="tip"></div>
 
-<script src="../shared/day.js?v=90a8fdfb"></script>
+<script src="../shared/day.js?v=105533b9"></script>
 <script>
 /* Per app, not per suite: BLOCK can wear Block while STATUS wears Ice.
 
@@ -708,8 +776,8 @@ Skins.load('../shared/skins.json').then(() => {
    different paths rather than a different colour. */
 if (window.Icons) Icons.paint();
 </script>
-<script src="../shared/records.js?v=90a8fdfb"></script>
-<script src="../shared/io.js?v=90a8fdfb"></script>
+<script src="../shared/records.js?v=105533b9"></script>
+<script src="../shared/io.js?v=105533b9"></script>
 <script>
 /* ══════════════════════════ LIFEOS KERNEL v2 ══════════════════════════
    Identical in every app that shares data — edit the copy in index.html and
@@ -842,7 +910,15 @@ window.LifeOS = (function () {
       else Rec.set('tick', d, actId, Object.assign({ src: '?' }, meta || {}));
       return wrote(doc);
     },
-    isDone: (actId, date) => Rec.has('tick', date || Day.today(), actId),
+    /* True or false, never nothing. Rec.has answers `undefined` for a row that
+       was never written, and three places here compared that against a box's
+       `false` with !==. pullDone called every block with no row "changed" and
+       wrote `undefined` onto it, which also meant a save and a full repaint on
+       every write anywhere in the store. toggleDone's storage check read the
+       same undefined as "the shared log refused the write" and switched the
+       shared log off. It stayed hidden while same-name blocks were skipped
+       wholesale, and surfaced the moment each routine's block got its own row. */
+    isDone: (actId, date) => !!Rec.has('tick', date || Day.today(), actId),
     dayLog: date => (doc.log[date || Day.today()] || {}),
 
     habit(h) { if (!h || !h.id) return Promise.resolve(doc); Rec.set('habit', null, h.id, Object.assign({ created: Day.today(), archived: false, cadence: { type: 'daily', days: [1, 1, 1, 1, 1, 1, 1], target: 7 } }, doc.habits[h.id], h)); return wrote(doc); },
@@ -955,13 +1031,14 @@ function isDoneOn(it, col, L) {
   const own = isDoneLogged(it, col, L);
   if (own !== null) return own;
   /* BLOCK has no page for that day, or the page predates this block. A tick
-     made in HABITS or on the home screen is still a tick, so fall back to the
-     shared log. Only where the name is unique in the day, because the shared
-     log is keyed by NAME and cannot tell a morning brush from a night one.
-     Wrapped because the shared log is allowed to be missing entirely. */
+     made in QUESTS or on the home screen is still a tick, so fall back to the
+     shared log, which files each block by name and routine. Not where the same
+     name sits twice in one routine: those two share a row and it cannot say
+     which one was done. Wrapped because the shared log is allowed to be
+     missing entirely. */
   try {
-    if (!LIFEOS_OK || !window.LifeOS || sameNameCount(it) > 1) return false;
-    return !!LifeOS.isDone(actIdOf(it), col.key);
+    if (!LIFEOS_OK || !window.LifeOS || twinsOf(it, L).length > 1) return false;
+    return !!LifeOS.isDone(actIdOf(it, L), col.key);
   } catch (x) { return false; }
 }
 function setDoneOn(it, col, scheduled, L) {
@@ -1013,13 +1090,12 @@ function setSkippedOn(it, col, L) {
     : '<b>' + esc(it.name) + '</b> not needed on ' + dateLabel(col.key) + ' — it will not count against you');
 }
 /* A tick belongs to the whole suite on the date it happened, not only to
-   BLOCK. Same rule as today's: report by name, and only flip it off once
-   EVERY block with that name is unticked, or un-ticking your evening brush
-   would erase the morning one. */
+   BLOCK. Same rule as today's: the row is this block in this routine, and it
+   only flips off once every twin sharing that row is unticked. */
 function shareTick(it, col) {
   try {
     if (!LIFEOS_OK || !window.LifeOS) return;
-    const twins = LANES().flatMap(L => items(L.id)).filter(x => x.name === it.name && !x.hidden);
+    const twins = twinsOf(it);
     LifeOS.done(actIdOf(it), col.key, twins.some(x => isDoneLogged(x, col, null) === true), { src: 'block' });
   } catch (e) {}
 }
@@ -1063,11 +1139,38 @@ document.addEventListener('mouseleave', () => tipBox.classList.remove('on'));
 /* ---------- context menus ---------- */
 function closeMenu() { clearTimeout(closeSub._t); document.querySelectorAll('.ctxmenu').forEach(m => m.remove()); }
 /** Submenus close on a delay: the pointer has to cross sibling rows to reach one,
- *  and each sibling asks for a close. Entering the submenu itself cancels that. */
-function closeSub(now) {
+ *  and each sibling asks for a close. Entering the submenu itself cancels that.
+ *  A flat delay was not enough. Going from Days down to Sunday is a slant across
+ *  six rows, and a hand that took longer than 320ms lost the submenu on the way.
+ *  Tom, 2026-09-14: "the right click menu vanishes... too fast". So while the
+ *  pointer is still moving towards the submenu, the close waits; it lands only
+ *  once the pointer rests on another row or heads somewhere else. `then` runs
+ *  after the close, which is how hovering another submenu row opens its own. */
+const aim = { at: null, from: null, moved: 0 };
+document.addEventListener('mousemove', e => { aim.at = [e.clientX, e.clientY]; aim.moved = performance.now(); }, { passive: true });
+function aimingAtSub() {
+  const s = document.querySelector('.ctxmenu.sub'), a = aim.from, b = aim.at;
+  if (!s || !a || !b) return false;
+  /* a hand on its way pauses for a moment; only a pause longer than that is a rest */
+  if (a[0] === b[0] && a[1] === b[1]) return performance.now() - aim.moved < 300;
+  const r = s.getBoundingClientRect();
+  const x = a[0] <= r.left ? r.left : a[0] >= r.right ? r.right : null;
+  if (x === null) return false;
+  /* inside the triangle from where the pointer was to the submenu's near edge */
+  const p = [x, r.top - 24], q = [x, r.bottom + 24];
+  const side = (u, v, w) => (v[0] - u[0]) * (w[1] - u[1]) - (v[1] - u[1]) * (w[0] - u[0]);
+  const d1 = side(a, p, b), d2 = side(p, q, b), d3 = side(q, a, b);
+  const inside = !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+  if (inside) aim.from = b;
+  return inside;
+}
+function closeSub(now, then) {
   clearTimeout(closeSub._t);
-  const kill = () => document.querySelectorAll('.ctxmenu.sub').forEach(m => m.remove());
-  if (now) kill(); else closeSub._t = setTimeout(kill, 320);
+  const kill = () => { document.querySelectorAll('.ctxmenu.sub').forEach(m => m.remove()); if (then) then(); };
+  if (now || !document.querySelector('.ctxmenu.sub')) return kill();
+  aim.from = aim.at;
+  const check = () => aimingAtSub() ? (closeSub._t = setTimeout(check, 120)) : kill();
+  closeSub._t = setTimeout(check, then ? 150 : 320);
 }
 function placeMenu(m, x, y) {
   m.style.left = clamp(x, 6, innerWidth - m.offsetWidth - 6) + 'px';
@@ -1097,13 +1200,17 @@ function buildMenu(m, list, gen) {
         s.onmouseenter = () => clearTimeout(closeSub._t);   /* reached it — call off the close */
         s.onmouseleave = () => closeSub();
         document.body.appendChild(s);
+        d._sub = s;
         const r = d.getBoundingClientRect();
         placeMenu(s, r.right + 3, r.top - 5);
       };
-      d.onmouseenter = () => { clearTimeout(closeSub._t); open(); };
+      /* back on the row whose submenu is open: keep it. Another row's: wait
+         until the pointer is not on its way into the open one */
+      d.onmouseenter = () => d._sub && d._sub.isConnected ? clearTimeout(closeSub._t) : closeSub(false, open);
       d.onclick = ev => { ev.stopPropagation(); open(); };   /* click works too, for touch + impatience */
     } else {
-      d.onmouseenter = () => closeSub();
+      /* a row inside a submenu must not close the submenu it sits in */
+      d.onmouseenter = () => { if (!m.classList.contains('sub')) closeSub(); };
       d.onclick = () => {
         /* multi-select rows (days, routines in a day) stay open and show the new tick,
            so you can set several without reopening the menu every time */
@@ -1378,7 +1485,7 @@ let S;
    meant BLOCK reopened days later still parked on some past Tuesday, showing
    a board that was not today and ticks that were not today's — the exact
    confusion this date bar exists to clear up. It opens on today, always. */
-const NOT_A_ROW = { lanes: 1, lib: 1, variants: 1, viewDate: 1 };
+const NOT_A_ROW = { lanes: 1, lib: 1, variants: 1, viewDate: 1, rhythms: 1 };
 
 /** S, taken apart. */
 function blockRows(st) {
@@ -1386,8 +1493,9 @@ function blockRows(st) {
      description be built for one BLOCK has not adopted — which is how the
      starter demo is recognised without having to load it first. */
   st = st || S;
-  const out = { lane: {}, routine: {}, item: {}, setting: {} };
+  const out = { lane: {}, routine: {}, item: {}, rhythm: {}, setting: {} };
   (st.lanes || []).forEach((l, i) => { out.lane[l.id] = Object.assign({}, l, { ord: i }); });
+  (st.rhythms || []).forEach((r, i) => { out.rhythm[r.id] = Object.assign({}, r, { ord: i }); });
   (st.lib || []).forEach((b, i) => { out.item['lib|' + b.id] = Object.assign({}, b, { ord: i, bin: 1 }); });
   (st.variants || []).forEach((v, i) => {
     const r = Object.assign({}, v, { ord: i });
@@ -1428,7 +1536,7 @@ function boardShape(st) {
    left out on purpose: the timezone and the volume are not the board. */
 function boardSig(st) {
   const rows = blockRows(st), out = [];
-  ['lane', 'routine', 'item'].forEach(t => {
+  ['lane', 'routine', 'item', 'rhythm'].forEach(t => {
     Object.keys(rows[t]).sort().forEach(k => out.push(t + '::' + k + '=' + JSON.stringify(rows[t][k])));
   });
   return out.join('|');
@@ -1464,6 +1572,9 @@ function blockState() {
   st.variants.forEach(v => Object.keys(v.items).forEach(l => v.items[l].sort(ord)));
   st.lanes.forEach(l => delete l.ord);
   st.lib.forEach(b => { delete b.ord; delete b.bin; });
+  const rh = Rec.map('rhythm');
+  st.rhythms = Object.keys(rh).map(id => Object.assign({ id: id }, rh[id])).sort(ord);
+  st.rhythms.forEach(r => { delete r.ord; });
   st.variants.forEach(v => {
     delete v.ord;
     Object.keys(v.items).forEach(l => v.items[l].forEach(it => {
@@ -1498,14 +1609,14 @@ let pendingAdopt = false;
 
 function rowSnap(now) {
   const snap = {};
-  ['lane', 'routine', 'item', 'setting'].forEach(type => {
+  ['lane', 'routine', 'item', 'rhythm', 'setting'].forEach(type => {
     Object.keys(now[type]).forEach(k => { snap[type + '::' + k] = JSON.stringify(now[type][k]); });
   });
   return snap;
 }
 function writeRows() {
   const now = blockRows(), was = lastRows || {}, snap = rowSnap(now);
-  ['lane', 'routine', 'item'].forEach(type => {
+  ['lane', 'routine', 'item', 'rhythm'].forEach(type => {
     const pre = type + '::';
     Object.keys(now[type]).forEach(k => {
       if (was[pre + k] !== snap[pre + k]) Rec.set(type, null, k, now[type][k]);
@@ -1534,7 +1645,7 @@ function writeRows() {
 /* BLOCK owns these three. Said before the first write, because it is what
    stamps each row with the app that wrote it and what makes the store warn if
    another app starts writing them. */
-Rec.declare('block', ['lane', 'item', 'routine']);
+Rec.declare('block', ['lane', 'item', 'routine', 'rhythm']);
 
 /* ── the demo is shown, not saved ──
 
@@ -1569,7 +1680,7 @@ if (!S.lanes || !S.variants) { S = seedState(); lastRows = null; showingDemo = t
    rebuild has to be normalised too, or a day loaded that way arrives with
    no items map and the first thing to touch it throws. */
 function normalise() {
-  S.templates = S.templates || []; S.rules = S.rules || []; S.week = S.week || [null, null, null, null, null, null, null];
+  S.templates = S.templates || []; S.rules = S.rules || []; S.week = S.week || [null, null, null, null, null, null, null]; S.rhythms = S.rhythms || [];
   S.view = S.view || 'day'; S.exportScope = S.exportScope || 'variant'; S.doneDate = S.doneDate || ''; if (S.weekStart == null) S.weekStart = 1; if (S.sound == null) S.sound = true; if (!S.soundTheme) S.soundTheme = 'marimba'; if (S.volume == null) S.volume = 0.6; if (!S.doneRoutines) S.doneRoutines = 'stay'; if (!S.weekMode) S.weekMode = 'time'; if (S.nowline == null) S.nowline = false; if (S.keepDone == null) S.keepDone = true;
   delete S.zoom;
   S.variants.forEach(v => S.lanes.forEach(l => { if (!v.items[l.id]) v.items[l.id] = []; }));
@@ -1677,7 +1788,7 @@ function saveQuiet() { if (showingDemo) return; save(); }
 
 const HIST = [];
 function snap() {
-  HIST.push(JSON.stringify({ lanes: S.lanes, variants: S.variants, current: S.current, lib: S.lib, templates: S.templates, rules: S.rules, week: S.week }));
+  HIST.push(JSON.stringify({ lanes: S.lanes, variants: S.variants, current: S.current, lib: S.lib, templates: S.templates, rules: S.rules, week: S.week, rhythms: S.rhythms }));
   if (HIST.length > 80) HIST.shift();
 }
 function undo() {
@@ -1872,6 +1983,14 @@ function todaysBlocks(vid) { return todaysPairs(vid).map(({ it }) => it); }
  */
 const tickKey = (it, L) => it.name + '||' + ((L && L.name) || '');
 const keyName = k => String(k).split('||')[0];
+/* The shared drawer's name for a tick, built from the same two things the key
+   above carries: the block's name and its routine. "Brush Teeth" in Morning
+   Routine is `brush-teeth.morning-routine`, and the evening one is a different
+   row. BLOCK's own page has always told them apart; the drawer now agrees with
+   it, so the two can never disagree about which brush this was. A key with no
+   routine — the oldest pages, from before routines were written down — stays
+   under the name alone, which is where it already is. */
+const idFromKey = k => { const p = String(k).split('||'); return p[1] ? LifeOS.slug(p[0]) + '.' + LifeOS.slug(p[1]) : LifeOS.slug(p[0]); };
 function laneOf(it) {
   for (const L of LANES()) if (items(L.id).some(x => x.id === it.id)) return L;
   for (const L of S.lanes) if (items(L.id).some(x => x.id === it.id)) return L;
@@ -1908,6 +2027,20 @@ function toggleSkip(it) {
 
 /** every block in the open day sharing this one's name — the reason ticks must not collapse */
 const sameNameCount = it => LANES().reduce((n, L) => n + items(L.id).filter(x => x.name === it.name && !x.hidden).length, 0);
+/* Blocks that are the SAME tick: they land on the same row in the drawer.
+   That is the same name in the same routine, and only that. The same name in
+   two routines is two things, set by Tom on 2026-09-14: "I can't imagine why
+   we need them to sync."
+
+   Judged by the row's id, not by comparing names. The id is slugged, so
+   "Brush teeth" and "Brush Teeth" in one routine share a row, and a guard that
+   compared the raw names called them strangers while the drawer called them
+   one. A tick on either then painted the other. The guard and the drawer have
+   to use the same idea of "same", or this is the stamp bug a third time. */
+function twinsOf(it, L) {
+  const id = actIdOf(it, L || laneOf(it));
+  return LANES().flatMap(M => items(M.id).filter(x => !x.hidden && actIdOf(x, M) === id));
+}
 function clearDone(vid) { withVariant(vid, () => LANES(vid).forEach(l => items(l.id).forEach(it => { it.done = false; it.skipped = false; }))); }
 /** new day → yesterday's ticks are gone, and today's come back from the LifeOS
     log (you may have ticked something in HABITS or on the home screen already) */
@@ -2008,10 +2141,14 @@ function toggleDone(it) {
   /* an explicit tick outranks a post-completion clear */
   if (S.cleared && S.cleared.date === todayKey() && window.LifeOS) delete S.cleared.ids[actIdOf(it)];
   /* the tick is not ours to keep — it goes in the shared day log, which is what
-     HABITS and the home screen read. Same block name = same tick, everywhere. */
-  /* report to the shared log by name, but only flip it off once EVERY block with that
-     name is unticked — otherwise un-ticking your evening brush would erase the morning one */
-  const twins = LANES().flatMap(L => items(L.id)).filter(x => x.name === it.name && !x.hidden);
+     QUESTS and the home screen read. The row is this block in this routine.
+
+     This used to find twins by NAME and write "any of them done". So with the
+     evening brush ticked, unticking the morning one wrote the morning row
+     straight back to true: the box emptied and the drawer kept the tick. Twins
+     are now only the same name in the same routine, which is the only case
+     where two boxes really do share one row. */
+  const twins = twinsOf(it);
   LifeOS.done(actIdOf(it), todayKey(), twins.some(x => x.done), { src: 'block' });
   /* if the shared log can't actually store it (private mode, blocked storage, quota),
      stop mirroring from it — otherwise pullDone would quietly un-tick everything */
@@ -2109,10 +2246,15 @@ function render() {
   $('#board').classList.toggle('hide', S.view !== 'day');
   $('#week').classList.toggle('hide', S.view !== 'week');
   $('#sum').classList.toggle('hide', S.view !== 'sum');
+  $('#every').classList.toggle('hide', S.view !== 'every');
+  $('#anytime').classList.toggle('hide', S.view !== 'anytime');
   $('#vDay').classList.toggle('on', S.view === 'day');
   $('#vWeek').classList.toggle('on', S.view === 'week');
+  $('#vEvery').classList.toggle('on', S.view === 'every');
+  $('#vAny').classList.toggle('on', S.view === 'anytime');
   $('#vSum').classList.toggle('on', S.view === 'sum');
-  $('#tabs').style.display = S.view === 'week' ? 'none' : '';
+  /* the day tabs belong to Day and Summary; Week, Every and Anytime are not about one day */
+  $('#tabs').style.display = (S.view === 'day' || S.view === 'sum') ? '' : 'none';
   $('#bNew').style.display = S.view === 'day' ? '' : 'none';
   /* The warning rides on the overflow, so a broken rule is still visible
      without the button that reports it taking up the bar. */
@@ -2134,8 +2276,9 @@ function render() {
   db.innerHTML = '';
   if (S.view === 'day') renderDateBar(db);
   renderTabs(); renderBin();
-  if (S.view === 'day') renderBoard(); else if (S.view === 'week') renderWeek(); else renderSum();
-  renderFoot(); saveQuiet();
+  if (S.view === 'day') renderBoard(); else if (S.view === 'week') renderWeek();
+  else if (S.view === 'every') renderEvery(); else if (S.view === 'anytime') renderAnytime(); else renderSum();
+  rhBadge(); renderFoot(); saveQuiet();
 }
 
 function renderTabs() {
@@ -2497,6 +2640,8 @@ function renderBoard() {
   const b = $('#board'); b.innerHTML = '';
   /* finished routines can stay put, slide to the end, or get out of the way entirely */
   const bcol = viewCol();
+  const also = alsoToday(bcol);
+  if (also) b.appendChild(also);
   const isDoneLane = L => { const a = items(L.id).filter(x => !x.hidden); return a.length > 0 && a.every(x => isDoneOn(x, bcol, L)); };
   let lanes = LANES();
   /* Getting out of the way is about DOING the day, so it only happens on
@@ -3537,6 +3682,309 @@ function renderWeek() {
 }
 
 
+/* ---------- every and anytime: the two rhythms beyond the week ----------
+   Tom, 2026-09-14. Everything else on this board repeats weekly: a day sits on
+   weekdays, and a routine or a block can be switched off on some of them. Two
+   things do not fit that. A deload, a monthly review or a haircut comes round
+   every so many days, weeks or months. Gym three times or reading four times
+   comes round a number of times a week, on no particular day and at no set
+   time. Each has its own tab rather than a place on the day, which is what he
+   asked for.
+
+   One row each, type `rhythm`. Never folded into the settings: the settings
+   are everything that is not a list, and a list saved as a setting is a blob.
+
+   What got done is not stored here. It is the shared tick log, filed under
+   the slug of the name with no routine on it, so a tick for the same name
+   from anywhere in the suite counts, and a Block of that name inside a
+   routine (filed as name.routine) is not mixed up with it.
+
+   Missed is OWED, Tom's call: an Every block keeps showing until it is done,
+   and the next one is counted from the day it was done, not the day it was
+   due. */
+const RH_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const RH_UNIT = { day: ['day', 'days'], week: ['week', 'weeks'], month: ['month', 'months'] };
+const rhythms = kind => (S.rhythms || (S.rhythms = [])).filter(r => r.kind === kind);
+const rhTick = r => (window.LifeOS ? LifeOS.slug(r.name) : null);
+const rhDate = k => { const d = new Date(k + 'T12:00:00'); return DSHORT[d.getDay()] + ' ' + d.getDate() + ' ' + RH_MON[d.getMonth()]; };
+const rhEvery = r => 'every ' + (r.n > 1 ? r.n + ' ' + RH_UNIT[r.unit][1] : RH_UNIT[r.unit][0]);
+const rhTimes = r => (r.times === 1 ? 'once' : r.times + ' times') + ' a week';
+
+/** A date moved on by n days, weeks or months. A month keeps its day where
+    the month has one and takes its last day where it does not, so the 31st
+    of January is followed by the 28th of February, not the 3rd of March. */
+function rhAdd(date, n, unit) {
+  if (unit === 'day') return Day.shift(date, n);
+  if (unit === 'week') return Day.shift(date, 7 * n);
+  const [y, m, d] = date.split('-').map(Number);
+  const first = new Date(y, m - 1 + n, 1, 12);
+  const last = new Date(first.getFullYear(), first.getMonth() + 1, 0, 12).getDate();
+  return first.getFullYear() + '-' + pad(first.getMonth() + 1) + '-' + pad(Math.min(d, last));
+}
+/** Every day each tick was made, by tick id, oldest first. Nothing in the future. */
+function rhLog() {
+  const m = {}, today = todayKey();
+  if (window.Rec) Rec.all('tick').forEach(t => { if (t.date && t.date <= today) (m[t.key] || (m[t.key] = [])).push(t.date); });
+  Object.keys(m).forEach(k => m[k].sort());
+  return m;
+}
+/** Where an Every block stands. Pure, so the self-test can hand it any dates. */
+function everyState(r, dates, today) {
+  const last = dates.length ? dates[dates.length - 1] : null;
+  if (last === today) return { st: 'done', last: last, next: rhAdd(today, r.n, r.unit) };
+  const due = last ? rhAdd(last, r.n, r.unit) : (r.from || today);
+  const late = Day.diff(today, due);
+  return { st: late > 0 ? 'owed' : late === 0 ? 'due' : 'later', last: last, due: due, late: late };
+}
+/** The first day of the week today sits in, by the "week starts on" setting.
+    Set to today, the week is the last seven days. */
+function rhWeekStart(today, start) {
+  if (start === 'today') return Day.shift(today, -6);
+  const dow = new Date(today + 'T12:00:00').getDay();
+  return Day.shift(today, -((dow - (start == null ? 1 : start) + 7) % 7));
+}
+function anytimeState(r, dates, today, start) {
+  const from = rhWeekStart(today, start);
+  const n = dates.filter(d => d >= from && d <= today).length;
+  return { n: n, of: r.times, met: n >= r.times, today: dates.indexOf(today) >= 0 };
+}
+
+function rhToggle(r, date, force) {
+  const id = rhTick(r);
+  if (!id) return toast('the shared tick log did not load, so this cannot be ticked');
+  date = date || todayKey();
+  const on = force != null ? force : !LifeOS.isDone(id, date);
+  LifeOS.done(id, date, on, { src: 'block' });
+  if (on && typeof beep === 'function') beep('done');
+  render();
+}
+
+function rhGroup(p, title, rows) {
+  if (!rows.length) return;
+  const sec = el('div', 'rhsec');
+  sec.appendChild(el('div', 'sumh', title));
+  rows.forEach(x => sec.appendChild(x));
+  p.appendChild(sec);
+}
+
+function rhRow(r, meta, status, cls) {
+  const row = el('div', 'rhrow' + (cls ? ' ' + cls : ''));
+  row.style.setProperty('--c', r.color || PAL[0]);
+  row.dataset.rh = r.id;
+  const ck = el('button', 'rhck' + (meta.done ? ' on' : ''));
+  ck.setAttribute('aria-label', meta.done ? 'Untick today' : 'Tick today');
+  ck.dataset.tip = meta.done ? 'Done today. Click to untick.' : 'Done it today';
+  const box = el('span', 'rhbox');
+  if (meta.done) { box.dataset.icon = 'done'; box.dataset.iconSize = '12'; }
+  ck.appendChild(box);
+  ck.onclick = e => { e.stopPropagation(); rhToggle(r); };
+  row.appendChild(ck);
+  row.appendChild(el('span', 'rhn', esc(r.name)));
+  if (meta.extra) row.appendChild(meta.extra);
+  row.appendChild(el('span', 'rhm', meta.how));
+  row.appendChild(el('span', 'rhs' + (meta.tone ? ' ' + meta.tone : ''), status));
+  const more = el('button', 'btn rhmore');
+  more.dataset.icon = 'more';
+  more.setAttribute('aria-label', 'More');
+  more.dataset.tip = 'Done on another day, change, rename, delete';
+  more.onclick = e => { e.stopPropagation(); const b = more.getBoundingClientRect(); rhMenu(r, b.left, b.bottom); };
+  row.appendChild(more);
+  row.oncontextmenu = e => { e.preventDefault(); rhMenu(r, e.clientX, e.clientY); };
+  return row;
+}
+
+function rhAddBar(kind) {
+  const f = el('div', 'rhadd');
+  const name = document.createElement('input');
+  name.type = 'text'; name.className = 'rhname'; name.autocomplete = 'off';
+  name.placeholder = kind === 'every' ? 'Deload week, monthly review, haircut…' : 'Gym, read, stretch…';
+  f.appendChild(name);
+  const num = (v, min, max) => { const i = document.createElement('input'); i.type = 'number'; i.min = min; if (max) i.max = max; i.value = v; i.className = 'rhnum'; return i; };
+  let n, unit, from, times;
+  if (kind === 'every') {
+    f.appendChild(el('span', 'rhword', 'every'));
+    n = num(2, 1); f.appendChild(n);
+    unit = document.createElement('select'); unit.className = 'rhunit';
+    ['day', 'week', 'month'].forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = RH_UNIT[u][1]; o.selected = u === 'week'; unit.appendChild(o); });
+    f.appendChild(unit);
+    f.appendChild(el('span', 'rhword', 'first due'));
+    from = document.createElement('input'); from.type = 'date'; from.value = todayKey(); from.className = 'rhfrom';
+    f.appendChild(from);
+  } else {
+    times = num(3, 1, 7); f.appendChild(times);
+    f.appendChild(el('span', 'rhword', 'times a week'));
+  }
+  const go = el('button', 'btn acc rhgo', 'Add');
+  const add = () => {
+    const nm = name.value.trim();
+    if (!nm) { name.focus(); return toast('give it a name first'); }
+    /* the ticks are filed by name, so two with one name would share them */
+    if ((S.rhythms || []).some(x => x.name.toLowerCase() === nm.toLowerCase())) return toast('<b>' + esc(nm) + '</b> is already on Every or Anytime');
+    const r = { id: uid(), kind: kind, name: nm, color: PAL[Math.floor(Math.random() * PAL.length)] };
+    if (kind === 'every') { r.n = Math.max(1, Math.round(+n.value || 1)); r.unit = unit.value; r.from = from.value || todayKey(); }
+    else r.times = clamp(Math.round(+times.value || 1), 1, 7);
+    snap(); rhythms(kind); S.rhythms.push(r); render();
+    const again = $('#' + kind + ' .rhname'); if (again) again.focus();
+  };
+  go.onclick = add;
+  f.addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+  f.appendChild(go);
+  return f;
+}
+
+function renderEvery() {
+  const p = $('#every'); p.innerHTML = '';
+  const bar = el('div', 'weekbar');
+  bar.appendChild(el('span', 'wbnote', 'Comes round every few days, weeks or months. Missed, it stays owed until it is done.'));
+  p.appendChild(bar);
+  p.appendChild(rhAddBar('every'));
+  const log = rhLog(), today = todayKey();
+  const list = rhythms('every').map(r => ({ r: r, s: everyState(r, log[rhTick(r)] || [], today) }));
+  if (!list.length) { p.appendChild(el('div', 'hint', 'Nothing here yet. Name one above and say how often it comes round.')); return; }
+  const how = x => rhEvery(x.r) + (x.s.last ? ', last done ' + rhDate(x.s.last) : ', not done yet');
+  const by = st => list.filter(x => x.s.st === st);
+  rhGroup(p, 'Owed', by('owed').sort((a, b) => b.s.late - a.s.late)
+    .map(x => rhRow(x.r, { how: how(x), tone: 'owed' }, 'owed since ' + rhDate(x.s.due))));
+  rhGroup(p, 'Due today', by('due').map(x => rhRow(x.r, { how: how(x), tone: 'due' }, 'due today')));
+  rhGroup(p, 'Done today', by('done').map(x => rhRow(x.r, { how: rhEvery(x.r), done: true }, 'next ' + rhDate(x.s.next), 'isdone')));
+  rhGroup(p, 'Coming up', by('later').sort((a, b) => (a.s.due < b.s.due ? -1 : 1))
+    .map(x => rhRow(x.r, { how: how(x) }, rhDate(x.s.due) + (x.s.late === -1 ? ', tomorrow' : ', in ' + (-x.s.late) + ' days'))));
+}
+
+function renderAnytime() {
+  const p = $('#anytime'); p.innerHTML = '';
+  const today = todayKey(), start = S.weekStart, from = rhWeekStart(today, start);
+  const bar = el('div', 'weekbar');
+  bar.appendChild(el('span', 'wbnote', 'Done a few times a week, on any day. ' +
+    (start === 'today' ? 'Counting the last seven days.' : 'This week is ' + rhDate(from) + ' to ' + rhDate(Day.shift(from, 6)) + '.')));
+  p.appendChild(bar);
+  p.appendChild(rhAddBar('anytime'));
+  const log = rhLog();
+  const list = rhythms('anytime').map(r => ({ r: r, s: anytimeState(r, log[rhTick(r)] || [], today, start) }));
+  if (!list.length) { p.appendChild(el('div', 'hint', 'Nothing here yet. Name one above and say how many times a week.')); return; }
+  const dots = s => { const d = el('span', 'rhdots'); for (let i = 0; i < Math.max(s.of, s.n); i++) d.appendChild(el('i', i < s.n ? 'on' : '')); return d; };
+  const row = x => rhRow(x.r, { how: rhTimes(x.r), done: x.s.today, extra: dots(x.s) }, x.s.n + ' of ' + x.s.of, x.s.met ? 'met' : '');
+  rhGroup(p, 'This week', list.filter(x => !x.s.met).map(row));
+  rhGroup(p, 'Done for this week', list.filter(x => x.s.met).map(row));
+}
+
+/* Only Every carries a number on its tab: owed or due today. A count of
+   Anytime habits not yet met would read as a debt every Monday morning. */
+function rhBadge() {
+  const b = $('#vEvery'); if (!b) return;
+  const log = rhLog(), today = todayKey();
+  const n = rhythms('every').filter(r => { const s = everyState(r, log[rhTick(r)] || [], today).st; return s === 'owed' || s === 'due'; }).length;
+  b.innerHTML = 'Every' + (n ? '<span class="vbadge">' + n + '</span>' : '');
+}
+
+function rhMenu(r, x, y) {
+  const every = r.kind === 'every';
+  openMenu(x, y, [
+    { head: r.name },
+    { label: 'Done on another day…', fn: () => rhBackfill(r) },
+    { label: every ? 'How often…' : 'Times a week…', fn: () => rhEdit(r) },
+    { label: 'Rename…', fn: () => {
+        const v = prompt('Name', r.name), nm = v && v.trim();
+        if (!nm || nm === r.name) return;
+        if ((S.rhythms || []).some(z => z !== r && z.name.toLowerCase() === nm.toLowerCase())) return toast('<b>' + esc(nm) + '</b> is already on Every or Anytime');
+        snap();
+        /* The ticks are filed under the name, so a new name starts a fresh
+           page, as renaming a block on the board does. An Every block keeps
+           its place in the schedule by taking the date it was next due. */
+        if (every) { const s = everyState(r, rhLog()[rhTick(r)] || [], todayKey()); r.from = s.st === 'done' ? s.next : s.due; }
+        r.name = nm; render();
+      } },
+    { sep: 1 },
+    { label: 'Delete', fn: () => {
+        const at = S.rhythms.indexOf(r);
+        snap(); S.rhythms.splice(at, 1); render();
+        const back = () => { S.rhythms.splice(Math.min(at, S.rhythms.length), 0, r); render(); };
+        if (window.UI && UI.undo) UI.undo(r.name + ' deleted. Its ticks are kept.', back);
+        else toast(esc(r.name) + ' deleted. Its ticks are kept.');
+      } },
+  ]);
+}
+
+function rhBackfill(r) {
+  const t = todayKey();
+  openModal('<div class="modal-head"><h3>DONE ON ANOTHER DAY</h3><button class="btn sm" id="mX" aria-label="Close" data-icon="close"></button></div>' +
+    '<div class="modal-body"><div class="hint">Which day was <b>' + esc(r.name) + '</b> done?</div>' +
+    '<div class="rhadd"><input type="date" id="rhDay" max="' + t + '" value="' + Day.shift(t, -1) + '">' +
+    '<button class="btn acc" id="rhYes" data-icon="done">Done that day</button>' +
+    '<button class="btn" id="rhNo">Not done that day</button></div></div>');
+  $('#mX').onclick = closeModal;
+  const pick = on => { const d = $('#rhDay').value; if (!d || d > t) return toast('pick a day up to today'); closeModal(); rhToggle(r, d, on); };
+  $('#rhYes').onclick = () => pick(true);
+  $('#rhNo').onclick = () => pick(false);
+}
+
+function rhEdit(r) {
+  const every = r.kind === 'every';
+  openModal('<div class="modal-head"><h3>' + (every ? 'HOW OFTEN' : 'TIMES A WEEK') + '</h3><button class="btn sm" id="mX" aria-label="Close" data-icon="close"></button></div>' +
+    '<div class="modal-body"><div class="rhadd">' +
+    (every
+      ? '<span class="rhword">every</span><input type="number" id="rhN" min="1" value="' + r.n + '"><select id="rhU">' +
+        ['day', 'week', 'month'].map(u => '<option value="' + u + '"' + (u === r.unit ? ' selected' : '') + '>' + RH_UNIT[u][1] + '</option>').join('') + '</select>'
+      : '<input type="number" id="rhT" min="1" max="7" value="' + r.times + '"><span class="rhword">times a week</span>') +
+    '<button class="btn acc" id="rhOk" data-icon="save">Save</button></div>' +
+    (every ? '<div class="hint">The next one is counted from the last day it was done.</div>' : '') + '</div>');
+  $('#mX').onclick = closeModal;
+  $('#rhOk').onclick = () => {
+    snap();
+    if (every) { r.n = Math.max(1, Math.round(+$('#rhN').value || 1)); r.unit = $('#rhU').value; }
+    else r.times = clamp(Math.round(+$('#rhT').value || 1), 1, 7);
+    closeModal(); render();
+  };
+}
+
+/* ── what Every and Anytime put on one day ──
+   Tom, 2026-09-14, "Build everything", answering whether an owed Every block
+   should also show on the Day. They still live on their own tabs; this reads
+   those tabs for one date, for the Day board and for the published plan:
+   what is owed or due, what is still to do this week, and what was ticked
+   that day. Counted only from ticks up to that day, so a date you step back
+   to reads as it stood then. */
+function rhFor(day, log) {
+  const out = [];
+  rhythms('every').forEach(r => {
+    const s = everyState(r, (log[rhTick(r)] || []).filter(d => d <= day), day);
+    if (s.st === 'owed') out.push({ r: r, done: false, tone: 'owed', why: 'owed since ' + rhDate(s.due) });
+    else if (s.st === 'due') out.push({ r: r, done: false, tone: 'due', why: 'due' });
+    else if (s.st === 'done') out.push({ r: r, done: true, why: 'done, next ' + rhDate(s.next) });
+  });
+  rhythms('anytime').forEach(r => {
+    const s = anytimeState(r, (log[rhTick(r)] || []).filter(d => d <= day), day, S.weekStart);
+    if (s.today || !s.met) out.push({ r: r, done: s.today, why: s.n + ' of ' + s.of + ' this week' });
+  });
+  return out;
+}
+
+/* The column on the Day. Not a routine, so nothing in it drags, and a future
+   date shows none of it: the future is a plan, and these are counted from
+   what was actually done. */
+function alsoToday(col) {
+  if (col.isFuture || !(S.rhythms || []).length) return null;
+  const day = col.key, rows = rhFor(day, rhLog());
+  if (!rows.length) return null;
+  const box = el('div', 'alsoday');
+  box.appendChild(el('div', 'also-head', '<b>Also ' + (col.isToday ? 'today' : 'this day') + '</b><span>from Every and Anytime</span>'));
+  rows.forEach(x => {
+    const row = el('div', 'also-row' + (x.done ? ' isdone' : ''));
+    row.style.setProperty('--c', x.r.color || PAL[0]);
+    const ck = el('button', 'rhck' + (x.done ? ' on' : ''));
+    ck.setAttribute('aria-label', x.done ? 'Untick' : 'Tick');
+    const bx = el('span', 'rhbox');
+    if (x.done) { bx.dataset.icon = 'done'; bx.dataset.iconSize = '12'; }
+    ck.appendChild(bx);
+    ck.onclick = e => { e.stopPropagation(); rhToggle(x.r, day); };
+    row.appendChild(ck);
+    row.appendChild(el('div', 'also-txt', '<span class="rhn">' + esc(x.r.name) + '</span><span class="rhs' + (x.tone ? ' ' + x.tone : '') + '">' + esc(x.why) + '</span>'));
+    row.oncontextmenu = e => { e.preventDefault(); rhMenu(x.r, e.clientX, e.clientY); };
+    box.appendChild(row);
+  });
+  return box;
+}
+
 /* ---------- summary: what the record says about your routine ---------- */
 function renderSum() {
   const p = $('#sum'); p.innerHTML = '';
@@ -3986,7 +4434,7 @@ $('#veil').onclick = e => { if (e.target.id === 'veil') closeModal(); };
 
 let expTab = 'ics';
 function openExport() {
-  const tabs = [['ics', 'Google Calendar (.ics)'], ['gl', 'GCal links'], ['csv', 'Todoist CSV'], ['qa', 'Todoist quick-add'], ['md', 'Plain text'], ['json', 'Backup']];
+  const tabs = [['ics', 'Google Calendar (.ics)'], ['gl', 'GCal links'], ['csv', 'Todoist CSV'], ['qa', 'Todoist quick-add'], ['md', 'Plain text'], ['share', 'For someone else'], ['json', 'Backup']];
   const assigned = S.week.some(Boolean);
   openModal(
     '<div class="modal-head"><h3>EXPORT</h3>' +
@@ -4006,7 +4454,7 @@ function openExport() {
 function paintExport() {
   const body = $('#mBody');
   const rows = allRows();
-  if (!rows.length && expTab !== 'json') { body.innerHTML = '<div class="hint">Nothing to export yet — drag some blocks in first.</div>'; return; }
+  if (!rows.length && expTab !== 'json' && expTab !== 'share') { body.innerHTML = '<div class="hint">Nothing to export yet — drag some blocks in first.</div>'; return; }
   const scopeNote = S.exportScope === 'week' && S.week.some(Boolean)
     ? '<div class="hint">Exporting the <b>full week</b>: each routine only fires on the days you assigned it in the Week tab, further narrowed by each block’s own day toggles.</div>' : '';
   if (expTab === 'ics') {
@@ -4040,6 +4488,8 @@ function paintExport() {
     body.innerHTML = '<textarea readonly>' + esc(t) + '</textarea><div class="row"><button class="btn acc" id="cp">Copy</button><button class="btn" id="dl">⤓ Download .md</button></div>';
     $('#cp').onclick = () => copy(t);
     $('#dl').onclick = () => download('routine.md', t);
+  } else if (expTab === 'share') {
+    paintShare(body);
   } else {
     const t = JSON.stringify(S, null, 1);
     body.innerHTML = '<div class="hint">Everything: blocks, routines, routines, templates, rules, week plan. Paste one back in and hit Restore to move it to another machine.</div>' +
@@ -4050,12 +4500,195 @@ function paintExport() {
       try {
         const o = JSON.parse($('#js').value); if (!o.lanes || !o.variants) throw 0;
         snap(); S = o;
-        S.templates = S.templates || []; S.rules = S.rules || []; S.week = S.week || [null, null, null, null, null, null, null];
+        S.templates = S.templates || []; S.rules = S.rules || []; S.week = S.week || [null, null, null, null, null, null, null]; S.rhythms = S.rhythms || [];
         S.variants.forEach(v => S.lanes.forEach(l => { if (!v.items[l.id]) v.items[l.id] = []; }));
         closeModal(); render(); toast('restored');
       } catch (e) { toast('that isn’t valid BLOCK JSON'); }
     };
   }
+}
+
+/* ── for someone else: a start, not a backup ──
+   Tom, 2026-09-14: "Sometimes I'll help people start up." Backup is the whole
+   board, history and all, and restoring it replaces everything on the other
+   end: right for moving your own board, wrong for handing somebody a start.
+   This carries only what was ticked: the days, the routines on them, their
+   blocks, which weekdays each runs on, and any Every or Anytime habits. No
+   ticks, no history, no settings, no rules.
+
+   Importing ADDS. Every id is made new. A routine or day whose name is taken
+   gets a number after it. A weekday that already has a day keeps it. An Every
+   or Anytime habit whose name is taken is skipped, because its ticks are
+   filed by name. The one exception is a board that is still the untouched
+   starter: nobody built it, so it is replaced. */
+let SHARE = null;
+const starterCopy = o => JSON.parse(JSON.stringify(o));
+
+function buildStarter(dayIds, rhIds, withBin) {
+  const days = S.variants.filter(v => dayIds.indexOf(v.id) >= 0);
+  const used = {}, src = {};
+  days.forEach(v => LANES(v.id).forEach(l => { used[l.id] = 1; }));
+  const outDays = days.map(v => {
+    const d = starterCopy(v);
+    delete d.date;
+    d.routines = LANES(v.id).map(l => l.id);
+    d.items = {};
+    d.routines.forEach(lid => {
+      d.items[lid] = (v.items[lid] || []).map(it => {
+        src[it.srcId] = 1;
+        const c = starterCopy(it);
+        c.done = false; delete c.skipped;
+        return c;
+      });
+    });
+    d.weekdays = [0, 1, 2, 3, 4, 5, 6].filter(k => S.week[k] === v.id);
+    return d;
+  });
+  return {
+    kind: 'motherbase-block-starter', v: 1, at: new Date().toISOString(),
+    lanes: S.lanes.filter(l => used[l.id]).map(l => starterCopy(l)),
+    lib: (S.lib || []).filter(b => withBin || src[b.id]).map(b => starterCopy(b)),
+    days: outDays,
+    /* the first due date is the giver's, so the other end starts from its own today */
+    rhythms: (S.rhythms || []).filter(r => rhIds.indexOf(r.id) >= 0).map(r => { const c = starterCopy(r); delete c.from; return c; }),
+  };
+}
+
+function importStarter(pack) {
+  if (pack && pack.lanes && pack.variants && !pack.kind) throw new Error('That is a full backup, not a file made for someone else. Restore it from Export, Backup.');
+  if (!pack || pack.kind !== 'motherbase-block-starter') throw new Error('That is not a BLOCK file made for someone else.');
+  snap();
+  const days = pack.days || [];
+  /* Untouched means nobody built anything on it. A tick is not building: the
+     starter's blocks pick up a tick from the shared log the moment somebody
+     with a "Brush teeth" of their own opens BLOCK, so ticks are left out of
+     the comparison. */
+  const bare = st => {
+    const c = starterCopy(st);
+    (c.variants || []).forEach(v => Object.keys(v.items || {}).forEach(k => v.items[k].forEach(it => { it.done = false; delete it.skipped; })));
+    return boardShape(c);
+  };
+  const fresh = days.length > 0 && (showingDemo || bare(S) === bare(seedState()));
+  if (fresh) { S.lanes = []; S.variants = []; S.lib = []; S.week = [null, null, null, null, null, null, null]; }
+  const low = s => String(s || '').toLowerCase();
+  const uniq = (name, taken) => { let n = name, k = 2; while (taken[low(n)]) n = name + ' (' + (k++) + ')'; taken[low(n)] = 1; return n; };
+  const got = { days: 0, routines: 0, rhythms: 0, skipped: 0, busy: 0, filled: 0 };
+  /* A day made for one person usually runs on no weekday on the giver's
+     board, whose week is the giver's own. Arriving like that it would run on
+     nothing, so the first day takes every weekday that has no day yet. */
+  const noWeek = !days.some(d => (d.weekdays || []).length);
+
+  /* A day with no list of its own runs every routine there is, so it would
+     quietly pick up the new ones. Written down first, so it keeps exactly
+     the routines it had. */
+  S.variants.forEach(v => { if (!v.routines) v.routines = S.lanes.map(l => l.id); });
+
+  const laneTaken = {}, laneMap = {};
+  S.lanes.forEach(l => { laneTaken[low(l.name)] = 1; });
+  (pack.lanes || []).forEach(l => {
+    const id = uid();
+    laneMap[l.id] = id;
+    S.lanes.push(Object.assign(starterCopy(l), { id: id, name: uniq(l.name, laneTaken) }));
+    S.variants.forEach(v => { v.items[id] = []; });
+    got.routines++;
+  });
+
+  /* a bin block with a name already on the shelf is that block, not a second one */
+  const libByName = {}, libMap = {};
+  S.lib.forEach(b => { libByName[low(b.name)] = b.id; });
+  (pack.lib || []).forEach(b => {
+    if (libByName[low(b.name)]) { libMap[b.id] = libByName[low(b.name)]; return; }
+    const id = uid();
+    libMap[b.id] = id; libByName[low(b.name)] = id;
+    S.lib.push(Object.assign(starterCopy(b), { id: id }));
+  });
+
+  const dayTaken = {};
+  S.variants.forEach(v => { dayTaken[low(v.name)] = 1; });
+  days.forEach(d => {
+    const v = starterCopy(d), wd = v.weekdays || [];
+    delete v.weekdays;
+    v.id = uid(); v.name = uniq(d.name, dayTaken);
+    v.routines = (d.routines || []).map(id => laneMap[id]).filter(Boolean);
+    v.items = {};
+    S.lanes.forEach(l => { v.items[l.id] = []; });
+    Object.keys(d.items || {}).forEach(old => {
+      if (!laneMap[old]) return;
+      v.items[laneMap[old]] = d.items[old].map(it => Object.assign(starterCopy(it), { id: uid(), srcId: libMap[it.srcId] || uid(), done: false }));
+    });
+    S.variants.push(v);
+    wd.forEach(k => { if (S.week[k]) got.busy++; else S.week[k] = v.id; });
+    if (noWeek && got.days === 0) for (let k = 0; k < 7; k++) { if (!S.week[k]) { S.week[k] = v.id; got.filled++; } }
+    got.days++;
+  });
+
+  S.rhythms = S.rhythms || [];
+  (pack.rhythms || []).forEach(r => {
+    if (S.rhythms.some(x => low(x.name) === low(r.name))) { got.skipped++; return; }
+    const c = Object.assign(starterCopy(r), { id: uid() });
+    if (c.kind === 'every') c.from = todayKey();
+    S.rhythms.push(c);
+    got.rhythms++;
+  });
+
+  if ((fresh || !variant(S.current)) && S.variants.length) S.current = S.variants[0].id;
+  save(); render();
+  return got;
+}
+
+function pickStarter() {
+  const i = document.createElement('input');
+  i.type = 'file'; i.accept = '.json,application/json';
+  i.onchange = () => {
+    const f = i.files && i.files[0];
+    if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const got = importStarter(JSON.parse(fr.result));
+        closeModal();
+        const n = (k, one, many) => got[k] + ' ' + (got[k] === 1 ? one : many);
+        toast('Added ' + n('days', 'day', 'days') + ', ' + n('routines', 'routine', 'routines') +
+          (got.rhythms ? ' and ' + n('rhythms', 'habit', 'habits') : '') +
+          (got.busy ? '. ' + n('busy', 'weekday', 'weekdays') + ' already had a day, so kept it' : '') +
+          (got.filled ? '. It runs on the ' + n('filled', 'weekday', 'weekdays') + ' that had nothing on them' : '') +
+          (got.skipped ? '. ' + n('skipped', 'habit was', 'habits were') + ' already here, so skipped' : ''));
+      } catch (e) { toast(esc(e && e.message ? e.message : 'That file could not be read.')); }
+    };
+    fr.readAsText(f);
+  };
+  i.click();
+}
+
+/* The day on screen, and nothing to pick. Tom, 2026-09-14: "When I set someone
+   up, I open up a new day with that person's name, export function should
+   work with the day currently being viewed anyway." So the day's name is
+   the person, and it names the file. */
+function paintShare(body) {
+  const v = M(), rh = S.rhythms || [];
+  if (!v) { body.innerHTML = '<div class="hint">Open a day first.</div>'; return; }
+  if (!SHARE) SHARE = { rh: {}, bin: false };
+  const wds = weekOrd().filter(k => S.week[k] === v.id).map(k => DSHORT[k]).join(' ');
+  const n = LANES(v.id).length, file = 'block-' + (v.name.replace(/\W+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'day') + '.json';
+  const line = (attr, id, on, name, note) => '<label class="shr"><input type="checkbox" ' + attr + '="' + id + '"' + (on ? ' checked' : '') + '><b>' + esc(name) + '</b><span>' + esc(note) + '</span></label>';
+  body.innerHTML =
+    '<div class="hint">For helping somebody start. This is the day on screen, <b>' + esc(v.name) + '</b>: ' + n + (n === 1 ? ' routine' : ' routines') +
+      ' and their blocks' + (wds ? ', running on ' + esc(wds) : '') + '. Your ticks, history, settings and rules stay here. To hand over a different day, open that one first.</div>' +
+    (rh.length ? '<div class="sumh">Every and Anytime to go with it</div>' + rh.map(r => line('data-rh', r.id, SHARE.rh[r.id], r.name, r.kind === 'every' ? rhEvery(r) : rhTimes(r))).join('') : '') +
+    '<label class="shr"><input type="checkbox" id="shBin"' + (SHARE.bin ? ' checked' : '') + '>Include the whole Block bin<span>not only the blocks this day uses</span></label>' +
+    '<div class="row"><button class="btn acc" id="shDl">Download ' + esc(file) + '</button></div>' +
+    '<div class="sumh">On their computer</div>' +
+    '<div class="hint">They open BLOCK, press the <b>⋯</b> button, then <b>Import routines from a file</b>. It adds to their board and changes nothing already on it.</div>' +
+    '<div class="row"><button class="btn" id="shIn">Import routines from a file</button></div>';
+  body.querySelectorAll('[data-rh]').forEach(c => { c.onchange = () => { if (c.checked) SHARE.rh[c.dataset.rh] = 1; else delete SHARE.rh[c.dataset.rh]; }; });
+  $('#shBin').onchange = e => { SHARE.bin = e.target.checked; };
+  $('#shDl').onclick = () => {
+    const rids = Object.keys(SHARE.rh).filter(id => rh.some(r => r.id === id));
+    const pack = buildStarter([v.id], rids, SHARE.bin);
+    pack.for = v.name;
+    download(file, JSON.stringify(pack, null, 1), 'application/json');
+  };
+  $('#shIn').onclick = pickStarter;
 }
 
 function openCompare() {
@@ -4291,17 +4924,51 @@ function selfTest() {
       it.name = 'Check Ins & Online Coaching';
       const after = actIdOf(it);
       removeItem(L, it.id);
-      if (before !== 'new-block') return 'placeholder id was ' + before;
-      return after === 'check-ins-online-coaching' || 'stayed ' + after;
+      const r = '.' + LifeOS.slug(lane(L).name);
+      if (before !== 'new-block' + r) return 'placeholder id was ' + before;
+      return after === 'check-ins-online-coaching' + r || 'stayed ' + after;
     });
-    ok('no two differently-named blocks share one tick identity', () => {
+    /* One level under both "Check Ins also ticks Bed" and "the two Brush Teeth
+       sync". Both bugs were an identity that stopped meaning what it said: a
+       stamp left over from a placeholder name, and a name that ignored the
+       routine. So: no block carries a stored id, and blocks in two different
+       routines never land on one row. */
+    ok('routines never share a tick row, and no block carries a stored id', () => {
       const seen = {}, bad = [];
       S.variants.forEach(v => S.lanes.forEach(l => (v.items[l.id] || []).forEach(it => {
-        const id = actIdOf(it);
-        if (seen[id] && seen[id] !== it.name) bad.push(seen[id] + ' + ' + it.name + ' = ' + id);
-        seen[id] = it.name;
+        if (it.actId) bad.push(it.name + ' carries a stored id ' + it.actId);
+        const id = actIdOf(it, l);
+        if (seen[id] && seen[id] !== l.id) bad.push(id + ' is shared by two routines');
+        seen[id] = l.id;
       })));
       return !bad.length || bad.join(', ');
+    });
+    /* One level under "the evening brush came back undefined": the shared log
+       has to answer a yes or a no. Anything else compared with !== against a
+       box's false is a phantom change. */
+    ok('the shared log answers yes or no, never nothing', () => {
+      const never = LifeOS.isDone('zz-never-written.nowhere', todayKey());
+      return typeof never === 'boolean' || 'a missing row answered ' + String(never);
+    });
+    /* The second mechanism: twins found by name wrote "any of them done", so
+       unticking the morning brush with the evening one ticked wrote the morning
+       row straight back to true. Driven with real clicks on the real boxes. */
+    ok('the same block in two routines ticks separately, both ways', () => {
+      const R = LANES();
+      if (R.length < 2) return 'skip: needs two routines on this day';
+      const a = addItem(R[0].id, { name: 'zz brush', dur: 5, color: '#fff', energy: 1 });
+      const b = addItem(R[1].id, { name: 'zz brush', dur: 5, color: '#fff', energy: 1 });
+      const ia = actIdOf(a, R[0]), ib = actIdOf(b, R[1]), t = todayKey();
+      const box = x => document.querySelector('[data-id="' + x.id + '"] .b-check');
+      const out = [];
+      box(b).click();                                   /* evening brushed */
+      box(a).click(); box(a).click();                   /* morning ticked, then unticked */
+      out.push(ia !== ib, !LifeOS.isDone(ia, t), !!LifeOS.isDone(ib, t), !a.done, !!b.done);
+      if (b.done) box(b).click();
+      LifeOS.done(ia, t, false, { src: 'test' }); LifeOS.done(ib, t, false, { src: 'test' });
+      removeItem(R[0].id, a.id); removeItem(R[1].id, b.id);
+      return out.every(Boolean) || 'different ids ' + out[0] + ', morning row clear ' + out[1] +
+        ', evening row kept ' + out[2] + ', morning box clear ' + out[3] + ', evening box kept ' + out[4];
     });
     ok('week view renders 7 days', () => { S.view = 'week'; render(); const n = document.querySelectorAll('.day').length; S.view = 'day'; render(); return n === 7 || 'got ' + n; });
     ok('week view: a checkbox ticks the block', () => {
@@ -4309,10 +4976,15 @@ function selfTest() {
       const ck = document.querySelector('.day-ck');
       if (!ck) { S.view = 'day'; render(); return 'no checkbox'; }
       ck.click();
-      const n = S.lanes.flatMap(l => items(l.id)).filter(i => i.done).length;
+      /* The click writes a real row in the shared log, and this check used to
+         leave it there. The next run on the same store then started with that
+         box already on, clicked it off, and reported "nothing ticked". A check
+         that fails only on its second run is a check about its own litter. */
+      const ticked = S.lanes.flatMap(l => items(l.id).filter(i => i.done).map(i => [i, l]));
+      ticked.forEach(([i, l]) => LifeOS.done(actIdOf(i, l), todayKey(), false, { src: 'test' }));
       S.lanes.forEach(l => items(l.id).forEach(i => i.done = false));
       S.view = 'day'; render();
-      return n > 0 || 'nothing ticked';
+      return ticked.length > 0 || 'nothing ticked';
     });
     ok('week: priority mode groups by P, keeps the routine as subtitle', () => {
       const it = LANES().flatMap(l => items(l.id))[0]; it.pri = 1;
@@ -4375,11 +5047,13 @@ function selfTest() {
     });
     ok('settings apply without a Save button', () => {
       const keep = S.doneRoutines;
-      setTab = 'board'; openSettings();
-      const n = $('#sDone'); if (!n) { closeModal(); return 'no control'; }
+      const h = openSettings();
+      const row = [...document.querySelectorAll('.mb-sheet .mb-row')].find(r => /A routine fully ticked/.test(r.textContent));
+      const n = row && row.querySelector('select');
+      if (!n) { if (h) h.close(); return 'no control'; }
       n.value = 'hide'; n.onchange();
       const applied = S.doneRoutines === 'hide';
-      S.doneRoutines = keep; closeModal(); setTab = 'general';
+      S.doneRoutines = keep; save(); render(); if (h) h.close();
       return applied || 'not applied';
     });
     ok('multi-select: ctrl-click selects, bulk menu opens', () => {
@@ -4472,6 +5146,15 @@ function selfTest() {
       ck.click();
       const per = [...document.querySelectorAll('.day')].map(c => c.querySelectorAll('.day-ck.on').length);
       const onlyToday = per.filter(n => n > 0).length === 1;
+      /* The click wrote a real row in the shared log, and this check left it
+         there. On the next run reset() cleared the boxes, the next sync painted
+         them back from the drawer, and "week view: a checkbox ticks the block"
+         found its first box already on and clicked it off: "nothing ticked".
+         Found by recording the call stack of every tick write during a run.
+         It leaked before routines had their own rows too; a guard that skipped
+         any name appearing twice happened to hide it. */
+      S.lanes.flatMap(l => items(l.id).filter(i => i.done).map(i => [i, l]))
+        .forEach(([i, l]) => LifeOS.done(actIdOf(i, l), todayKey(), false, { src: 'test' }));
       S.lanes.forEach(l => items(l.id).forEach(i => i.done = false));
       restore();
       S.view = 'day'; render();
@@ -4593,6 +5276,114 @@ function selfTest() {
       closeMenu(); arr[1].at = null; render();
       return n > 1 || 'menu had ' + n;
     });
+    /* ── every and anytime ── */
+    ok('every: a month on from the 31st of January is the 28th of February', () =>
+      rhAdd('2026-01-31', 1, 'month') === '2026-02-28' || 'got ' + rhAdd('2026-01-31', 1, 'month'));
+    ok('every: missed stays owed, and the next is counted from the day it was done', () => {
+      const r = { n: 2, unit: 'week', from: '2026-01-01' };
+      const a = everyState(r, ['2026-01-03'], '2026-01-20');
+      const b = everyState(r, [], '2026-01-01');
+      const c = everyState(r, ['2026-01-03', '2026-01-20'], '2026-01-20');
+      const d = everyState(r, ['2026-01-10'], '2026-01-12');
+      return (a.st === 'owed' && a.due === '2026-01-17' && a.late === 3 && b.st === 'due' &&
+        c.st === 'done' && c.next === '2026-02-03' && d.st === 'later') || JSON.stringify([a, b, c, d]);
+    });
+    ok('anytime: counts only this week, from the day the week starts', () => {
+      const s = anytimeState({ times: 3 }, ['2026-09-12', '2026-09-13', '2026-09-14', '2026-09-16'], '2026-09-16', 1);
+      return (s.n === 2 && !s.met && s.today) || JSON.stringify(s);
+    });
+    ok('every: kept as rows of its own, not folded into a setting', () => {
+      S.rhythms = [{ id: 'rhtest', kind: 'every', name: 'Zz Rhythm Test', n: 1, unit: 'day', from: todayKey() }];
+      const rows = blockRows(S), good = !!rows.rhythm.rhtest && !('rhythms' in rows.setting);
+      S.rhythms = [];
+      return good || 'rhythm rows: ' + Object.keys(rows.rhythm).join(',') + ', in settings: ' + ('rhythms' in rows.setting);
+    });
+    ok('every tab: adding one draws a row, and ticking it is a shared tick', () => {
+      if (!window.LifeOS) return 'skip: the shared tick log did not load';
+      S.rhythms = []; S.view = 'every'; render();
+      const p = $('#every');
+      p.querySelector('.rhname').value = 'Zz Rhythm Test';
+      p.querySelector('.rhnum').value = '3';
+      p.querySelector('.rhunit').value = 'day';
+      p.querySelector('.rhgo').click();
+      const r = S.rhythms[0];
+      if (!r || r.n !== 3 || r.unit !== 'day') { S.rhythms = []; S.view = 'day'; render(); return 'not added: ' + JSON.stringify(S.rhythms); }
+      const id = LifeOS.slug(r.name), t = todayKey();
+      $('#every .rhrow .rhck').click();
+      const ticked = !!LifeOS.isDone(id, t), moved = !!$('#every .rhrow.isdone');
+      $('#every .rhrow .rhck').click();
+      const unticked = !LifeOS.isDone(id, t);
+      LifeOS.done(id, t, false, { src: 'test' });
+      S.rhythms = []; S.view = 'day'; render();
+      return (ticked && moved && unticked) || JSON.stringify({ ticked: ticked, moved: moved, unticked: unticked });
+    });
+    ok('day: an owed Every block shows on today, and goes into the plan with no clock', () => {
+      if (!window.LifeOS) return 'skip: the shared tick log did not load';
+      S.rhythms = [{ id: 'zzowed', kind: 'every', name: 'Zz Rhythm Test', n: 1, unit: 'week', from: Day.shift(todayKey(), -3), color: PAL[0] }];
+      S.view = 'day'; S.viewDate = null; render();
+      const col = $('#board .alsoday'), text = col ? col.textContent : '';
+      publishFor(todayKey(), true);
+      const plan = Rec.get('plan', todayKey(), 'routine');
+      const hit = plan && plan.blocks.filter(x => x.name === 'Zz Rhythm Test')[0];
+      S.rhythms = []; render();
+      return (!!col && /owed since/.test(text) && !!hit && hit.s === null && /owed since/.test(hit.why) && hit.actId === LifeOS.slug('Zz Rhythm Test')) ||
+        JSON.stringify({ col: !!col, text: text, hit: hit || null });
+    });
+    ok('day: nothing from Every or Anytime on a future date', () => {
+      S.rhythms = [{ id: 'zzfut', kind: 'anytime', name: 'Zz Rhythm Test', times: 3, color: PAL[0] }];
+      S.view = 'day'; S.viewDate = Day.shift(todayKey(), 2); render();
+      const col = $('#board .alsoday');
+      S.viewDate = null; S.rhythms = []; render();
+      return !col || 'a column was drawn on a future date';
+    });
+    /* ── for someone else ── */
+    ok('share: a file carries the chosen day, its routines and weekdays, and no history', () => {
+      const v = M(), L0 = LANES()[0];
+      if (!L0) return 'no routine on the test day';
+      items(L0.id).push(mkItem({ name: 'Zz Share', dur: 10, color: PAL[0] }));
+      items(L0.id).forEach(it => { it.done = true; });
+      const wk = S.week.slice(); S.week[1] = v.id;
+      const pack = buildStarter([v.id], [], false);
+      S.week = wk;
+      const d = pack.days[0], all = [].concat.apply([], Object.keys(d.items).map(k => d.items[k]));
+      return (pack.kind === 'motherbase-block-starter' && pack.days.length === 1 && d.weekdays.indexOf(1) >= 0 &&
+        pack.lanes.length === LANES().length && all.length > 0 && all.every(it => !it.done) && !('log' in pack) && !('date' in d)) ||
+        JSON.stringify({ days: pack.days.length, wd: d.weekdays, lanes: pack.lanes.length, n: all.length });
+    });
+    ok('share: importing adds to a board, renames clashes, and overwrites nothing', () => {
+      const v = M();
+      const before = { lanes: S.lanes.length, variants: S.variants.length, routines: JSON.stringify(v.routines || S.lanes.map(l => l.id)) };
+      S.week[1] = v.id;
+      const pack = buildStarter([v.id], [], false), got = importStarter(pack);
+      const nv = S.variants[S.variants.length - 1];
+      const good = S.variants.length === before.variants + 1 && S.lanes.length === before.lanes + pack.lanes.length &&
+        JSON.stringify(v.routines) === before.routines && S.week[1] === v.id && got.busy >= 1 &&
+        nv.name !== v.name && LANES(nv.id).length === pack.lanes.length && LANES(nv.id).every(l => / \(\d+\)$/.test(l.name));
+      return good || JSON.stringify({ got: got, lanes: S.lanes.map(l => l.name), nv: nv.name, kept: S.week[1] === v.id });
+    });
+    ok('share: importing into an untouched starter board replaces the starter', () => {
+      const pack = buildStarter([M().id], [], false);
+      S = seedState(); S.view = 'day'; render();
+      const got = importStarter(pack);
+      return (S.variants.length === pack.days.length && S.lanes.length === pack.lanes.length && !!M()) ||
+        JSON.stringify({ got: got, v: S.variants.length, l: S.lanes.length });
+    });
+    ok('share: a day that runs on no weekday takes the empty ones when it arrives', () => {
+      const pack = buildStarter([M().id], [], false);
+      pack.days.forEach(d => { d.weekdays = []; });
+      S = seedState(); S.view = 'day'; render();
+      const got = importStarter(pack);
+      return (got.filled === 7 && S.week.every(w => w === S.variants[0].id)) || JSON.stringify({ got: got, week: S.week });
+    });
+    ok('anytime tab: right-click on a row opens its menu', () => {
+      S.rhythms = [{ id: uid(), kind: 'anytime', name: 'Zz Rhythm Test', times: 2 }]; S.view = 'anytime'; render();
+      const row = $('#anytime .rhrow');
+      if (!row) { S.rhythms = []; S.view = 'day'; render(); return 'no row'; }
+      rc(row);
+      const n = document.querySelectorAll('.ctxmenu .mi').length;
+      closeMenu(); S.rhythms = []; S.view = 'day'; render();
+      return n >= 4 || 'menu had ' + n;
+    });
   } finally {
     closeMenu(); closePop();
     S = JSON.parse(backup); render();
@@ -4688,110 +5479,107 @@ function tzList() {
   if (!zones.includes(S.tz)) zones = [S.tz].concat(zones);
   return zones;
 }
-let setTab = 'general';
+/* ── settings ──
+   On the shared panel since 2026-09-15, like every other app, instead of a
+   modal of its own that looked like nothing else. Tom: "Block yes". BLOCK's
+   own tab, an EXPORT tab for the calendar file and Todoist, and the suite's
+   DATA tab. Its theme is picked in STYLE. BLOCK's sounds are its own synth,
+   so they stay here. The self-test and the resets are folded under More.
+   Everything applies as it is touched; there is no Save to forget. */
 function openSettings() {
-  const tabs = [['general', 'General'], ['board', 'Board'], ['sound', 'Sound'], ['export', 'Calendar + Todoist'], ['data', 'Data']];
-  const sel = (id, opts, val) => '<select id="' + id + '">' + opts.map(([v, l]) =>
-    '<option value="' + esc(v) + '"' + (String(val) === String(v) ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select>';
-  const chk = (id, on) => '<input type="checkbox" id="' + id + '" ' + (on ? 'checked' : '') + '>';
-
-  let body = '';
-  if (setTab === 'general') {
-    body = '<div class="set">' +
-      '<label>What this is called<span>Used as the calendar name on export</span></label><input type="text" id="sCal" value="' + esc(S.calName) + '">' +
-      '<label>Timezone<span>Times are written as local wall-clock in this zone</span></label>' +
-      sel('sTz', tzList().map(z => [z, z]), S.tz) +
-      '<label>Clock<span></span></label>' + sel('sH24', [['0', '12-hour — 6:30am'], ['1', '24-hour — 06:30']], S.h24 ? '1' : '0') +
-      '<label>Week starts on<span>Also sets the order of the Week tab</span></label>' +
-      sel('sWS', [['today', 'Today (rolling 7 days)'], ['0', 'Sunday'], ['1', 'Monday'], ['6', 'Saturday']], S.weekStart) +
-      '</div>';
-  } else if (setTab === 'board') {
-    body = '<div class="set">' +
-      '<label>Buffer between blocks<span>Dead time inserted after every block</span></label><input type="number" id="sGap" min="0" max="60" step="5" value="' + S.gap + '">' +
-      '<label>When a routine is fully ticked<span></span></label>' +
-      sel('sDone', [['stay', 'Leave it where it is'], ['right', 'Slide it to the far right'], ['hide', 'Hide it until tomorrow']], S.doneRoutines) +
-      '<label>Fit blocks to their length<span>Draw an hour as an hour, scaled to fit without scrolling</span></label>' + chk('sProp', S.proportional) +
-      '<label>Moving “now” line<span>A red line at the current minute, only in routines it passes through</span></label>' + chk('sNow', S.nowline) +
-      '<label>Keep finished blocks in the Week tab<span>Off hides them as you tick</span></label>' + chk('sKeep', S.keepDone) +
-      '</div>';
-  } else if (setTab === 'sound') {
-    body = '<div class="set">' +
-      '<label>Sounds<span>Synthesised in the browser — no files, no network</span></label>' + chk('sSnd', S.sound) +
-      '<label>Sound set<span>Ticks rise in pitch as you get closer to finishing</span></label>' +
-      sel('sTheme', Object.keys(THEMES).map(k => [k, THEMES[k].name]), S.soundTheme) +
-      '<label>Volume<span></span></label><input type="range" id="sVol" min="0" max="1" step="0.05" value="' + (S.volume == null ? .6 : S.volume) + '">' +
-      '</div>' +
-      '<div class="row"><button class="btn" id="tTick" data-icon="play">Hear a tick</button><button class="btn" id="tDone" data-icon="play">Hear a finished day</button></div>' +
-      '<div class="hint" style="margin-top:12px">The tick climbs a pentatonic scale as your list empties, so the last one of the day sounds like the last one. Finishing everything plays a short fanfare.</div>';
-  } else if (setTab === 'export') {
-    body = '<div class="set">' +
-      '<label>Todoist project tag<span>Appended as #Tag on quick-add lines</span></label><input type="text" id="sProj" value="' + esc(S.tdProject) + '">' +
-      '<label>Todoist priority for blocks with no P<span>4 = urgent, 1 = normal</span></label><input type="number" id="sPri" min="1" max="4" value="' + S.tdPriority + '">' +
-      '<label>Default export scope<span></span></label>' +
-      sel('sScope', [['variant', 'Just the open day'], ['week', 'The whole week']], S.exportScope) +
-      '</div>' +
-      '<div class="row"><button class="btn acc" id="goExport" data-icon="next" data-icon-after>Open export</button><button class="btn" id="goPrint" data-icon="next" data-icon-after>Print / client sheet</button></div>';
-  } else {
-    const days = Object.keys(S.log || {}).length;
-    const blocks = S.variants.reduce((a, v) => a + S.lanes.reduce((b, l) => b + ((v.items[l.id] || []).length), 0), 0);
-    body = '<div class="hint">' + S.variants.length + ' days · ' + S.lanes.length + ' routines · ' + blocks + ' blocks · ' +
-      S.lib.length + ' in the bin · ' + S.templates.length + ' templates · ' + days + ' days of history</div>' +
-      '<div class="row"><button class="btn acc" id="sBackup">⤓ Backup everything</button><button class="btn" id="sTest">Run self-test</button></div>' +
-      '<div class="row"><button class="btn" id="sClear">Reset today’s ticks</button>' +
-      '<button class="btn" id="sWipeLog">Clear history</button>' +
-      '<button class="btn" id="sReset" style="color:var(--bad)">Reset everything</button></div>' +
-      '<div class="hint" style="margin-top:12px">Everything lives in this browser. The backup is a single JSON file you can restore on another machine from <b>Export → Backup</b>.</div>';
-  }
-
-  openModal(
-    '<div class="modal-head"><h3>SETTINGS</h3><button class="btn sm" id="mX" aria-label="Close" data-icon="close"></button></div>' +
-    '<div class="mtabs">' + tabs.map(([k, l]) => '<button class="mtab' + (k === setTab ? ' on' : '') + '" data-k="' + k + '">' + l + '</button>').join('') + '</div>' +
-    '<div class="modal-body">' + body + '</div>'
-  );
-  $('#mX').onclick = closeModal;
-  $('#modal').querySelectorAll('.mtab').forEach(b => b.onclick = () => { saveSettings(); setTab = b.dataset.k; openSettings(); });
-
-  const on = (id, fn) => { const n = $(id); if (n) n.onclick = fn; };
-  on('#tTick', () => { saveSettings(); beep('done'); });
-  on('#tDone', () => { saveSettings(); beep('complete'); });
-  on('#goExport', () => { saveSettings(); closeModal(); openExport(); });
-  on('#goPrint', ev => { saveSettings(); closeModal(); openPrintMenu(innerWidth / 2 - 100, 120); });
-  on('#sBackup', () => { saveSettings(); closeModal(); expTab = 'json'; openExport(); });
-  on('#sTest', () => { saveSettings(); selfTest(); });
-  on('#sClear', () => { snap(); S.variants.forEach(v => clearDone(v.id)); render(); toast('ticks cleared'); });
-  on('#sWipeLog', () => { if (confirm('Delete the completion history? Your routines stay.')) { snap(); S.log = {}; render(); toast('history cleared'); } });
-  on('#sReset', () => { if (confirm('Wipe all blocks, routines, days, templates and rules?')) { snap(); S = seedState(); closeModal(); render(); } });
-  const vol = $('#sVol'); if (vol) vol.onchange = () => { S.volume = parseFloat(vol.value); beep('done'); };
-  ['#sSnd', '#sTheme', '#sNow', '#sProp', '#sKeep', '#sDone', '#sH24', '#sWS', '#sTz', '#sScope'].forEach(id => {
-    const n = $(id); if (n) n.onchange = () => { saveSettings(); render(); };
-  });
+  return UI.settings('block', [
+    { id: 'block', name: 'BLOCK', draw: drawBlockSettings },
+    { id: 'export', name: 'EXPORT', draw: drawBlockExport },
+  ], { order: ['block', 'export', 'data'] });
 }
-/** settings apply as you touch them — no Save button to forget */
-function saveSettings() {
-  const val = (id, d) => { const n = $(id); return n ? n.value : d; };
-  const on = id => { const n = $(id); return n ? n.checked : null; };
-  if ($('#sCal')) S.calName = val('#sCal', S.calName).trim() || 'Routine';
-  if ($('#sTz')) S.tz = val('#sTz', S.tz);
-  if ($('#sH24')) S.h24 = val('#sH24', '0') === '1';
-  if ($('#sWS')) { const w = val('#sWS', '1'); S.weekStart = w === 'today' ? 'today' : parseInt(w); }
-  if ($('#sGap')) S.gap = clamp(parseInt(val('#sGap', S.gap)) || 0, 0, 60);
-  if ($('#sDone')) S.doneRoutines = val('#sDone', 'stay');
-  if (on('#sProp') != null) S.proportional = on('#sProp');
-  if (on('#sNow') != null) S.nowline = on('#sNow');
-  if (on('#sKeep') != null) S.keepDone = on('#sKeep');
-  if (on('#sSnd') != null) S.sound = on('#sSnd');
-  if ($('#sTheme')) S.soundTheme = val('#sTheme', S.soundTheme);
-  if ($('#sVol')) S.volume = parseFloat(val('#sVol', S.volume));
-  if ($('#sProj')) S.tdProject = val('#sProj', S.tdProject).trim() || 'Routine';
-  if ($('#sPri')) S.tdPriority = clamp(parseInt(val('#sPri', S.tdPriority)) || 1, 1, 4);
-  if ($('#sScope')) S.exportScope = val('#sScope', S.exportScope);
-  save();
+function setSelect(opts, val, onPick) {
+  const s = document.createElement('select');
+  s.className = 'mb-sel';
+  s.innerHTML = opts.map(([v, l]) =>
+    '<option value="' + esc(v) + '"' + (String(val) === String(v) ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
+  s.onchange = () => onPick(s.value);
+  return s;
+}
+function drawBlockSettings(pane, h) {
+  const put = (k, v) => { S[k] = v; save(); render(); };
+  const sw = (label, note, k) => pane.appendChild(UI.row(label, note, UI.toggle(!!S[k], v => put(k, v))));
+  pane.appendChild(UI.row('Clock', null,
+    setSelect([['0', '12-hour, 6:30am'], ['1', '24-hour, 06:30']], S.h24 ? '1' : '0', v => put('h24', v === '1'))));
+  pane.appendChild(UI.row('Week starts on', 'Also the order of the Week tab',
+    setSelect([['today', 'Today, a rolling 7 days'], ['0', 'Sunday'], ['1', 'Monday'], ['6', 'Saturday']], S.weekStart,
+      v => put('weekStart', v === 'today' ? 'today' : parseInt(v)))));
+  const gap = UI.field('number', { value: String(S.gap || 0) });
+  gap.style.maxWidth = '6em';
+  gap.onchange = () => put('gap', clamp(parseInt(gap.value) || 0, 0, 60));
+  pane.appendChild(UI.row('Buffer between blocks', 'Minutes of dead time after every block', gap));
+  pane.appendChild(UI.row('A routine fully ticked', null,
+    setSelect([['stay', 'Stays where it is'], ['right', 'Slides to the far right'], ['hide', 'Hides until tomorrow']],
+      S.doneRoutines, v => put('doneRoutines', v))));
+  sw('Fit blocks to their length', 'An hour drawn as an hour', 'proportional');
+  sw('Moving now line', 'A red line at the current minute', 'nowline');
+  sw('Keep finished blocks in the Week tab', 'Off hides them as you tick', 'keepDone');
+
+  pane.appendChild(el('div', 'mb-group', 'SOUND'));
+  sw('Sounds', null, 'sound');
+  pane.appendChild(UI.row('Sound set', 'Ticks rise in pitch as the list empties',
+    setSelect(Object.keys(THEMES).map(k => [k, THEMES[k].name]), S.soundTheme, v => { put('soundTheme', v); beep('done'); })));
+  const vol = document.createElement('input');
+  vol.type = 'range'; vol.min = 0; vol.max = 1; vol.step = 0.05; vol.className = 'mb-range';
+  vol.value = S.volume == null ? 0.6 : S.volume;
+  vol.onchange = () => { S.volume = parseFloat(vol.value); save(); beep('done'); };
+  pane.appendChild(UI.row('Volume', null, vol));
+
+  pane.appendChild(UI.more('More', box => {
+    const blocks = S.variants.reduce((a, v) => a + S.lanes.reduce((b, l) => b + ((v.items[l.id] || []).length), 0), 0);
+    box.appendChild(el('p', 'hint', S.variants.length + ' days · ' + S.lanes.length + ' routines · ' + blocks + ' blocks · ' +
+      S.lib.length + ' in the bin · ' + S.templates.length + ' templates · ' + Object.keys(S.log || {}).length + ' days of history'));
+    const btn = (label, fn, bad) => {
+      const b = el('button', 'mb-btn mb-press mb-tap' + (bad ? ' bad' : ''), esc(label));
+      b.type = 'button';
+      b.style.cssText = 'width:100%;margin-top:var(--s-2)';
+      b.onclick = fn;
+      box.appendChild(b);
+    };
+    btn('Run self-test', () => { h.close(); selfTest(); });
+    btn('Reset today’s ticks', () => { snap(); S.variants.forEach(v => clearDone(v.id)); render(); toast('ticks cleared'); });
+    btn('Clear history', () => { if (confirm('Delete the completion history? Your routines stay.')) { snap(); S.log = {}; render(); toast('history cleared'); } }, true);
+    btn('Reset everything', () => { if (confirm('Wipe all blocks, routines, days, templates and rules?')) { snap(); S = seedState(); h.close(); render(); } }, true);
+  }, 'block-more'));
+}
+function drawBlockExport(pane, h) {
+  const txt = (label, note, k, fallback) => {
+    const f = UI.field('text', { value: S[k] || '' });
+    f.onchange = () => { S[k] = f.value.trim() || fallback; save(); };
+    pane.appendChild(UI.row(label, note, f));
+  };
+  txt('Calendar name', 'What the calendar file is called', 'calName', 'Routine');
+  pane.appendChild(UI.row('Timezone', 'Times are written as clock time in this zone',
+    setSelect(tzList().map(z => [z, z]), S.tz, v => { S.tz = v; save(); })));
+  pane.appendChild(UI.row('Export', null,
+    setSelect([['variant', 'Just the open day'], ['week', 'The whole week']], S.exportScope, v => { S.exportScope = v; save(); })));
+  pane.appendChild(el('div', 'mb-group', 'TODOIST'));
+  txt('Project tag', 'Added as #Tag on each line', 'tdProject', 'Routine');
+  const pri = UI.field('number', { value: String(S.tdPriority || 1) });
+  pri.style.maxWidth = '6em';
+  pri.onchange = () => { S.tdPriority = clamp(parseInt(pri.value) || 1, 1, 4); save(); };
+  pane.appendChild(UI.row('Priority for blocks with none', '4 is urgent, 1 is normal', pri));
+  const go = (label, fn, cls) => {
+    const b = el('button', 'mb-btn mb-press mb-tap' + (cls ? ' ' + cls : ''), esc(label));
+    b.type = 'button';
+    b.style.cssText = 'width:100%;margin-top:var(--s-3)';
+    b.onclick = () => { h.close(); fn(); };
+    pane.appendChild(b);
+  };
+  go('Open export', openExport, 'go');
+  go('Print or a client sheet', () => openPrintMenu(innerWidth / 2 - 100, 120));
 }
 
 /* ============================ wiring ============================ */
 $('#vDay').onclick = () => { S.view = 'day'; render(); };
 $('#vWeek').onclick = () => { S.view = 'week'; render(); };
 $('#vSum').onclick = () => { S.view = 'sum'; render(); };
+$('#vEvery').onclick = () => { S.view = 'every'; render(); };
+$('#vAny').onclick = () => { S.view = 'anytime'; render(); };
 $('#bExp').onclick = openExport;
 /* Everything that used to have its own button on the bar. Rules keeps its
    warning count, because a broken rule is a thing you should see without
@@ -4803,6 +5591,8 @@ $('#bMore').onclick = ev => {
     { label: 'Rules' + (RULECHK.count ? '  ⚠ ' + RULECHK.count : (S.rules.length ? '  ✓' : '')), fn: openRules },
     { sep: 1 },
     { label: 'Print or make a client sheet', fn: () => openPrintMenu(r.left - 120, r.bottom + 5) },
+    { label: 'Make a file for someone else', fn: () => { expTab = 'share'; openExport(); } },
+    { label: 'Import routines from a file', fn: pickStarter },
     { label: 'How BLOCK works', fn: openHelp },
     { sep: 1 },
     { label: 'Settings', fn: openSettings },
@@ -4883,7 +5673,13 @@ window.addEventListener('beforeunload', () => { clearTimeout(saveT); try { write
 
 /* BLOCK owns these three, so it says so once and gets backup, the readable
    spreadsheet and the sheet mirror for free, the same as every other app. */
-IO.register({ app: 'block', name: 'BLOCK', types: ['lane', 'item', 'routine'] });
+/* `rhythm` and `plan` were declared to the store and never registered here,
+   so an Every or Anytime habit and the published plan never went to the sheet
+   and never reached another device (found 2026-09-15). `reads`: ticks from
+   the apps that tick BLOCK's blocks, from their own sheet tabs. */
+IO.register({ app: 'block', name: 'BLOCK', types: ['lane', 'item', 'routine', 'rhythm', 'plan'],
+  reads: { status: ['tick', 'activity'], quest: ['tick', 'activity'], log: ['tick', 'activity'],
+    train: ['tick', 'activity'], speak: ['tick', 'activity'] } });
 
 /* ── rows that arrive after the board is already on screen ──
 
@@ -4952,8 +5748,7 @@ Rec.on(adoptRows);
      library  →  the shared activity vocabulary (so HABITS can promote any of it)
      ticks    →  the shared day log (so a tick here is a tick everywhere)
      plan     →  today's blocks, published for the home screen to show and tick
-   Blocks are matched across apps by slugged NAME: two blocks called the same
-   thing are the same thing, which is exactly what makes the ticks agree.  */
+   Blocks are matched across apps by name AND routine: see actIdOf below.  */
 /* ── a block's tick identity is its NAME, worked out fresh every time ──
    This used to be cached: the first time a block was asked for its identity it
    was stamped with the slug of whatever it was called AT THAT MOMENT, and the
@@ -4972,8 +5767,17 @@ Rec.on(adoptRows);
 
    The cost of not caching is that renaming a block moves its shared streak to
    a new name. That is the right answer anyway — BLOCK's own day log is keyed
-   by name and lane, so a rename already starts a fresh page there. */
-const actIdOf = it => LifeOS.slug(it.name);
+   by name and lane, so a rename already starts a fresh page there.
+
+   ── and then the routine joined it, 2026-09-14 ──
+   Name alone still made morning Brush Teeth and evening Brush Teeth one row,
+   while BLOCK's own page — keyed by name and routine since it was written —
+   said they were two. Same disease as the stamp: two ideas of what makes a
+   block the same block. The id is now built from tickKey, the one BLOCK's page
+   already used, so there is one idea again and it is the one Tom asked for.
+   Renaming a ROUTINE now moves the streaks of everything in it, for the same
+   reason renaming a block does, and BLOCK's page already behaved that way. */
+const actIdOf = (it, L) => idFromKey(tickKey(it, L || laneOf(it)));
 
 /* ── one-off: unstick the blocks that were stamped with a placeholder name ──
    A board built before the fix above carries a frozen `actId` on every block.
@@ -5025,14 +5829,52 @@ function repairActIds() {
   return moved;
 }
 
+/* ── one-off: refile the tick history by routine ──
+   Every past tick BLOCK wrote sits under the name alone. BLOCK's own day pages
+   know the routine for each one, so they are replayed into the new rows and
+   nothing anyone did is lost. The old name-only rows are left where they are:
+   some were written by other apps, all of them are true, and nothing reads
+   them for BLOCK any more.
+
+   The store tells every listener about every write, one at a time, and BLOCK's
+   own listener re-syncs the whole board each time. A year of pages is a
+   thousand writes, so BLOCK stops listening for the length of the replay and
+   syncs once at the end. Runs once per board. */
+let REPLAYING = false;
+function repairTickIds() {
+  if (S.tickIdsByRoutine) return 0;
+  S.tickIdsByRoutine = 1;
+  let n = 0;
+  REPLAYING = true;
+  try {
+    Object.keys(S.log || {}).forEach(date => ((S.log[date] || {}).d || []).forEach(k => {
+      if (String(k).indexOf('||') < 0) return;
+      const id = idFromKey(k);
+      if (!LifeOS.isDone(id, date)) { LifeOS.done(id, date, true, { src: 'block' }); n++; }
+    }));
+    /* today's page is written as you go, but the boxes are the truth for today */
+    S.variants.forEach(v => withVariant(v.id, () => LANES(v.id).forEach(l => items(l.id).forEach(it => {
+      const id = actIdOf(it, l);
+      if (it.done && !LifeOS.isDone(id, todayKey())) { LifeOS.done(id, todayKey(), true, { src: 'block' }); n++; }
+    }))));
+  } finally { REPLAYING = false; }
+  saveQuiet();
+  console.info('[block] tick history refiled by routine: ' + n + ' rows');
+  return n;
+}
+
 function pushLib() {
   const seen = {}, out = [];
-  const add = (name, cat, dur, color, energy) => {
-    const id = LifeOS.slug(name); if (seen[id]) return; seen[id] = 1;
+  const add = (id, name, cat, dur, color, energy) => {
+    if (seen[id]) return; seen[id] = 1;
     out.push({ id: id, name: name, cat: cat || '', dur: dur || 0, color: color || '', energy: energy || 2 });
   };
-  S.lib.forEach(l => add(l.name, l.cat, l.dur, l.color, l.energy));
-  S.variants.forEach(v => S.lanes.forEach(l => (v.items[l.id] || []).forEach(it => add(it.name, 'routine', it.dur, it.color, it.energy))));
+  S.lib.forEach(l => add(LifeOS.slug(l.name), l.name, l.cat, l.dur, l.color, l.energy));
+  /* A block in a routine is offered under the id its ticks are filed under,
+     with the routine as its category, so anything that picks it from this list
+     finds its real history and can tell the morning brush from the evening. */
+  S.variants.forEach(v => S.lanes.forEach(l => (v.items[l.id] || []).forEach(it =>
+    add(actIdOf(it, l), it.name, l.name, it.dur, it.color, it.energy))));
   LifeOS.acts(out);
 }
 /* ── publishing the plan ──
@@ -5055,11 +5897,18 @@ const PUBLISH_AHEAD = 14;
    once, fourteen times per render is fourteen reloads of the home screen while
    you are dragging a block around. So the fortnight is written quietly and
    today goes through the shim, which is one poke for the lot. */
-function publishFor(key, quiet) {
+function publishFor(key, quiet, log) {
   const vid = routineForDate(key), d = Day.dow(key);
+  /* "Not needed" leaves the day's scheduled set, so it leaves the plan too.
+     Tom, 2026-09-14: "If I put a block as not needed today in BLOCK, it still
+     shows up in today view." The live flag belongs to S.doneDate; any other
+     day keeps its skips in that day's log page. */
+  const skipped = (it, L) => key === (S.doneDate || todayKey())
+    ? !!it.skipped
+    : ((((S.log || {})[key]) || {}).s || []).includes(tickKey(it, L));
   const blocks = withVariant(vid, () => S.lanes.flatMap(l =>
-    schedule(l.id).filter(r => effDays(lane(l.id), r.it)[d]).map(r => ({
-      id: r.it.id, actId: actIdOf(r.it), name: r.it.name, s: r.s, dur: r.it.dur,
+    schedule(l.id).filter(r => effDays(lane(l.id), r.it)[d] && !skipped(r.it, lane(l.id))).map(r => ({
+      id: r.it.id, actId: actIdOf(r.it, lane(l.id)), name: r.it.name, s: r.s, dur: r.it.dur,
       color: r.it.color, lane: lane(l.id).name,
       /* Where it goes, if it goes anywhere. "Todoist Run Through" is only
          useful as a link on the screen he is actually following, which is the
@@ -5068,7 +5917,16 @@ function publishFor(key, quiet) {
       link: r.it.link || '',
       note: r.it.note || '',
     })))).sort((a, b) => a.s - b.s);
-  const plan = { date: key, vid: vid, name: (variant(vid) || {}).name || 'routine', blocks: blocks };
+  /* Every and Anytime ride along at the end, with no clock (`s: null`, which
+     every reader already handles for an untimed routine) and `why`, the few
+     words that say where each one stands. Their tick is the ordinary tick
+     under the name, so ticking one on the home screen or in QUESTS ticks it
+     here. */
+  const extra = rhFor(key, log || rhLog()).map(x => ({
+    id: x.r.id, actId: rhTick(x.r), name: x.r.name, s: null, dur: 0, color: x.r.color || '',
+    lane: x.r.kind === 'every' ? 'Every' : 'Anytime', why: x.why, link: '', note: '',
+  }));
+  const plan = { date: key, vid: vid, name: (variant(vid) || {}).name || 'routine', blocks: blocks.concat(extra) };
   if (quiet) Rec.set('plan', key, 'routine', plan);
   else LifeOS.publishToday(plan);
 }
@@ -5076,8 +5934,9 @@ function publishFor(key, quiet) {
 function publishToday() {
   /* The days ahead first and quietly, then today through the shim, so exactly
      one poke goes out and it goes out after everything is written. */
-  for (let i = 1; i < PUBLISH_AHEAD; i++) publishFor(Day.shift(todayKey(), i), true);
-  publishFor(todayKey());
+  const log = rhLog();
+  for (let i = 1; i < PUBLISH_AHEAD; i++) publishFor(Day.shift(todayKey(), i), true, log);
+  publishFor(todayKey(), false, log);
 }
 /** the shared log is the truth about what got done — mirror it onto the blocks */
 let LIFEOS_OK = true;
@@ -5087,13 +5946,15 @@ function pullDone() {
   const date = todayKey(); let changed = 0;
   const cleared = (S.cleared && S.cleared.date === date) ? S.cleared.ids : {};
   S.variants.forEach(v => withVariant(v.id, () => {
-    /* the shared log is keyed by NAME, so it cannot tell a morning brush from an
-       evening one. Where a name appears more than once in a day, local ticks win. */
+    /* the shared log files each block by name and routine. Where two blocks
+       land on one row — the same name twice in ONE routine, capitals aside —
+       the row cannot say which was done, so local ticks win. Counted by row
+       id, the same thing the drawer counts by. */
     const seen = {};
-    LANES(v.id).forEach(l => items(l.id).forEach(it => { seen[it.name] = (seen[it.name] || 0) + 1; }));
+    LANES(v.id).forEach(l => items(l.id).forEach(it => { const k = actIdOf(it, l); seen[k] = (seen[k] || 0) + 1; }));
     LANES(v.id).forEach(l => items(l.id).forEach(it => {
-      if (seen[it.name] > 1) return;
-      const aid = actIdOf(it);
+      const aid = actIdOf(it, l);
+      if (seen[aid] > 1) return;
       if (cleared[aid]) return;            /* boxes deliberately cleared after a full pass — leave them empty */
       const on = LifeOS.isDone(aid, date);
       if (!!it.done !== on) { it.done = on; changed++; }
@@ -5107,6 +5968,7 @@ const _render = render;
 render = function () { _render.apply(this, arguments); clearTimeout(pubT); pubT = setTimeout(() => { pushLib(); publishToday(); }, 400); };
 /* someone ticked something elsewhere — only repaint if it actually moved */
 LifeOS.on(() => {
+  if (REPLAYING) return;                /* repairTickIds syncs once when it is done */
   /* Not while the starter board is only being shown. This fires when rows
      arrive, which is exactly when the other device's board is landing, and
      saving here would write the demo down with this second's clock on it —
@@ -5114,7 +5976,7 @@ LifeOS.on(() => {
      laptop used to overwrite the phone. */
   if (pullDone()) { saveQuiet(); render(); }
 });
-LifeOS.ready(() => { repairActIds(); pullDone(); render(); });
+LifeOS.ready(() => { repairActIds(); repairTickIds(); pullDone(); render(); });
 
 render();
 /* keep the now line honest without redrawing the world */

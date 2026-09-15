@@ -147,6 +147,10 @@ body{overscroll-behavior-y:none}
 .mb-veil.on{opacity:1}
 .mb-sheet{position:fixed;left:0;right:0;bottom:0;z-index:8901;
   display:flex;flex-direction:column;max-height:min(92vh,var(--mb-h,92vh));
+  /* vh on an iPhone is the screen with Safari's toolbars hidden, so 92vh runs
+     under them. svh is the screen as it actually is; older browsers keep the
+     line above. Found by TRAIN. */
+  max-height:min(92svh,var(--mb-h,92svh));
   margin:0 auto;width:100%;max-width:var(--mb-w,560px);
   background:var(--surface-1,#0e141d);color:var(--text-1,#dbe7f0);
   border-top:1px solid var(--border-strong,#2b3a4d);
@@ -250,6 +254,44 @@ function chrome() {
     s.name = 'apple-mobile-web-app-status-bar-style'; s.content = 'black-translucent';
     doc.head.appendChild(s);
   }
+
+  /* ── the icon on an iPhone's home screen ──
+     Tom, 2026-09-15: "what about icons for the Home Screen on iOS". Add to
+     Home Screen takes a PNG named by this link and nothing else: no SVG, no
+     favicon, and without it iOS uses a screenshot of the page. The pictures
+     live in shared/icons, one per app id, drawn from the master set at
+     180px on the app's own plate colour (2026-09-15; redraw them the same
+     way when a drawing changes). The app is what it declared to the store,
+     or its folder before it has, and the home screen carries its own link.
+     Only put in where the page has not said otherwise. Nothing here is a
+     web app install: that needs a web address, and from a folder the link
+     is simply unused. Done once the page has loaded, so the app has
+     declared itself by then. */
+  const here = (doc.currentScript && doc.currentScript.src) || '';
+  const sharedDir = here.replace(/[^\/]*$/, '');
+  const homeIcon = () => {
+    const folder = (location.pathname.match(/\/([^\/]+)\/[^\/]*$/) || [])[1];
+    const declared = g.Rec && g.Rec.appId && g.Rec.appId !== 'app' ? g.Rec.appId : '';
+    const appId = declared || (folder && folder !== 'shared' && folder.indexOf('.') < 0 && folder.indexOf('%') < 0 ? folder : 'home');
+    if (sharedDir && !doc.querySelector('link[rel="apple-touch-icon"]')) {
+      /* in the theme already in force, if the theme got there first; skins.js
+         moves it on every theme change after this */
+      const S = g.Skins, cur = S && S.current;
+      const th = cur && S.factory && S.factory(cur.id) ? cur.id + '/' : '';
+      const l = doc.createElement('link');
+      l.rel = 'apple-touch-icon';
+      l.setAttribute('data-mb-app', appId); l.setAttribute('data-mb-dir', sharedDir);
+      l.href = sharedDir + 'icons/' + th + appId + '.png';
+      doc.head.appendChild(l);
+    }
+    if (!doc.querySelector('meta[name="apple-mobile-web-app-title"]')) {
+      const t = doc.createElement('meta');
+      t.name = 'apple-mobile-web-app-title';
+      t.content = (doc.title || appId).replace(/\s*[—–-].*$/, '').trim() || appId;
+      doc.head.appendChild(t);
+    }
+  };
+  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', homeIcon); else homeIcon();
 
   root.classList.toggle('mb-ios', ios);
   root.classList.toggle('mb-android', android);
@@ -560,15 +602,15 @@ function hold(el, fn, opts) {
   base();
   opts = opts || {};
   const delay = opts.delay || 500;
-  let timer = null, sx = 0, sy = 0, fired = false, id = null;
+  let timer = null, sx = 0, sy = 0, fired = false, firedAt = 0, id = null;
   const cancel = () => { clearTimeout(timer); timer = null; id = null; };
 
   el.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;  /* right-click has its own path */
     if (opts.skip && e.target.closest(opts.skip)) return;
-    id = e.pointerId; sx = e.clientX; sy = e.clientY; fired = false;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; fired = false; firedAt = 0;
     timer = setTimeout(() => {
-      fired = true; timer = null;
+      fired = true; firedAt = Date.now(); timer = null;
       /* The buzz is the only signal that the hold registered. Without it you
          cannot tell a working long-press from a dead one until the menu
          appears, by which point you have already held too long. */
@@ -595,6 +637,13 @@ function hold(el, fn, opts) {
   el.addEventListener('contextmenu', e => {
     if (opts.skip && e.target.closest(opts.skip)) return;
     e.preventDefault();
+    /* Android Chrome raises its own contextmenu at the end of a long press,
+       at about the same moment the timer above fires, so one hold opened the
+       menu twice (a sheet on top of a sheet). A pointer still down, or a hold
+       that has already fired, means the timer owns this one; a mouse's
+       right-click never reached pointerdown (its button is not 0) and still
+       lands here. */
+    if (id !== null || (firedAt && Date.now() - firedAt < 700)) return;
     fn(e);
   });
 
@@ -650,8 +699,14 @@ function swipe(row, opts) {
     live = false;
   }, { passive: true });
 
-  /* one row open at a time, and a tap anywhere else puts it away */
-  doc.addEventListener('pointerdown', e => { if (on && !row.contains(e.target)) reset(); }, { passive: true });
+  /* one row open at a time, and a tap anywhere else puts it away. The
+     listener lets go of itself once the row has left the page: a list that
+     redraws on every tick was leaving one of these behind per row per draw. */
+  const away = e => {
+    if (!row.isConnected) { doc.removeEventListener('pointerdown', away); return; }
+    if (on && !row.contains(e.target)) reset();
+  };
+  doc.addEventListener('pointerdown', away, { passive: true });
   return { reset: reset, face: face };
 }
 
