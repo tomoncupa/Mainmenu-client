@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="105533b9">
+<html lang="en" data-built="8581e9c4">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.8, 2026-09-15">
+<meta name="mb-version" content="1.0.9, 2026-09-16">
 <title>LOG</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▤</text></svg>">
 <meta name="theme-color" content="#0B0E14">
@@ -11,17 +11,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=105533b9"></script>
-<script src="../shared/day.js?v=105533b9"></script>
-<script src="../shared/records.js?v=105533b9"></script>
-<script src="../shared/journal.js?v=105533b9"></script>
-<script src="../shared/mobile.js?v=105533b9"></script>
-<script src="../shared/sound.js?v=105533b9"></script>
-<script src="../shared/ui.js?v=105533b9"></script>
-<script src="../shared/chart.js?v=105533b9"></script>
-<script src="../shared/io.js?v=105533b9"></script>
-<script src="../shared/health.js?v=105533b9"></script>
-<script src="../shared/icons.js?v=105533b9"></script>
+<script src="../shared/skins.js?v=8581e9c4"></script>
+<script src="../shared/day.js?v=8581e9c4"></script>
+<script src="../shared/records.js?v=8581e9c4"></script>
+<script src="../shared/journal.js?v=8581e9c4"></script>
+<script src="../shared/measure.js?v=8581e9c4"></script>
+<script src="../shared/mobile.js?v=8581e9c4"></script>
+<script src="../shared/sound.js?v=8581e9c4"></script>
+<script src="../shared/ui.js?v=8581e9c4"></script>
+<script src="../shared/chart.js?v=8581e9c4"></script>
+<script src="../shared/io.js?v=8581e9c4"></script>
+<script src="../shared/health.js?v=8581e9c4"></script>
+<script src="../shared/icons.js?v=8581e9c4"></script>
 
 <style>
 /* Colours and sizes are tokens, never numbers. shared/THEMING.md is the
@@ -513,7 +514,7 @@ function applyText() {
 /* ══════════════════════ STATUS'S JOURNAL ══════════════════════
    The kinds, the time parser, the clock labels and the two publish steps are
    shared/journal.js, the one set of rules STATUS, QUESTS and the home screen
-   read too. The half-life sum below is still a copy of STATUS's: change both. */
+   read too. The half-life sum is shared/measure.js since 2026-09-16. */
 
 const NOTE_KINDS = Journal.KINDS;
 const MARK = { todo: '×', entry: '·', event: '–', idea: '!' };
@@ -651,9 +652,11 @@ function xValue(def, d) {
   });
   if (!e.length) return '';
   e.sort((a, b) => a.t - b.t);
-  const v = f.agg === 'sum' ? e.reduce((a, x) => a + x.v, 0)
-    : f.agg === 'avg' ? e.reduce((a, x) => a + x.v, 0) / e.length
-    : e[e.length - 1].v;
+  /* The rule for a day's one number lives in shared/measure.js since
+     2026-09-16, so LOG, STATUS and the home screen cannot answer differently.
+     The READING stays here: the calendar draws a year at a time off G's
+     indexes, and going back to the store per day per column would be slow. */
+  const v = Measure.dayValue(f, e);
   if (f.measure === 'check') return v ? '✓' : '';
   if (f.measure === 'scale' || f.dec) return r1(v);
   return Math.round(v).toLocaleString();
@@ -709,7 +712,7 @@ function graphHTML(d) {
     const span = Math.ceil(half * 4 / 24) + 1;
     const doses = [];
     Day.range(Day.shift(d, -(span - 1)), d).forEach(x => cafDoses(x).forEach(e => doses.push(e)));
-    const level = T => doses.reduce((a, e) => { const hrs = (T - e.t) / 3600000; return hrs < 0 ? a : a + e.v * Math.pow(0.5, hrs / half); }, 0);
+    const level = T => Measure.decay(doses, half, T);
     const samples = [];
     for (let m = start; m < W; m += 15) samples.push({ m, v: level(mid + m * 60000) });
     samples.push({ m: W, v: level(mid + W * 60000) });

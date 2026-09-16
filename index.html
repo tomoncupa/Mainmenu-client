@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="105533b9">
+<html lang="en" data-built="8581e9c4">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.7, 2026-09-15">
+<meta name="mb-version" content="1.0.8, 2026-09-16">
 <title>MAIN MENU</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>">
 <!-- the icon on an iPhone's home screen. Every app gets one from mobile.js;
@@ -20,17 +20,18 @@
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=105533b9"></script>
-<script src="shared/day.js?v=105533b9"></script>
-<script src="shared/records.js?v=105533b9"></script>
-<script src="shared/journal.js?v=105533b9"></script>
-<script src="shared/chart.js?v=105533b9"></script>
-<script src="shared/mobile.js?v=105533b9"></script>
-<script src="shared/sound.js?v=105533b9"></script>
-<script src="shared/ui.js?v=105533b9"></script>
-<script src="shared/io.js?v=105533b9"></script>
-<script src="shared/icons.js?v=105533b9"></script>
-<script src="shared/import.js?v=105533b9"></script>
+<script src="shared/skins.js?v=8581e9c4"></script>
+<script src="shared/day.js?v=8581e9c4"></script>
+<script src="shared/records.js?v=8581e9c4"></script>
+<script src="shared/journal.js?v=8581e9c4"></script>
+<script src="shared/measure.js?v=8581e9c4"></script>
+<script src="shared/chart.js?v=8581e9c4"></script>
+<script src="shared/mobile.js?v=8581e9c4"></script>
+<script src="shared/sound.js?v=8581e9c4"></script>
+<script src="shared/ui.js?v=8581e9c4"></script>
+<script src="shared/io.js?v=8581e9c4"></script>
+<script src="shared/icons.js?v=8581e9c4"></script>
+<script src="shared/import.js?v=8581e9c4"></script>
 <style>
 :root{
   /* ── the bridge ──
@@ -939,15 +940,12 @@ function trainLastDay() {
    number without becoming a second author of it. */
 
 /** the value of one tracked field on one day, or null */
-function evValue(date, id) {
-  const row = Rec.get('ev', date, id);
-  if (!row || !row.e || !row.e.length) return null;
-  const f = Rec.map('field')[id];
-  const es = row.e.map(x => Number(x.v)).filter(v => !isNaN(v));
-  if (!es.length) return null;
-  if (f && f.agg === 'avg') return es.reduce((a, b) => a + b, 0) / es.length;
-  return es[es.length - 1];
-}
+/* shared/measure.js, since 2026-09-16. This used to be its own copy of the
+   rule and had fallen behind STATUS's: no `sum`, so a summed field showed its
+   last reading rather than the total, and no food, so caffeine drunk as coffee
+   was invisible here while STATUS had it. Same function, same answer, in every
+   app that reads a measure. */
+function evValue(date, id) { return Measure.value(date, id); }
 
 /** every weight reading in the window, oldest first */
 function weightSeries(days) {
