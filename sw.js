@@ -56,7 +56,7 @@
 /* Replaced by tools/build-client.py. 'live' never changes here, which is
    correct: with nothing stamped, every entry is refreshed by the rule above
    on every online fetch, so there is no old copy to throw away. */
-const STAMP = '15a1c155';
+const STAMP = '92f93888';
 const CACHE = 'mb-' + STAMP;
 
 const PRECACHE = [
@@ -71,21 +71,21 @@ const PRECACHE = [
   "log/index.html",
   "quest/",
   "quest/index.html",
-  "shared/chart.js?v=15a1c155",
-  "shared/day.js?v=15a1c155",
-  "shared/health.js?v=15a1c155",
-  "shared/icons.js?v=15a1c155",
-  "shared/import.js?v=15a1c155",
-  "shared/io.js?v=15a1c155",
-  "shared/journal.js?v=15a1c155",
-  "shared/measure.js?v=15a1c155",
-  "shared/mobile.js?v=15a1c155",
-  "shared/notice.js?v=15a1c155",
-  "shared/records.js?v=15a1c155",
-  "shared/skins.js?v=15a1c155",
+  "shared/chart.js?v=92f93888",
+  "shared/day.js?v=92f93888",
+  "shared/health.js?v=92f93888",
+  "shared/icons.js?v=92f93888",
+  "shared/import.js?v=92f93888",
+  "shared/io.js?v=92f93888",
+  "shared/journal.js?v=92f93888",
+  "shared/measure.js?v=92f93888",
+  "shared/mobile.js?v=92f93888",
+  "shared/notice.js?v=92f93888",
+  "shared/records.js?v=92f93888",
+  "shared/skins.js?v=92f93888",
   "shared/skins.json",
-  "shared/sound.js?v=15a1c155",
-  "shared/ui.js?v=15a1c155",
+  "shared/sound.js?v=92f93888",
+  "shared/ui.js?v=92f93888",
   "status/",
   "status/index.html",
   "style/",
