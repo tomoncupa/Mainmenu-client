@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="e2114bfc">
+<html lang="en" data-built="e3140350">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="mb-version" content="1.0.34, 2026-09-18">
+<meta name="mb-version" content="1.0.36, 2026-09-18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,18 +15,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script src="../shared/skins.js?v=e2114bfc"></script>
-<script src="../shared/day.js?v=e2114bfc"></script>
-<script src="../shared/records.js?v=e2114bfc"></script>
-<script src="../shared/journal.js?v=e2114bfc"></script>
-<script src="../shared/chart.js?v=e2114bfc"></script>
-<script src="../shared/mobile.js?v=e2114bfc"></script>
-<script src="../shared/sound.js?v=e2114bfc"></script>
-<script src="../shared/ui.js?v=e2114bfc"></script>
-<script src="../shared/io.js?v=e2114bfc"></script>
-<script src="../shared/icons.js?v=e2114bfc"></script>
-<script src="../shared/health.js?v=e2114bfc"></script>
-<script src="../shared/notice.js?v=e2114bfc"></script>
+<script src="../shared/skins.js?v=e3140350"></script>
+<script src="../shared/day.js?v=e3140350"></script>
+<script src="../shared/records.js?v=e3140350"></script>
+<script src="../shared/journal.js?v=e3140350"></script>
+<script src="../shared/chart.js?v=e3140350"></script>
+<script src="../shared/mobile.js?v=e3140350"></script>
+<script src="../shared/sound.js?v=e3140350"></script>
+<script src="../shared/ui.js?v=e3140350"></script>
+<script src="../shared/io.js?v=e3140350"></script>
+<script src="../shared/icons.js?v=e3140350"></script>
+<script src="../shared/health.js?v=e3140350"></script>
+<script src="../shared/notice.js?v=e3140350"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -1613,22 +1613,11 @@ function hhmm(ms) { return Journal.hhmm(ms); }
 function clockLabel(at) { return Journal.clockLabel(at); }
 function durLabel(d) { return Journal.durLabel(d); }
 
-const addNote = (date, kind, text) => {
-  const list = Rec.all('note', { date: date });
-  const parsed = parseLine(text, date);
-  Rec.set('note', date, uid(), {
-    /* `t` is when it was written, which is not the same as the day it belongs
-       to — a task logged at midnight for tomorrow, or a line backfilled a week
-       later, both need the two kept apart. `at` is different again: it is the
-       time the thing happens, which is the one you typed. */
-    kind: kind, text: parsed.text, t: Date.now(), made: date,
-    at: parsed.at, dur: parsed.dur,
-    ord: list.length, done: 0, cancelled: 0,
-  });
-  /* published here rather than at the call site, so a line reaches the hub
-     however it was written */
-  publishNotes(date);
-};
+/* The one creator in shared/journal.js since 2026-09-18, which writes this
+   payload for every app. `t` is when it was written, `at` the time the thing
+   happens, and it publishes, so a line reaches the hub however it was
+   written. Returns the new key. */
+const addNote = (date, kind, text, extra) => Journal.add(date, kind, text, extra, APP.id);
 
 /* A tick is the one row every app may write, which makes it the only way to
    tell the rest of the suite something happened without the other end knowing
@@ -6303,7 +6292,9 @@ function newFieldForm(pane, existing) {
     if (measure === 'scale') {
       extra.appendChild(el('label', 'fl', 'How far it runs'));
       const w = el('div', 'chips');
-      [3, 4, 5, 10].forEach(n => {
+      /* Tom, 2026-09-18: 1-3, 1-5, 1-7 and 1-10. A field already on 1 to 4
+         keeps it; the chip just is not offered for a new one. */
+      [3, 5, 7, 10].forEach(n => {
         const b = el('button', 'chip' + (hi === n ? ' on' : ''), '1 to ' + n);
         b.onclick = () => { hi = n; paint(); };
         w.appendChild(b);
@@ -7835,12 +7826,7 @@ function checkSave() {
   });
   const doing = checkDoing.trim();
   checkDoing = '';
-  if (doing) {
-    addNote(d, 'entry', doing);
-    const mine = Rec.all('note', { date: d }).sort((a, b) => (b.payload.t || 0) - (a.payload.t || 0))[0];
-    const now = new Date(), hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-    if (mine && !mine.payload.at) { Rec.patch('note', d, mine.key, { at: hm }); publishNotes(d); }
-  }
+  if (doing) addNote(d, 'entry', doing, { now: true });
   if (n) Mobile.feedback('success');
   /* Answering by hand puts the next one off. Without this the question he just
      answered comes back ten minutes later, which is how a prompt stops being
