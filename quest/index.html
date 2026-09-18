@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="e2385bf8">
+<html lang="en" data-built="9b23df9b">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.13, 2026-09-18">
+<meta name="mb-version" content="1.0.14, 2026-09-18">
 <title>QUESTS</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◆</text></svg>">
 <meta name="theme-color" content="#0B0E14">
@@ -12,16 +12,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
 <!-- The shared foundation. quest/CLAUDE.md is this app's brief. -->
-<script src="../shared/skins.js?v=e2385bf8"></script>
-<script src="../shared/day.js?v=e2385bf8"></script>
-<script src="../shared/records.js?v=e2385bf8"></script>
-<script src="../shared/journal.js?v=e2385bf8"></script>
-<script src="../shared/mobile.js?v=e2385bf8"></script>
-<script src="../shared/sound.js?v=e2385bf8"></script>
-<script src="../shared/ui.js?v=e2385bf8"></script>
-<script src="../shared/io.js?v=e2385bf8"></script>
-<script src="../shared/health.js?v=e2385bf8"></script>
-<script src="../shared/icons.js?v=e2385bf8"></script>
+<script src="../shared/skins.js?v=9b23df9b"></script>
+<script src="../shared/day.js?v=9b23df9b"></script>
+<script src="../shared/records.js?v=9b23df9b"></script>
+<script src="../shared/journal.js?v=9b23df9b"></script>
+<script src="../shared/mobile.js?v=9b23df9b"></script>
+<script src="../shared/sound.js?v=9b23df9b"></script>
+<script src="../shared/ui.js?v=9b23df9b"></script>
+<script src="../shared/io.js?v=9b23df9b"></script>
+<script src="../shared/health.js?v=9b23df9b"></script>
+<script src="../shared/icons.js?v=9b23df9b"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -452,12 +452,13 @@ const RULES = [
       const m = w.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
       return m ? dayMonth(+m[1] - 1, +m[2], m[3] ? +m[3] : 0) : null;
     } },
-  /* A range: "2-4:30", "9-11am", "from 7 to 9". Needs a colon, an am or pm,
-     or "at" or "from", so "3-5 reps" stays words. */
+  /* A range: "2-4:30", "9-11am", "from 7 to 9", and since 2026-09-18 a bare
+     "8-11" too (Tom: "We don't track reps with bullets anyway"). On a todo it
+     becomes the start and the end. */
   { kind: 'time', src: '(?:(?:at|from)\\s+)?\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?\\s*(?:-|–|to)\\s*\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?',
     fn: (w, out) => {
       const m = w.toLowerCase().match(/^(?:(at|from)\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:-|–|to)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
-      if (!m || !(m[1] || m[3] || m[4] || m[6] || m[7])) return null;
+      if (!m) return null;
       const smm = m[3] ? +m[3] : 0, eh = +m[5], emm = m[6] ? +m[6] : 0;
       let s = clockMins(+m[2], smm, m[4] || m[7] || null, out.due);
       if (s == null) return null;
