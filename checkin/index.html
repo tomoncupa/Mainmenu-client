@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="55166c7f">
+<html lang="en" data-built="788081a8">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.8, 2026-09-19">
+<meta name="mb-version" content="1.0.10, 2026-09-22">
 <title>CHECK IN</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◎</text></svg>">
 <meta name="theme-color" content="#0B0E14">
@@ -12,15 +12,16 @@
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
 <!-- The shared foundation, exactly as _template/index.html loads it. -->
-<script src="../shared/skins.js?v=55166c7f"></script>
-<script src="../shared/day.js?v=55166c7f"></script>
-<script src="../shared/records.js?v=55166c7f"></script>
-<script src="../shared/mobile.js?v=55166c7f"></script>
-<script src="../shared/sound.js?v=55166c7f"></script>
-<script src="../shared/ui.js?v=55166c7f"></script>
-<script src="../shared/io.js?v=55166c7f"></script>
-<script src="../shared/health.js?v=55166c7f"></script>
-<script src="../shared/icons.js?v=55166c7f"></script>
+<script src="../shared/skins.js?v=788081a8"></script>
+<script src="../shared/day.js?v=788081a8"></script>
+<script src="../shared/records.js?v=788081a8"></script>
+<script src="../shared/mobile.js?v=788081a8"></script>
+<script src="../shared/sound.js?v=788081a8"></script>
+<script src="../shared/ui.js?v=788081a8"></script>
+<script src="../shared/io.js?v=788081a8"></script>
+<script src="../shared/health.js?v=788081a8"></script>
+<script src="../shared/icons.js?v=788081a8"></script>
+<script src="../shared/creatures.js?v=788081a8"></script>
 
 <style>
 /* CHECK IN. Everywhere: built to the phone rules, laid out in two columns on a
@@ -1931,34 +1932,30 @@ const ANIMALS = {
   monkey: { name: 'Monkey', ops: [['c', 24, 106, 26, 'hsl(30 45% 76%)'], ['c', 176, 106, 26, 'hsl(30 45% 76%)'], ['c', 100, 102, 78, 'hsl(25 40% 36%)'],
     ['e', 78, 104, 30, 34, 0, 'hsl(30 45% 76%)'], ['e', 122, 104, 30, 34, 0, 'hsl(30 45% 76%)'], ['e', 100, 146, 46, 34, 0, 'hsl(30 45% 76%)'], ['eyes'], ['c', 93, 142, 4, INK], ['c', 107, 142, 4, INK]] },
 };
-const pathCache = {};
-function drawAnimal(g, kind, cx, cy, r, ang) {
-  const A = ANIMALS[kind] || ANIMALS.bear;
-  g.save();
-  g.translate(cx, cy);
-  g.rotate(ang || 0);
-  const s = r / 92;
-  g.scale(s, s);
-  g.translate(-100, -104);
-  A.ops.forEach(op => {
-    if (op[0] === 'eyes') {
-      [[72, 102], [128, 102]].forEach(([x, y]) => { g.fillStyle = INK; g.beginPath(); g.arc(x, y, 10, 0, 7); g.fill(); g.fillStyle = WHITE; g.beginPath(); g.arc(x + 3, y - 4, 3.2, 0, 7); g.fill(); });
-      return;
-    }
-    g.beginPath();
-    if (op[0] === 'c') { g.fillStyle = op[4]; g.arc(op[1], op[2], op[3], 0, Math.PI * 2); g.fill(); }
-    else if (op[0] === 'e') { g.fillStyle = op[6]; g.ellipse(op[1], op[2], op[3], op[4], op[5], 0, Math.PI * 2); g.fill(); }
-    else if (op[0] === 'p') { g.fillStyle = op[2]; g.fill(pathCache[op[1]] || (pathCache[op[1]] = new Path2D(op[1]))); }
-    else if (op[0] === 'arc') { g.strokeStyle = op[4]; g.lineWidth = 6; g.lineCap = 'round'; g.arc(op[1], op[2], op[3], 0.25 * Math.PI, 0.75 * Math.PI); g.stroke(); }
-  });
-  g.restore();
-}
+/* ══════════════ pokémon ══════════════
+   Tom, 2026-09-22: "How bout check in is pokemon instead of animals", and on
+   being told the art is Nintendo's and CHECK IN ships to clients on a public
+   address: "it's fine". His call. Drawn here from circles and paths in the
+   same small language as the animals, so nothing is downloaded and it works
+   offline.
+
+   The animals above are kept, not deleted: removals can flip. Every animal a
+   client already picked shows as the Pokémon in LEGACY, so nobody sees a
+   bear on one screen and a Pikachu on another. Putting the animals back is
+   pointing CREATURES at ANIMALS again. */
+const CREATURES = Creatures.list;
+const creature = Creatures.pick;
+/* the face, drawn by shared/creatures.js so COACH draws the same one */
+function drawAnimal(g, kind, cx, cy, r, ang) { Creatures.draw(g, kind, cx, cy, r, ang); }
+
 function animalPicker(cur, onPick) {
   const box = el('div', 'animals');
-  Object.keys(ANIMALS).forEach(k => {
+  cur = creature(cur);
+  Object.keys(CREATURES).forEach(k => {
     const b = el('button', cur === k ? 'on' : '');
     b.type = 'button';
-    b.setAttribute('aria-label', ANIMALS[k].name);
+    b.setAttribute('aria-label', CREATURES[k].name);
+    b.title = CREATURES[k].name;
     const c = el('canvas');
     c.width = 120; c.height = 120;
     drawAnimal(c.getContext('2d'), k, 60, 62, 50, 0);
