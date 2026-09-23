@@ -1439,7 +1439,7 @@ const IO = {
 
       It draws nothing at all until `cloud.js` is there, so a device where the
       file failed to arrive shows the sheet exactly as it always did. */
-  cloudRow(pane) {
+  cloudRow(pane, top) {
     const C = g.Cloud;
     if (!C) return;
     /* Everything this draws goes inside one wrapper, so the sheet's own row
@@ -1447,7 +1447,10 @@ const IO = {
        either section can address the one it means. The wrapper is a plain
        block and changes no layout. */
     const wrap = el('div', 'mb-live-sync');
-    pane.appendChild(wrap);
+    /* At the top of DATA since 2026-09-23, Tom: "Put sign in with google on
+       top". Signing in is the one thing a new device needs first. */
+    if (top === false) pane.appendChild(wrap);
+    else pane.insertBefore(wrap, pane.firstChild);
     wrap.appendChild(el('div', 'mb-group', 'LIVE SYNC'));
     const line = el('p');
     const box = el('div');
@@ -3147,7 +3150,7 @@ g.addEventListener('message', e => {
    row has to be drawable everywhere. Whether anything CONNECTS is cloud.js's
    own decision, and from a folder or inside a frame the answer is no.      */
 (function loadCloud() {
-  return;   /* client build: no live sync, see tools/build-client.py */
+  if (g.Cloud || document.getElementById('mb-cloud-js')) return;
   var me = document.currentScript && document.currentScript.src;
   if (!me) {
     var tags = document.getElementsByTagName('script');
