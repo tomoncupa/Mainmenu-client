@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="788081a8">
+<html lang="en" data-built="8febe0f8">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.24, 2026-09-22">
+<meta name="mb-version" content="1.0.25, 2026-09-23">
 <title>MAIN MENU</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>">
 <!-- the icon on an iPhone's home screen. Every app gets one from mobile.js;
@@ -20,18 +20,18 @@
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=788081a8"></script>
-<script src="shared/day.js?v=788081a8"></script>
-<script src="shared/records.js?v=788081a8"></script>
-<script src="shared/journal.js?v=788081a8"></script>
-<script src="shared/measure.js?v=788081a8"></script>
-<script src="shared/chart.js?v=788081a8"></script>
-<script src="shared/mobile.js?v=788081a8"></script>
-<script src="shared/sound.js?v=788081a8"></script>
-<script src="shared/ui.js?v=788081a8"></script>
-<script src="shared/io.js?v=788081a8"></script>
-<script src="shared/icons.js?v=788081a8"></script>
-<script src="shared/import.js?v=788081a8"></script>
+<script src="shared/skins.js?v=8febe0f8"></script>
+<script src="shared/day.js?v=8febe0f8"></script>
+<script src="shared/records.js?v=8febe0f8"></script>
+<script src="shared/journal.js?v=8febe0f8"></script>
+<script src="shared/measure.js?v=8febe0f8"></script>
+<script src="shared/chart.js?v=8febe0f8"></script>
+<script src="shared/mobile.js?v=8febe0f8"></script>
+<script src="shared/sound.js?v=8febe0f8"></script>
+<script src="shared/ui.js?v=8febe0f8"></script>
+<script src="shared/io.js?v=8febe0f8"></script>
+<script src="shared/icons.js?v=8febe0f8"></script>
+<script src="shared/import.js?v=8febe0f8"></script>
 <style>
 :root{
   /* ── the bridge ──
@@ -801,7 +801,7 @@ if (typeof Icons !== 'undefined') addEventListener('DOMContentLoaded', () => {
 /* A step heavier than a button's icon and a size up from where it was: at
    16px in a 1.75 stroke a row of app icons read as a row of letters. */
 const appIco = (a, size) => (typeof Icons !== 'undefined' &&
-  Icons.svg('app.' + a.id, { size: size || 20, weight: 2.1 })) || a.ic;
+  Icons.svg('app.' + a.id, { size: size || 20, weight: 2.1, art: true })) || a.ic;
 /* the app's colour: its slot in the theme's chart ramp, as a CSS value. The
    table is in shared/icons.js, so the iPhone icons are drawn from the same one. */
 const appTint = a => {
