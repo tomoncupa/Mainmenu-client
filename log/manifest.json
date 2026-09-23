@@ -1,7 +1,7 @@
 {
-  "name": "STATUS",
-  "short_name": "STATUS",
-  "description": "Every daily measure, food, money and the journal.",
+  "name": "LOG",
+  "short_name": "LOG",
+  "description": "The journal, the last few weeks at a glance.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

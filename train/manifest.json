@@ -1,7 +1,7 @@
 {
-  "name": "STATUS",
-  "short_name": "STATUS",
-  "description": "Every daily measure, food, money and the journal.",
+  "name": "TRAIN",
+  "short_name": "TRAIN",
+  "description": "The training log: sets, reps, records.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

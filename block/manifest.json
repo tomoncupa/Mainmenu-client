@@ -1,7 +1,7 @@
 {
-  "name": "STATUS",
-  "short_name": "STATUS",
-  "description": "Every daily measure, food, money and the journal.",
+  "name": "BLOCK",
+  "short_name": "BLOCK",
+  "description": "Build the day out of blocks.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

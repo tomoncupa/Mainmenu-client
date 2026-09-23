@@ -1,7 +1,7 @@
 {
-  "name": "STATUS",
-  "short_name": "STATUS",
-  "description": "Every daily measure, food, money and the journal.",
+  "name": "MAIN MENU",
+  "short_name": "MAIN MENU",
+  "description": "Today, streaks, everything at a glance.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

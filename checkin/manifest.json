@@ -1,7 +1,7 @@
 {
-  "name": "STATUS",
-  "short_name": "STATUS",
-  "description": "Every daily measure, food, money and the journal.",
+  "name": "CHECK IN",
+  "short_name": "CHECK IN",
+  "description": "Photos, weight and how the week went.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
