@@ -59,7 +59,7 @@
 /* Replaced by tools/build-client.py. 'live' never changes here, which is
    correct: with nothing stamped, every entry is refreshed by the rule above
    on every online fetch, so there is no old copy to throw away. */
-const STAMP = 'c414e3b4';
+const STAMP = 'ace5c8da';
 const CACHE = 'mb-' + STAMP;
 
 const PRECACHE = [
@@ -74,25 +74,25 @@ const PRECACHE = [
   "log/index.html",
   "quest/",
   "quest/index.html",
-  "shared/chart.js?v=c414e3b4",
-  "shared/cloud.js?v=c414e3b4",
-  "shared/creatures.js?v=c414e3b4",
-  "shared/day.js?v=c414e3b4",
-  "shared/health.js?v=c414e3b4",
-  "shared/icons.js?v=c414e3b4",
-  "shared/import.js?v=c414e3b4",
-  "shared/io.js?v=c414e3b4",
-  "shared/journal.js?v=c414e3b4",
-  "shared/measure.js?v=c414e3b4",
-  "shared/mobile.js?v=c414e3b4",
-  "shared/notice.js?v=c414e3b4",
-  "shared/nutrients.js?v=c414e3b4",
-  "shared/range.js?v=c414e3b4",
-  "shared/records.js?v=c414e3b4",
-  "shared/skins.js?v=c414e3b4",
+  "shared/chart.js?v=ace5c8da",
+  "shared/cloud.js?v=ace5c8da",
+  "shared/creatures.js?v=ace5c8da",
+  "shared/day.js?v=ace5c8da",
+  "shared/health.js?v=ace5c8da",
+  "shared/icons.js?v=ace5c8da",
+  "shared/import.js?v=ace5c8da",
+  "shared/io.js?v=ace5c8da",
+  "shared/journal.js?v=ace5c8da",
+  "shared/measure.js?v=ace5c8da",
+  "shared/mobile.js?v=ace5c8da",
+  "shared/notice.js?v=ace5c8da",
+  "shared/nutrients.js?v=ace5c8da",
+  "shared/range.js?v=ace5c8da",
+  "shared/records.js?v=ace5c8da",
+  "shared/skins.js?v=ace5c8da",
   "shared/skins.json",
-  "shared/sound.js?v=c414e3b4",
-  "shared/ui.js?v=c414e3b4",
+  "shared/sound.js?v=ace5c8da",
+  "shared/ui.js?v=ace5c8da",
   "status/",
   "status/index.html",
   "style/",
