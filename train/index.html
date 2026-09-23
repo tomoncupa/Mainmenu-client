@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="cdd9c761">
+<html lang="en" data-built="0f2bac65">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="mb-version" content="1.0.16, 2026-09-22">
+<meta name="mb-version" content="1.0.18, 2026-09-23">
 <title>TRAIN</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛭</text></svg>">
 <meta name="theme-color" content="#0B0E14">
@@ -11,9 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=cdd9c761"></script>
-<script src="../shared/day.js?v=cdd9c761"></script>
-<script src="../shared/records.js?v=cdd9c761"></script>
+<script src="../shared/skins.js?v=0f2bac65"></script>
+<script src="../shared/day.js?v=0f2bac65"></script>
+<script src="../shared/records.js?v=0f2bac65"></script>
 <script>
 /* ═══════════════════ A CLIENT'S TRAIN ═══════════════════
    Tom, 2026-09-22: COACH "should act exactly like train just on their
@@ -96,14 +96,14 @@
   };
 })();
 </script>
-<script src="../shared/mobile.js?v=cdd9c761"></script>
-<script src="../shared/sound.js?v=cdd9c761"></script>
-<script src="../shared/ui.js?v=cdd9c761"></script>
-<script src="../shared/io.js?v=cdd9c761"></script>
-<script src="../shared/icons.js?v=cdd9c761"></script>
-<script src="../shared/chart.js?v=cdd9c761"></script>
-<script src="../shared/range.js?v=cdd9c761"></script>
-<script src="../shared/health.js?v=cdd9c761"></script>
+<script src="../shared/mobile.js?v=0f2bac65"></script>
+<script src="../shared/sound.js?v=0f2bac65"></script>
+<script src="../shared/ui.js?v=0f2bac65"></script>
+<script src="../shared/io.js?v=0f2bac65"></script>
+<script src="../shared/icons.js?v=0f2bac65"></script>
+<script src="../shared/chart.js?v=0f2bac65"></script>
+<script src="../shared/range.js?v=0f2bac65"></script>
+<script src="../shared/health.js?v=0f2bac65"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -5864,20 +5864,43 @@ TRAIN.sendToCoach = function () {
   ask.then(function (name) {
     if (!name) return;
     var bag = TRAIN.coachFile(name);
-    var text = JSON.stringify(bag);
-    var file = 'TRAIN ' + name + ' ' + Day.today() + '.json';
-    var f = null;
-    try { f = new File([text], file, { type: 'application/json' }); } catch (e) {}
-    var done = function () { UI.toast('Sent. <b>' + bag.rows.length + '</b> rows in the file.'); };
-    if (f && navigator.canShare && navigator.canShare({ files: [f] }) && Mobile.touch) {
-      navigator.share({ files: [f] }).then(done, function () {});
-      return;
-    }
-    var url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-    var a = document.createElement('a'); a.href = url; a.download = file;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 8000);
-    done();
+
+    /* The file, which is what this always did and what it still does whenever
+       the upload cannot happen: opened from a folder, not signed in, no
+       signal, blocked CDN. Hard constraint 4, and the reason this is still one
+       button — the client presses the same thing either way and never has
+       to know which of the two carried it. */
+    var toFile = function (why) {
+      var text = JSON.stringify(bag);
+      var file = 'TRAIN ' + name + ' ' + Day.today() + '.json';
+      var f = null;
+      try { f = new File([text], file, { type: 'application/json' }); } catch (e) {}
+      var done = function () {
+        UI.toast(why ? 'Saved a file to send instead. ' + UI.esc(why)
+                     : 'Sent. <b>' + bag.rows.length + '</b> rows in the file.');
+      };
+      if (f && navigator.canShare && navigator.canShare({ files: [f] }) && Mobile.touch) {
+        navigator.share({ files: [f] }).then(done, function () {});
+        return;
+      }
+      var url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      var a = document.createElement('a'); a.href = url; a.download = file;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 8000);
+      done();
+    };
+
+    /* The upload, 2026-09-23. Same press, no file to hand over: the parcel
+       goes on the coach's shelf and his COACH takes it in. Still a deliberate
+       send, which is the part Tom kept when he picked this over a live feed
+       — nothing leaves this phone until the button is pressed. */
+    if (!window.Cloud || !Cloud.send) { toFile(''); return; }
+    UI.toast('Sending to your coach…');
+    Cloud.send('train', bag).then(function () {
+      UI.toast('Sent to your coach. <b>' + bag.rows.length + '</b> rows.');
+    }, function (e) {
+      toFile((e && e.message) || 'that did not go through');
+    });
   });
 };
 TRAIN.openProgram = function () {
@@ -7482,6 +7505,13 @@ document.getElementById('moreBtn').onclick = function (e) {
       { label: 'Supersets', fn: function () { TRAIN.supersetPanel(); } },
       { label: 'Share Picture', fn: function () { TRAIN.shareRecap(TRAIN.date); } },
       { label: 'Share As Text', fn: function () { TRAIN.shareWorkout(); } },
+      /* Tom, 2026-09-23: "Maybe in post workout share menu". The moment a
+         client would send is the one they just finished, not a trip to
+         Profile, so it sits with the other two ways of sending a session
+         out. It still sends the whole log rather than this day, because
+         COACH merges on updated_at and a partial send would be the one that
+         quietly loses the days around it. */
+      { label: 'Send To Coach', fn: function () { TRAIN.sendToCoach(); } },
       { label: phNow ? 'Edit Training Block' : 'New Training Block', fn: function () {
         TRAIN.phaseDialog(phNow ? phNow.key : null);
       } },
@@ -7502,9 +7532,14 @@ document.getElementById('moreBtn').onclick = function (e) {
     ];
   }
   /* inside COACH already: there is no coach to send a client's rows to */
-  if (CLIENT) items = items.filter(function (it) { return it.label !== 'Send To Coach'; }); else {
-    items = [{ label: 'Settings', fn: function () { TRAIN.settings(); } }];
-  }
+  if (CLIENT) items = (items || []).filter(function (it) { return it.label !== 'Send To Coach'; });
+  /* A screen with no menu of its own still opens on Settings. This was an
+     `else` on the line above until 2026-09-23, which meant every screen that
+     was NOT inside COACH had its whole MORE menu replaced by that one item —
+     so from 1.0.16 nobody could reach Send To Coach, Share Picture, Supersets
+     or any of the rest. Caught by trying to press the button rather than by
+     calling what is behind it. */
+  if (!items || !items.length) items = [{ label: 'Settings', fn: function () { TRAIN.settings(); } }];
   menuAt(at, items, 'MORE');
 };
 
