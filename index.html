@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="60b61ed4">
+<html lang="en" data-built="1cd92f18">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.35, 2026-09-25">
+<meta name="mb-version" content="1.0.36, 2026-09-28">
 <title>MAIN MENU</title>
 <link rel="icon" href="icon-192.png">
 <!-- the icon on an iPhone's home screen. Every app gets one from mobile.js;
@@ -21,18 +21,18 @@
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=60b61ed4"></script>
-<script src="shared/day.js?v=60b61ed4"></script>
-<script src="shared/records.js?v=60b61ed4"></script>
-<script src="shared/journal.js?v=60b61ed4"></script>
-<script src="shared/measure.js?v=60b61ed4"></script>
-<script src="shared/chart.js?v=60b61ed4"></script>
-<script src="shared/mobile.js?v=60b61ed4"></script>
-<script src="shared/sound.js?v=60b61ed4"></script>
-<script src="shared/ui.js?v=60b61ed4"></script>
-<script src="shared/io.js?v=60b61ed4"></script>
-<script src="shared/icons.js?v=60b61ed4"></script>
-<script src="shared/import.js?v=60b61ed4"></script>
+<script src="shared/skins.js?v=1cd92f18"></script>
+<script src="shared/day.js?v=1cd92f18"></script>
+<script src="shared/records.js?v=1cd92f18"></script>
+<script src="shared/journal.js?v=1cd92f18"></script>
+<script src="shared/measure.js?v=1cd92f18"></script>
+<script src="shared/chart.js?v=1cd92f18"></script>
+<script src="shared/mobile.js?v=1cd92f18"></script>
+<script src="shared/sound.js?v=1cd92f18"></script>
+<script src="shared/ui.js?v=1cd92f18"></script>
+<script src="shared/io.js?v=1cd92f18"></script>
+<script src="shared/icons.js?v=1cd92f18"></script>
+<script src="shared/import.js?v=1cd92f18"></script>
 <style>
 :root{
   /* ── the bridge ──
@@ -793,6 +793,7 @@ const APPS = [
   { id: 'quest',  nm: 'QUESTS', ic: '◆', file: 'quest/index.html',  ds: 'todos, when they are due, and projects', shares: 'the journal todos', phone: 1 },
   { id: 'train',  nm: 'TRAIN',  ic: '⛭', file: 'train/index.html',  ds: 'the training log — sets, reps, records',     shares: 'the training log + ticks', phone: 1 },
   { id: 'checkin', nm: 'CHECK IN', ic: '◎', file: 'checkin/index.html', ds: 'photos, weight and how the week went', shares: 'weight, with STATUS', phone: 1 },
+  { id: 'kitchen', nm: 'KITCHEN', ic: '▥', file: 'kitchen/index.html', ds: 'what is on the shelf, the week of meals, and what is short', shares: 'foods, meals and purchases', phone: 1 },
   { id: 'style',  nm: 'STYLE',  ic: '◧', file: 'style/index.html',  ds: 'pick, compare, edit and add themes',         shares: 'the themes every app wears' },
 ];
 const app = id => APPS.find(a => a.id === id);
