@@ -39,6 +39,14 @@ const BK = a => 'mb.backup.' + a;
 const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const toast = (h, o) => g.UI ? g.UI.toast(h, o) : console.log(h.replace(/<[^>]+>/g, ''));
+/* Every row in memory, TRAIN's sets included: records.js keeps them out of
+   the open (KEPT OUT) until something asks. A backup, a restore and the sheet
+   all ask first. */
+const needRows = () => (g.Rec && g.Rec.need ? g.Rec.need() : Promise.resolve());
+/* The demo (shared/skins.js, DEMO, 2026-09-30): a made-up person in a store of
+   its own. It never signs in, never syncs to the sheet or the cloud, and
+   leaves no device note, so nothing in it can reach Tom's rows. */
+const DEMO = !!g.MB_DEMO;
 
 /* ── a column that stores an id and shows a word ──
    `kind` on a journal line is stored as `todo`, because that is a stable key
@@ -1092,6 +1100,9 @@ const IO = {
   backup(appId) {
     const S = IO.spec(appId), R = g.Rec;
     if (!R) return toast('no store loaded', { bad: true });
+    return needRows().then(() => IO._backup(appId));
+  },
+  _backup(appId) {
     const bag = IO.bagFor(appId);
     const rows = bag.rows;
     /* The stamp is written when the file lands, not when the button is
@@ -1110,6 +1121,9 @@ const IO = {
   },
   /** every app at once — the belt-and-braces one, lives on the home screen */
   backupAll() {
+    return needRows().then(() => IO._backupAll());
+  },
+  _backupAll() {
     const R = g.Rec;
     const bag = { kind: 'motherbase-backup', v: 1, app: '*', at: new Date().toISOString(), rows: R.export() };
     /* Waits for the file, like backup() does. This one stamped every app as
@@ -1320,7 +1334,7 @@ const IO = {
 
     pane.appendChild(el('div', 'mb-group', 'IMPORT'));
     opt('⭱', 'Restore', 'From a backup or an exported spreadsheet. Fills in what is missing, never overwrites newer.',
-      () => IO.pick(f => IO.readAny(f).then(bag => {
+      () => IO.pick(f => IO.readAny(f).then(bag => needRows().then(() => bag)).then(bag => {
         const c = IO.restore(bag, 'merge');
         toast(c ? '<b>' + c + '</b> rows restored' : 'nothing to restore — this device is already up to date');
         repaint();   /* the row count moved even when the backup date did not */
@@ -1440,8 +1454,20 @@ const IO = {
       It draws nothing at all until `cloud.js` is there, so a device where the
       file failed to arrive shows the sheet exactly as it always did. */
   cloudRow(pane, top) {
+    if (DEMO) {
+      const w = el('div', 'mb-live-sync');
+      if (top === false) pane.appendChild(w); else pane.insertBefore(w, pane.firstChild);
+      w.appendChild(el('div', 'mb-group', 'LIVE SYNC'));
+      w.appendChild(el('p', null, 'Off in the demo. Nothing here leaves this browser.'));
+      return;
+    }
     const C = g.Cloud;
-    if (!C) return;
+    /* cloud.js arrives once the page is open; a DATA opened sooner fetches it
+       now and draws the row when it lands */
+    if (!C) {
+      IO.loadCloud(() => { if (pane.isConnected && g.Cloud && !pane.querySelector('.mb-live-sync')) IO.cloudRow(pane, top); });
+      return;
+    }
     /* Everything this draws goes inside one wrapper, so the sheet's own row
        above stays exactly the DOM it has always been and anything measuring
        either section can address the one it means. The wrapper is a plain
@@ -1544,6 +1570,70 @@ const IO = {
        pane has left the document, which needs no cooperation from whoever
        closed it. */
     const off = C.on(() => { pane.isConnected ? draw() : off(); });
+    IO.deviceRow(wrap);
+  },
+
+  /** DEVICES, under LIVE SYNC: every device's own note from report.js, most
+      recently seen first. When it last opened anything, what live sync last
+      did there, and its last error if one came this week. Tom, 2026-09-30:
+      nothing had ever been watched on his iPhone, so this is where the
+      iPhone says how it is doing. Draws nothing until a device has written. */
+  deviceRow(host) {
+    const Rp = g.DeviceReport;
+    const list = Rp && Rp.devices ? Rp.devices() : [];
+    /* How long THIS open took, from records.js's own clock (2026-09-30), so
+       the Galaxy A10 can say its figure on its own screen. */
+    const t = g.Rec && g.Rec.timing ? g.Rec.timing() : null;
+    const secs = ms => (Math.round(ms / 100) / 10) + ' s';
+    if (!list.length && !(t && t.ready)) return;
+    const small = 'font-size:var(--f-2,13px);color:var(--text-2,#8fa3b5);margin:2px 0 0';
+    const ago = iso => {
+      const t = Date.parse(iso || '');
+      if (!t) return 'never';
+      const m = Math.round((Date.now() - t) / 60000);
+      if (m < 2) return 'just now';
+      if (m < 60) return m + ' min ago';
+      if (m < 60 * 24) return Math.round(m / 60) + ' h ago';
+      if (m < 60 * 48) return 'yesterday';
+      return new Date(t).toISOString().slice(0, 10);
+    };
+    /* an app's folder is not always its name */
+    const NAMES = { home: 'HOME', quest: 'QUESTS', portion: 'FOODDÉX', mix: 'ELEMENT', system: 'NOTICE', sheet: 'CHARACTER SHEET' };
+    const nameOf = k => NAMES[k] || String(k || 'an app').toUpperCase();
+    host.appendChild(el('div', 'mb-group', 'DEVICES'));
+    if (t && t.ready) {
+      const op = el('p', null, 'Opened in <b>' + secs(Math.max(t.paint, t.ready)) + '</b> here' +
+        (t.paint ? ', first drawn at ' + secs(t.paint) : '') + '.');
+      op.className = 'mb-opened';
+      host.appendChild(op);
+    }
+    const week = Date.now() - 7 * 86400000;
+    list.slice(0, 8).forEach(d => {
+      const box = el('div');
+      box.style.cssText = 'margin:0 0 var(--s-3,12px)';
+      const sync = d.sync === 'live' ? 'synced ' + ago(d.syncedAt) : d.sync || 'no live sync';
+      box.appendChild(el('p', null, '<b>' + esc(d.name) + '</b>' + (d.me ? ' (this one)' : '') +
+        '. Seen ' + esc(ago(d.seen)) + ', ' + esc(sync) + '.'));
+      const recent = d.errs.filter(e => Date.parse(e.t) > week);
+      const last = d.errs[d.errs.length - 1];
+      const e = el('p', null, recent.length
+        ? esc(recent.length + (recent.length === 1 ? ' error' : ' errors') + ' this week. Last, in ' + nameOf(last.app) + ': ' + last.m)
+        : 'No errors this week.');
+      e.style.cssText = small;
+      box.appendChild(e);
+      /* the last three opens on that device, newest first */
+      const opens = Object.keys(d.open || {}).map(k => [k, d.open[k]]).filter(x => x[1] && x[1].s != null)
+        .sort((a, b) => String(b[1].at || '').localeCompare(String(a[1].at || ''))).slice(0, 3);
+      if (opens.length) {
+        const o = el('p', null, esc('Opened ' + opens.map(x => nameOf(x[0]) + ' in ' + x[1].s + ' s' +
+          (x[1].p ? ' (drawn at ' + x[1].p + ' s)' : '')).join(', ') + '.'));
+        o.style.cssText = small;
+        box.appendChild(o);
+      }
+      const v = Object.keys(d.v).sort().map(k => nameOf(k) + ' ' + d.v[k]).join(', ');
+      if (v) { const vp = el('p', null, esc(v)); vp.style.cssText = small; box.appendChild(vp); }
+      host.appendChild(box);
+    });
   },
 };
 
@@ -1673,7 +1763,7 @@ const release = appId => { inflight[appId] = 0; };
    suite rather than to one app, the same way the link does: the calendar is
    one place and turning it on twice would mean turning it off twice. */
 let mcfg = { url: '', on: 0, at: null, pushed: {}, seen: {}, full: {}, sig: {}, sheetV: 0, cal: 0 };
-const mread = () => { try { Object.assign(mcfg, JSON.parse(localStorage.getItem(MKEY) || '{}')); } catch (e) {} };
+const mread = () => { try { Object.assign(mcfg, JSON.parse(localStorage.getItem(MKEY) || '{}')); } catch (e) {} if (DEMO) mcfg.url = ''; };
 mread();
 
 /* The per-app boundaries, which every frame writes and none of them owns. */
@@ -1706,7 +1796,7 @@ g.addEventListener('storage', e => { if (e.key === MKEY) mread(); });
    which strands whatever was already pasted — the app looks configured and
    has no link. Carry it across once, the first time an app asks. */
 function adoptOldLink(appId) {
-  if (mcfg.url || !g.Rec) return;
+  if (DEMO || mcfg.url || !g.Rec) return;
   try {
     const old = g.Rec.setting(appId, 'mirror');
     if (old && old.url) { mcfg.url = old.url; if (old.on) mcfg.on = old.on; msave(); }
@@ -2120,6 +2210,7 @@ const Mirror = {
   push(appId, quiet, opts) {
     adoptOldLink(appId);
     opts = opts || {};
+    if (DEMO) return Promise.resolve({ state: 'failed', missing: 0, of: 0 });
     if (!mcfg.url) {
       if (!quiet) toast('Paste the link first', { bad: true });
       return Promise.resolve({ state: 'failed', missing: 0, of: 0 });
@@ -2428,13 +2519,15 @@ const Mirror = {
 
   /** the whole round trip, in the order that makes it safe */
   sync(appId, quiet, opts) {
+    if (DEMO) { if (!quiet) toast('The demo never syncs'); return Promise.resolve(false); }
     if (!mcfg.url) { mlog({ a: appId, w: 'manual', r: 'skip', y: 'no-link' }); return Promise.resolve(false); }
     if (!quiet) toast('Syncing…');
     mstep(0, 4, 'Reading the sheet', quiet);
     const t0 = Date.now();
     const mline = { a: appId, w: quiet ? 'auto' : 'manual', o: Mirror.outstanding(appId) ? 1 : 0 };
     let idx = null;
-    return Mirror.index(appId)
+    /* every row, TRAIN's sets included, before anything is read or sent */
+    return needRows().then(() => Mirror.index(appId))
       .then(pre => {
         idx = pre;
         mstep(1, 4, 'Downloading', quiet);
@@ -2618,14 +2711,14 @@ const Mirror = {
        whole problem: a sync that declines to run is as worth a line as one
        that fails, and these three are the difference between "the phone is
        broken" and "the toggle is off". */
-    if (!mcfg.url) { mlog({ a: appId, w: w, r: 'skip', y: 'no-link' }); return Promise.resolve(false); }
+    if (DEMO || !mcfg.url) { mlog({ a: appId, w: w, r: 'skip', y: 'no-link' }); return Promise.resolve(false); }
     if (!mcfg.on) { mlog({ a: appId, w: w, r: 'skip', y: 'switched-off' }); return Promise.resolve(false); }
     if (busy(appId)) { mlog({ a: appId, w: w, r: 'skip', y: 'already-running' }); return Promise.resolve(false); }
     hold(appId);
     const t0 = Date.now();
     const held = Mirror.outstanding(appId);
     let idx = null, line = { a: appId, w: w, o: held ? 1 : 0 };
-    const job = Mirror.index(appId)
+    const job = needRows().then(() => Mirror.index(appId))
       .then(pre => {
         idx = pre;
         line.v = (pre && pre.v) || 0;
@@ -3160,8 +3253,37 @@ g.addEventListener('message', e => {
    It is added even inside a frame and even from a folder, because the settings
    row has to be drawable everywhere. Whether anything CONNECTS is cloud.js's
    own decision, and from a folder or inside a frame the answer is no.      */
-(function loadCloud() {
-  if (g.Cloud || document.getElementById('mb-cloud-js')) return;
+/* ── errors, from the first line ──
+   report.js keeps each device's last errors, but it arrives after an app's
+   own script has run, and an error while an app boots is the one that
+   matters most. So this catches from here until report.js takes over and
+   hands it what it held (`__mbEarly`, five at most). */
+(function earlyErrors() {
+  if (g.__mbEarly) return;
+  var q = g.__mbEarly = [];
+  var put = function (m, at) {
+    if (q.done || q.length >= 5) return;
+    q.push({ t: new Date().toISOString(), m: String(m || 'error').slice(0, 160), at: at || '' });
+  };
+  g.addEventListener('error', function (e) {
+    if (e && e.message) put(e.message, String(e.filename || '').split('?')[0].split('/').slice(-2).join('/') + (e.lineno ? ':' + e.lineno : ''));
+  });
+  g.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason;
+    put('promise: ' + ((r && (r.message || r.name)) || r || 'rejected'), '');
+  });
+})();
+
+/* ── report.js and cloud.js, once the page is open (2026-09-30) ──
+   Both used to be added the moment this file ran, so on every open they were
+   fetched and parsed while the page was still drawing its first screen:
+   70 KB of cloud.js on a Galaxy A10 that is slow on every open. Nothing
+   needs either before then. cloud.js waited for Rec.ready plus 1.2 s before
+   it connected anyway, and every app already treats a missing Cloud as "not
+   yet". So both are added once the store has answered, and cloud.js at once
+   when DATA is opened before that. Where this file is was worked out here,
+   while the page is still reading it: document.currentScript is gone later. */
+const SHARED_SRC = (function () {
   var me = document.currentScript && document.currentScript.src;
   if (!me) {
     var tags = document.getElementsByTagName('script');
@@ -3169,14 +3291,34 @@ g.addEventListener('message', e => {
       if (/\/shared\/io\.js(\?|$)/.test(tags[i].src)) { me = tags[i].src; break; }
     }
   }
-  if (!me) return;
-  var t = document.createElement('script');
-  t.id = 'mb-cloud-js';
-  t.src = me.replace(/io\.js.*$/, 'cloud.js');
-  /* A missing or broken cloud.js must cost nothing: no error, no retry, and
+  return me || '';
+})();
+function addShared(id, file, done) {
+  const had = document.getElementById(id);
+  if (had) { if (done) had.addEventListener('load', done, { once: true }); return; }
+  if (!SHARED_SRC) return;
+  const t = document.createElement('script');
+  t.id = id;
+  t.src = SHARED_SRC.replace(/io\.js.*$/, file);
+  /* A missing or broken file must cost nothing: no error, no retry, and
      the sheet sync carries on exactly as it did. */
   t.onerror = function () { t.remove(); };
+  if (done) t.addEventListener('load', done, { once: true });
   document.head.appendChild(t);
+}
+/* The demo never signs in and leaves no device note: neither file is
+   fetched there at all. */
+/* report.js: this device's note. cloud.js: LIVE SYNC. */
+IO.loadCloud = function (done) {
+  if (DEMO) return;
+  if (g.Cloud) { if (done) setTimeout(done, 0); return; }
+  addShared('mb-cloud-js', 'cloud.js', done);
+};
+(function afterOpen() {
+  if (DEMO) return;
+  const go = () => setTimeout(() => { addShared('mb-report-js', 'report.js'); IO.loadCloud(); }, 0);
+  if (g.Rec && g.Rec.ready) g.Rec.ready(go);
+  else g.addEventListener('load', go, { once: true });
 })();
 
 g.IO = IO;
