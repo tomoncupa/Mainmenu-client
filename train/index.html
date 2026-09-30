@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="1cd92f18">
+<html lang="en" data-built="8d889953">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.38, 2026-09-26">
+<meta name="mb-version" content="1.0.42, 2026-09-30">
 <title>TRAIN</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B0E14">
@@ -12,9 +12,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=1cd92f18"></script>
-<script src="../shared/day.js?v=1cd92f18"></script>
-<script src="../shared/records.js?v=1cd92f18"></script>
+<script src="../shared/skins.js?v=8d889953"></script>
+<script src="../shared/day.js?v=8d889953"></script>
+<script src="../shared/records.js?v=8d889953"></script>
 <script>
 /* ═══════════════════ A CLIENT'S TRAIN ═══════════════════
    Tom, 2026-09-22: COACH "should act exactly like train just on their
@@ -33,7 +33,9 @@
    affected" — until then only three were, and a unit changed on a client
    changed his own TRAIN. A setting the client has never had reads Tom's,
    so a new client starts on his setup; three never do (whether TRAIN has
-   greeted them, the record rule, a running rest timer). Theme and sound
+   greeted them, the record rule, a running rest timer), and nor does a lift
+   left out of a picture (`share.<id>`), because the same exercise id is
+   another lift in another log. Theme and sound
    are kept by the device per app, outside the store, and stay shared.
    Rec.patch, map, keys, count and setting all go through the calls
    replaced here, so they follow without being touched. */
@@ -54,7 +56,7 @@
     if (T[type]) return [T[type], pre + (key == null ? '' : key)];
     if (type === 'setting' && String(key).indexOf('train.') === 0) {
       var theirs = 'train.' + pre + key.slice(6);
-      if (!read || MINE[key] || raw.row('setting', null, theirs)) return [type, theirs];
+      if (!read || MINE[key] || key.indexOf('train.share.') === 0 || raw.row('setting', null, theirs)) return [type, theirs];
     }
     return [type, key];
   }
@@ -106,14 +108,14 @@
   };
 })();
 </script>
-<script src="../shared/mobile.js?v=1cd92f18"></script>
-<script src="../shared/sound.js?v=1cd92f18"></script>
-<script src="../shared/ui.js?v=1cd92f18"></script>
-<script src="../shared/io.js?v=1cd92f18"></script>
-<script src="../shared/icons.js?v=1cd92f18"></script>
-<script src="../shared/chart.js?v=1cd92f18"></script>
-<script src="../shared/range.js?v=1cd92f18"></script>
-<script src="../shared/health.js?v=1cd92f18"></script>
+<script src="../shared/mobile.js?v=8d889953"></script>
+<script src="../shared/sound.js?v=8d889953"></script>
+<script src="../shared/ui.js?v=8d889953"></script>
+<script src="../shared/io.js?v=8d889953"></script>
+<script src="../shared/icons.js?v=8d889953"></script>
+<script src="../shared/chart.js?v=8d889953"></script>
+<script src="../shared/range.js?v=8d889953"></script>
+<script src="../shared/health.js?v=8d889953"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -667,6 +669,15 @@ div.prow{padding:0}
   gap:var(--s-1);color:var(--text-2);overflow-wrap:anywhere}
 .recap .rec .v{font-variant-numeric:tabular-nums;color:var(--text-1);font-weight:var(--w-bold);white-space:nowrap}
 .recap .rec .v small{color:var(--text-muted);font-weight:var(--w-body)}
+/* A lift on a shared picture: its name, then its top set with how it moved
+   under it. The change is only ever a gain, so it is only ever this colour. */
+.recap .lift{display:flex;align-items:baseline;gap:var(--s-3);padding:var(--s-2) 0;
+  border-top:var(--border-width) solid var(--border)}
+.recap .lift .nm{flex:1;min-width:0;color:var(--text-2);overflow-wrap:anywhere}
+.recap .lift .v{display:flex;flex-direction:column;align-items:flex-end;font-variant-numeric:tabular-nums;
+  color:var(--text-1);font-weight:var(--w-bold);white-space:nowrap}
+.recap .lift .v small{color:var(--text-muted);font-weight:var(--w-body)}
+.recap .lift .v em{font-style:normal;font-size:var(--f-1);color:var(--success)}
 .recap .pill{font-style:normal;font-size:var(--f-1);letter-spacing:.06em;text-transform:uppercase;padding:0 var(--s-2);
   border-radius:var(--radius-full);background:color-mix(in srgb, var(--accent) 18%, transparent);
   color:var(--accent);white-space:nowrap}
@@ -4876,12 +4887,12 @@ TRAIN.recordsFor = function (exId, range) {
    Sets can be fractional now. That is the honest shape: pretending a pull-up
    gives biceps a whole set or none of one is the thing that made the number
    not mean anything. */
-TRAIN.breakdown = function (from, to, by) {
+TRAIN.breakdown = function (from, to, by, off) {
   var exs = TRAIN.exercises(), cats = TRAIN.cats(), out = {}, days = {};
   Object.keys(TRAIN.idx.byDate).forEach(function (d) {
     if (d < from || d > to) return;
     TRAIN.idx.byDate[d].forEach(function (s) {
-      if (s.warm || !TRAIN.counts(s)) return;
+      if (s.warm || !TRAIN.counts(s) || (off && off[s.ex])) return;
       var ex = exs[s.ex];
       var vol = (s.kg || 0) * (s.r || 0);
       var put = function (key, share) {
@@ -5533,27 +5544,41 @@ TRAIN.showDelta = function (kg, ex) {
   return (kg >= 0 ? '+' : '−') + t;
 };
 
+/* A lift switched off on the Share Picture panel stays out of the text too,
+   and so does a lift that went down (TRAIN.wentDown); the toast names what
+   was left out, so what went out is never a surprise to him. Plain, as Tom
+   picked (F, 2026-09-30): working sets only, no warmups and no comments. */
 TRAIN.shareWorkout = function () {
-  var date = TRAIN.date, groups = TRAIN.dayGroups(date);
-  if (!groups.length) return UI.toast('There is no session to share', { bad: true });
+  var date = TRAIN.date, down = TRAIN.wentDown(date);
+  var work = function (g) { return g.sets.filter(function (s) { return !s.warm && TRAIN.counts(s); }); };
+  var all = TRAIN.dayGroups(date).filter(function (g) { return work(g).length; });
+  if (!all.length) return UI.toast('There is no session to share', { bad: true });
+  var out = function (g) { return TRAIN.sharedOut(g.ex) || down[g.ex]; };
+  var groups = all.filter(function (g) { return !out(g); });
+  var left = all.filter(out).map(function (g) { return UI.esc(g.def.name); }).join(', ');
+  if (!groups.length) return UI.toast('Nothing to share. Left out: ' + left, { bad: true });
   var lines = [Day.label(date)];
   var sess = Rec.get('session', date, '') || {};
   if (sess.start && sess.end) lines.push(clockOf(sess.start) + ' - ' + clockOf(sess.end) + '  ' + fmtLen(sess.start, sess.end));
   lines.push('');
   groups.forEach(function (g) {
+    var f = TRAIN.fieldsOf(g.ex);
     lines.push(g.def.name);
-    g.sets.forEach(function (s, i) {
-      lines.push('  ' + (i + 1) + '.  ' +
-        (s.kg ? TRAIN.showWeight(s.kg, s.u, g.ex) + ' ' + TRAIN.unitLabel(g.ex) + ' x ' : '') +
-        (s.r || 0) + ' reps' + (s.note ? '   (' + s.note + ')' : ''));
+    work(g).forEach(function (s, i) {
+      lines.push('  ' + (i + 1) + '.  ' + f.map(function (k) {
+        if (k === 'w') return s.kg ? TRAIN.showWeight(s.kg, s.u, g.ex) + ' ' + TRAIN.unitLabel(g.ex) : '';
+        if (k === 'r') return TRAIN.showReps(s.r || 0) + ' reps';
+        if (k === 'd') return TRAIN.showDist(s.dist || 0) + ' ' + TRAIN.distUnit();
+        return fmtSecs(s.dur || 0);
+      }).filter(Boolean).join(' x '));
     });
     lines.push('');
   });
   var text = lines.join('\n');
-  var done = function () { UI.toast('Session copied to the clipboard'); };
+  var done = function () { UI.toast('Session copied to the clipboard' + (left ? '. Left out: ' + left : '')); };
   if (navigator.share) {
     navigator.share({ title: 'Training - ' + Day.label(date), text: text })
-      .catch(function () { copyText(text, done); });
+      .then(function () { if (left) UI.toast('Left out: ' + left); }, function () { copyText(text, done); });
   } else copyText(text, done);
 };
 function copyText(text, then) {
@@ -7581,11 +7606,12 @@ TRAIN.logFromRoutine = function (key) {
 };
 
 /* ═══════════════════ COACH ═══════════════════
-   Two files, one each way, because there is no server between a client and
-   a coach and there is not meant to be one yet.
+   One thing each way. Since cloud.js 0.2.0 (2026-09-30) both travel through
+   the database's trays when this phone is signed in, and as files when it is
+   a folder copy or Firebase is blocked.
 
-   Out: SEND TO COACH. Every training row on this phone, as a file the coach
-   opens in COACH. Sent again, it carries everything again, and COACH merges
+   Out: SEND TO COACH. Every training row on this phone, for the coach to
+   take in COACH. Sent again, it carries everything again, and COACH merges
    on updated_at like any sync, so a second send only adds what is new.
 
    In: OPEN A PROGRAM. A file the coach made in COACH, or one he sold. It
@@ -7660,15 +7686,95 @@ TRAIN.sendToCoach = function () {
        goes on the coach's shelf and his COACH takes it in. Still a deliberate
        send, which is the part Tom kept when he picked this over a live feed
        — nothing leaves this phone until the button is pressed. */
-    if (!window.Cloud || !Cloud.send) { toFile(''); return; }
+    /* Since cloud.js 0.2.0 (2026-09-30) it goes through this phone's outbox
+       into the coach's in-tray: with no signal it waits and goes by itself
+       when the signal is back, and nobody signed in is asked to sign in
+       rather than handed a file. The file is left for a folder copy and a
+       blocked Firebase. A long log goes as several parcels, `train@1`,
+       `train@2`, each under the ceiling; COACH merges each on its own. */
+    if (!window.Cloud || !Cloud.post) {
+      if (!window.Cloud || !Cloud.send) { toFile(''); return; }
+      Cloud.send('train', bag).then(function () {
+        UI.toast('Sent to your coach. <b>' + bag.rows.length + '</b> rows.');
+      }, function (e) { toFile((e && e.message) || 'that did not go through'); });
+      return;
+    }
     UI.toast('Sending to your coach…');
-    Cloud.send('train', bag).then(function () {
-      UI.toast('Sent to your coach. <b>' + bag.rows.length + '</b> rows.');
+    Cloud.post(TRAIN.coachParts(bag).map(function (b, i) {
+      return { to: 'coach', id: 'train@' + (i + 1), kind: 'train', bag: b, say: 'to your coach' };
+    })).then(function (r) {
+      if (!r.left) return UI.toast('Sent to your coach. <b>' + bag.rows.length + '</b> rows.');
+      if (r.why === 'offline') return UI.toast('No signal. Sends by itself when the signal is back.');
+      if (r.why === 'refused') return UI.toast('Not sent. Your coach’s inbox refused it. It tries again next time an app opens.', { bad: true });
+      if (r.why === 'signin') return TRAIN.signInToSend(r.keys, function () { toFile(''); });
+      Cloud.unpost(r.keys);
+      toFile(r.why === 'blocked' ? 'Firebase would not load' : r.why === 'file' ? '' : (r.msg || 'that did not go through'));
     }, function (e) {
       toFile((e && e.message) || 'that did not go through');
     });
   });
 };
+/* Rows split so no parcel passes about 1.9 million characters, the database's
+   ceiling being two. Each part is a whole bag, so it merges on its own. */
+TRAIN.coachParts = function (bag, cap) {
+  cap = cap || 1900000;
+  var head = Object.assign({}, bag, { rows: [] }), base = JSON.stringify(head).length;
+  var parts = [], cur = [], size = base;
+  bag.rows.forEach(function (r) {
+    var n = JSON.stringify(r).length + 1;
+    if (cur.length && size + n > cap) { parts.push(cur); cur = []; size = base; }
+    cur.push(r); size += n;
+  });
+  parts.push(cur);
+  return parts.map(function (rows) { return Object.assign({}, head, { rows: rows }); });
+};
+/* Nobody is signed in on this phone. The send waits in the outbox, and
+   signing in sends it. */
+TRAIN.signInToSend = function (keys, fallback) {
+  UI.dialog({
+    title: 'SIGN IN TO SEND', width: 400,
+    body: function (b) {
+      var p = UI.el('p', 'empty');
+      p.textContent = 'Sign in with Google once and your sessions go straight to your coach. This one waits here until then.';
+      b.appendChild(p);
+    },
+    actions: [
+      { label: 'SAVE A FILE', fn: function () { Cloud.unpost(keys); fallback(); } },
+      { label: 'SIGN IN', kind: 'go', fn: function () {
+        Cloud.signIn().then(function () { return Cloud.flush(); }).then(function (r) {
+          UI.toast(r.left ? 'Signed in. Sends by itself when the signal is back.' : 'Sent to your coach.');
+        }, function (e) { UI.toast(UI.esc((e && e.message) || 'Could not sign in'), { bad: true }); });
+      } },
+    ],
+  });
+};
+/* A program the coach sent, waiting in this phone's own tray (cloud.js
+   0.2.0), becomes a routine the way an opened program file does. Looked for
+   once the app is up, and again when it comes back to the front, at most
+   every five minutes. A parcel that will not read stays in the tray. Never
+   on a client's profile inside COACH: that tray is Tom's own. */
+TRAIN.fromCoach = function () {
+  if (CLIENT || !window.Cloud || !Cloud.inbox || !Cloud.ready || !Cloud.ready()) return Promise.resolve(0);
+  TRAIN._inboxAt = Date.now();
+  return Cloud.inbox().then(function (list) {
+    var names = [];
+    list.forEach(function (p) {
+      if (!p.body || p.body.kind !== 'motherbase-program') return;
+      var n;
+      try { n = TRAIN.takeProgram(p.body); } catch (e) { return; }
+      names.push(n.name);
+      Cloud.opened(p.id).catch(function () {});
+    });
+    if (names.length) {
+      UI.toast('<b>' + names.map(UI.esc).join(', ') + '</b> from your coach ' + (names.length > 1 ? 'are' : 'is') + ' in Training Routines');
+      if (TRAIN.redraw) TRAIN.redraw();
+    }
+    return names.length;
+  }, function () { return 0; });
+};
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && Date.now() - (TRAIN._inboxAt || 0) > 300000) TRAIN.fromCoach();
+});
 TRAIN.openProgram = function () {
   var inp = document.createElement('input');
   inp.type = 'file'; inp.accept = '.json,application/json';
@@ -8576,13 +8682,14 @@ function deltaChip(d) {
   return '<span class="dl' + (d.dir > 0 ? ' up' : d.dir < 0 ? ' down' : '') + '">' + UI.esc(d.text) + '</span>';
 }
 
-TRAIN.dayCompare = function (date) {
+TRAIN.dayCompare = function (date, off) {
   var groups = TRAIN.dayGroups(date);
   if (!groups.length) return null;
   var ctx = TRAIN.compareCtx(date);
   var out = { byEx: {}, up: 0, down: 0, same: 0, fresh: 0, marks: [], vs: null, vsDays: {}, whyOf: {},
               reps: 0, pctSum: 0, pctN: 0 };
   groups.forEach(function (g) {
+    if (off && off[g.ex]) return;
     var row = { vs: TRAIN.vsFor(date, g.ex, ctx), bySet: {}, up: 0, down: 0, same: 0, reps: 0, pctSum: 0, pctN: 0 };
     out.byEx[g.ex] = row;
     if (!row.vs) return;
@@ -8645,9 +8752,10 @@ TRAIN.recordHits = function (exId, date) {
     });
   });
 };
-TRAIN.sessionRecords = function (date) {
+TRAIN.sessionRecords = function (date, off) {
   var out = [];
   TRAIN.dayGroups(date).forEach(function (g) {
+    if (off && off[g.ex]) return;
     TRAIN.recordHits(g.ex, date).forEach(function (h) {
       out.push({ ex: g.ex, name: g.def.name, s: h.s, all: h.all, block: h.block });
     });
@@ -8698,13 +8806,13 @@ function musclesHtml(rows, week) {
         '<b>' + r.sets + '</b>' + (week ? '<em>' + r.workouts + '×</em>' : '') + '</div>';
     }).join('') + '</div></div>';
 }
-function muscleRows(from, to) {
-  return TRAIN.breakdown(from, to, 'category').rows
+function muscleRows(from, to, off) {
+  return TRAIN.breakdown(from, to, 'category', off).rows
     .filter(function (r) { return r.sets > 0; })
     .sort(function (a, b) { return b.sets - a.sets || b.workouts - a.workouts; });
 }
-TRAIN.sessionStats = function (date) {
-  var sets = TRAIN.setsOn(date).filter(function (s) { return !s.warm && TRAIN.counts(s); });
+TRAIN.sessionStats = function (date, off) {
+  var sets = TRAIN.setsOn(date).filter(function (s) { return !s.warm && TRAIN.counts(s) && !(off && off[s.ex]); });
   var reps = 0, ex = {};
   sets.forEach(function (s) { reps += s.r || 0; ex[s.ex] = 1; });
   var sess = Rec.get('session', date, '') || {};
@@ -8718,8 +8826,18 @@ TRAIN.sessionStats = function (date) {
    Tom: "make it aesthetic, this is something we might want to share on
    social media." What it says is fact, never praise: what was lifted, how
    each set did against last time, which muscles it went to, and any record
-   set. */
-TRAIN.recapCard = function (date, cmp) {
+   set. `off` holds lifts left out of a shared picture: the card is drawn as
+   if they were never in the session. `share` draws it for other people
+   (Tom picked B, 2026-09-30): "N of M sets stronger" stays, and the weaker
+   count, the down squares and every minus beside a total or on the gain
+   line go; each lift is listed with its top set (A). Only the picture does
+   this. The card on the log is his own view and shows everything. */
+TRAIN.recapCard = function (date, cmp, off, share) {
+  /* A lift left out takes its name and numbers with it and nothing else.
+     Tom, 2026-09-30: "Sometimes I won't want to share any specific movement
+     details, sometimes it will be plenty. This shouldn't change total sets."
+     So the totals, set by set and sets per muscle are always the whole
+     session; `off` reaches only LIFTS and RECORDS, the rows that name a lift. */
   var st = TRAIN.sessionStats(date);
   if (!st.sets) return null;
   if (cmp === undefined) cmp = TRAIN.dayCompare(date);
@@ -8735,8 +8853,8 @@ TRAIN.recapCard = function (date, cmp) {
   var num = function (n) { return Math.round(n).toLocaleString(); };
   var cell = function (label, big, small, now, then, fmt) {
     var em = '';
-    if (vs && then != null) {
-      var dd = now - then;
+    var dd = now - then;
+    if (vs && then != null && !(share && dd < 0 && Math.abs(dd) >= (label === 'Volume' ? 0.5 : 1))) {
       em = '<em>' + (Math.abs(dd) < (label === 'Volume' ? 0.5 : 1) ? 'same as ' : (dd > 0 ? '+' : '−') + fmt(Math.abs(dd)) + ' vs ') +
         esc(Day.short(cmp.vs)) + '</em>';
     }
@@ -8755,25 +8873,38 @@ TRAIN.recapCard = function (date, cmp) {
     '</div>';
 
   var n = cmp ? cmp.up + cmp.down + cmp.same : 0;
-  if (n) {
+  /* Shared, nothing stronger is nothing to say: the section goes. */
+  if (n && !(share && !cmp.up)) {
     var days = Object.keys(cmp.vsDays).length, vn = (Rec.get('session', cmp.vs, '') || {}).name;
-    var sub = [cmp.same ? cmp.same + ' same' : '', cmp.down ? cmp.down + ' weaker' : '',
+    var sub = [cmp.same ? cmp.same + ' same' : '', cmp.down && !share ? cmp.down + ' weaker' : '',
                cmp.fresh ? cmp.fresh + ' new' : ''].filter(Boolean);
     sub.push('vs ' + (vn ? vn + ', ' : '') + dayY(cmp.vs, date) +
       (days > 1 ? ' and ' + (days - 1) + ' other day' + (days > 2 ? 's' : '') : ''));
+    var avg = cmp.pctN ? cmp.pctSum / cmp.pctN : 0;
+    var gt = share ? gainText(Math.max(0, cmp.reps), avg > 0 ? cmp.pctSum : 0, cmp.pctN)
+                   : gainText(cmp.reps, cmp.pctSum, cmp.pctN);
     h += '<div><h3>SET BY SET</h3>' +
       '<div class="strong"><b>' + cmp.up + ' of ' + n + '</b> sets stronger</div>' +
-      (gainText(cmp.reps, cmp.pctSum, cmp.pctN)
-        ? '<div class="gain' + (cmp.pctN && cmp.pctSum / cmp.pctN >= 0.05 ? ' up'
-            : cmp.pctN && cmp.pctSum / cmp.pctN <= -0.05 ? ' down' : '') + '">' +
-          esc(gainText(cmp.reps, cmp.pctSum, cmp.pctN)) + '</div>' : '') +
+      (gt ? '<div class="gain' + (avg >= 0.05 ? ' up' : avg <= -0.05 && !share ? ' down' : '') + '">' + esc(gt) + '</div>' : '') +
       '<div class="sub">' + esc(sub.join(' · ')) + '</div>' +
-      '<div class="ticks">' + cmp.marks.map(function (k) { return '<i class="' + k + '"></i>'; }).join('') + '</div></div>';
+      '<div class="ticks">' + cmp.marks.map(function (k) {
+        return '<i class="' + (share && k === 'down' ? 'same' : k) + '"></i>';
+      }).join('') + '</div></div>';
+  }
+
+  if (share) {
+    var lifts = TRAIN.dayGroups(date).map(function (g) {
+      if (off && off[g.ex]) return null;
+      var L = TRAIN.liftLine(date, g.ex, cmp && cmp.byEx[g.ex]);
+      return L && '<div class="lift"><span class="nm">' + esc(g.def.name) + '</span><span class="v"><span>' + L.top + '</span>' +
+        (L.up ? '<em>' + esc(L.up) + '</em>' : '') + '</span></div>';
+    }).filter(Boolean);
+    if (lifts.length) h += '<div><h3>LIFTS</h3>' + lifts.join('') + '</div>';
   }
 
   h += musclesHtml(muscleRows(date, date), false);
 
-  var recs = TRAIN.sessionRecords(date);
+  var recs = TRAIN.sessionRecords(date, off);
   if (recs.length) {
     h += '<div><h3>RECORDS</h3>' + recs.map(function (x) {
       return '<div class="rec">' + ico('record') +
@@ -8792,19 +8923,109 @@ TRAIN.recapCard = function (date, cmp) {
    shared/io.js): the picture, its style and size already set to the last ones
    used, and one SHARE. `build` makes a fresh card each time a choice changes.
    Drawn at phone width, so it looks the same whatever the window. The TRAIN
-   mark comes off the picture: Tom, 2026-09-14, "no small branding". */
-function shareCard(build, name) {
+   mark comes off the picture: Tom, 2026-09-14, "no small branding".
+   `options` are the panel's extra switches; `build` gets their state, or
+   null for the check that there is anything to share at all. */
+function shareCard(build, name, options) {
   if (!window.IO || !IO.share) return UI.toast('Pictures are not available here', { bad: true });
-  if (!build()) return UI.toast('There is nothing to share', { bad: true });
-  IO.share({ app: APP.id, name: name, width: 390, build: function () {
-    var c = build(), mk = c && c.querySelector('.mark');
+  if (!build(null)) return UI.toast('There is nothing to share', { bad: true });
+  IO.share({ app: APP.id, name: name, width: 390, options: options, build: function (o) {
+    var c = build(o), mk = c && c.querySelector('.mark');
     if (mk) mk.remove();
     return c;
   } });
 }
+/* Which of a day's lifts are named when it is shared. Tom, 2026-09-29: "I
+   don't want to share lifts im weaker in." One switch per lift on the Share
+   panel, on until he turns it off, kept per lift as `share.<exercise id>`, so
+   a lift left out once stays out of every later picture and text until he
+   turns it back on. Off takes the lift's name and numbers out and leaves the
+   session's totals whole (recapCard). Only a lift with a working set that
+   counts gets a switch. */
+TRAIN.shareLifts = function (date) {
+  return TRAIN.dayGroups(date).filter(function (g) {
+    return g.sets.some(function (s) { return !s.warm && TRAIN.counts(s); });
+  });
+};
+TRAIN.sharedOut = function (exId) {
+  var v = Rec.setting(APP.id, 'share.' + exId);
+  return v != null && v !== true && +v !== 1;
+};
+/* Which of a day's lifts went down since the day each is measured against.
+   Tom, 2026-09-30: "I never want to share a lift im weaker in, no one does."
+   So a lift that went down is never named in a picture or text shared from a
+   session, for everyone, with no switch and no question; its sets still
+   count in the totals. Down is the test
+   that colours a lift's gain line: its sets' average change in estimated 1RM
+   at -0.05% or under. A lift with no 1RM on either side is down when it lost
+   reps, and one with no reps either (a run, a hold) when more of its sets
+   went down than up. A lift with nothing to compare with never went down. */
+TRAIN.wentDown = function (date) {
+  var cmp = TRAIN.dayCompare(date), out = {};
+  if (!cmp) return out;
+  Object.keys(cmp.byEx).forEach(function (ex) {
+    var r = cmp.byEx[ex];
+    if (!r.vs || !(r.up + r.down + r.same)) return;
+    if (r.pctN ? r.pctSum / r.pctN <= -0.05 : r.reps ? r.reps < 0 : r.down > r.up) out[ex] = 1;
+  });
+  return out;
+};
+/* One lift as a shared picture lists it (A): its top set, the one furthest
+   along the lift's first measure (the heaviest, ties to more reps), and how
+   it moved. The change is the first of these that went up: the top set's
+   weight, the reps at the same top weight, the lift's average percentage.
+   Otherwise nothing: a shared picture never carries a minus. */
+TRAIN.liftLine = function (date, exId, row) {
+  var kind = TRAIN.kindOf(exId), f = TRAIN.fieldsOf(exId), U = TRAIN.unitLabel(exId);
+  var val = function (s, k) { return +({ w: s.kg, r: s.r, d: s.dist, t: s.dur }[k]) || 0; };
+  var better = function (a, b) {
+    for (var i = 0; i < f.length; i++) {
+      var x = val(a, f[i]), y = val(b, f[i]);
+      if (Math.abs(x - y) < 0.0005) continue;
+      /* over a distance, less time is the better run */
+      return kind === 'dt' && f[i] === 't' ? x < y : x > y;
+    }
+    return false;
+  };
+  var top = function (d) {
+    var best = null;
+    workOn(d, exId).forEach(function (s) { if (TRAIN.counts(s) && (!best || better(s, best))) best = s; });
+    return best;
+  };
+  var now = top(date);
+  if (!now) return null;
+  var then = row && row.vs ? top(row.vs.date) : null, up = '';
+  if (then && f[0] === 'w' && f[1] === 'r') {
+    var dk = (now.kg || 0) - (then.kg || 0), dr = (now.r || 0) - (then.r || 0);
+    if (dk >= 0.005) up = TRAIN.showDelta(dk, exId) + ' ' + U;
+    else if (dk > -0.005 && dr > 0) up = '+' + TRAIN.showReps(dr) + (dr === 1 ? ' rep' : ' reps');
+  } else if (then && better(now, then)) {
+    var d0 = val(now, f[0]) - val(then, f[0]);
+    if (d0 > 0.0005) up = f[0] === 'w' ? TRAIN.showDelta(d0, exId) + ' ' + U
+      : f[0] === 'r' ? '+' + TRAIN.showReps(d0) + (d0 === 1 ? ' rep' : ' reps')
+      : f[0] === 'd' ? '+' + TRAIN.showDist(d0) + ' ' + TRAIN.distUnit() : '';
+  }
+  if (!up && row && row.pctN && row.pctSum / row.pctN >= 0.05) up = '+' + (row.pctSum / row.pctN).toFixed(1) + '%';
+  var top1 = f.map(function (k) {
+    if (k === 'w') return now.kg ? TRAIN.showWeight(now.kg, now.u, exId) + ' <small>' + U + '</small>' : '';
+    if (k === 'r') return TRAIN.showReps(now.r || 0) + (f[0] === 'w' && now.kg ? '' : ' <small>reps</small>');
+    if (k === 'd') return TRAIN.showDist(now.dist || 0) + ' <small>' + TRAIN.distUnit() + '</small>';
+    return fmtSecs(now.dur || 0);
+  }).filter(Boolean).join(' × ');
+  return { top: top1, up: up };
+};
 TRAIN.shareRecap = function (date) {
   date = date || TRAIN.date;
-  shareCard(function () { return TRAIN.recapCard(date); }, 'train-' + date);
+  var down = TRAIN.wentDown(date);
+  var lifts = TRAIN.shareLifts(date).filter(function (g) { return !down[g.ex]; });
+  shareCard(function (o) {
+    var off = {};
+    Object.keys(down).forEach(function (ex) { off[ex] = 1; });
+    if (o) lifts.forEach(function (g) { if (!o['share.' + g.ex]) off[g.ex] = 1; });
+    return TRAIN.recapCard(date, undefined, off, true);
+  }, 'train-' + date, lifts.map(function (g) {
+    return { id: 'share.' + g.ex, label: g.def.name, def: 1 };
+  }));
 };
 
 /* ── the week ──
@@ -9843,6 +10064,9 @@ function boot() {
     TRAIN.importAsked = 1;
     setTimeout(function () { TRAIN.importPanel(); }, 150);
   }
+  /* a program the coach sent. After the paint, never before it: the tray
+     needs the network, and cloud.js arrives after io.js by itself. */
+  setTimeout(function () { if (window.Cloud) TRAIN.fromCoach(); else setTimeout(TRAIN.fromCoach, 4000); }, 2500);
 }
 
 /* ── the first paint does not wait for the store ──
