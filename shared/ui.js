@@ -755,6 +755,27 @@ const UI = {
     return { v: hit[1], date: date, dateText: dateText };
   },
 
+  /** UPDATE NOW: the offline cache fetches every file it keeps from the
+      network (sw.js, "refresh"), then the whole window reopens with ?fresh=1,
+      the home screen and its frames together. With no worker, or one too old
+      to answer, it waits at most 20 seconds and reopens fresh anyway. */
+  update() {
+    let top = window;
+    try { if (window.top.location.href) top = window.top; } catch (e) {}
+    const go = n => {
+      try { top.sessionStorage.setItem('mb.updated', String(n)); } catch (e) {}
+      const u = new URL(top.location.href);
+      u.searchParams.set('fresh', '1');
+      top.location.replace(u.href);
+    };
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (!sw || typeof MessageChannel === 'undefined') { go(-1); return; }
+    const ch = new MessageChannel();
+    const t = setTimeout(() => go(-1), 20000);
+    ch.port1.onmessage = e => { clearTimeout(t); go(e.data && e.data.ok ? e.data.n : -1); };
+    try { sw.postMessage({ mb: 'refresh' }, [ch.port2]); } catch (e) { clearTimeout(t); go(-1); }
+  },
+
   /** opts.order names the tab ids in the order they should appear.
       opts.append bolts extra drawing onto a tab the foundation owns. */
   settings(appId, extraTabs, opts) {
@@ -814,10 +835,18 @@ const UI = {
         }
         body.appendChild(pane);
         /* which version of this app is open, under every tab */
+        /* and pressing it updates. Tom, 2026-09-30: a pushed change arrived
+           on the second open; then "Make the version line the update button".
+           It asks for every file now and reopens on them (UI.update). */
         const ver = UI.version();
         if (ver) {
-          const p = el('p', null, esc(appName.toUpperCase() + ' ' + ver.v + (ver.dateText ? ', updated ' + ver.dateText : '')));
-          p.style.cssText = 'color:var(--text-muted,#5b6d80);font-size:var(--f-1,12px);margin:var(--s-5,24px) 0 0';
+          const p = el('button', 'mb-tap mb-version', esc(appName.toUpperCase() + ' ' + ver.v + (ver.dateText ? ', updated ' + ver.dateText : '')));
+          p.type = 'button';
+          p.title = 'Update now';
+          p.setAttribute('aria-label', appName + ' ' + ver.v + '. Update now');
+          p.style.cssText = 'display:block;width:100%;background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;' +
+            'color:var(--text-muted,#5b6d80);font-size:var(--f-1,12px);margin:var(--s-5,24px) 0 0';
+          p.onclick = () => { p.disabled = true; p.textContent = 'Updating…'; UI.update(); };
           body.appendChild(p);
         }
         show(active);
@@ -1051,4 +1080,17 @@ function drawApp(appId, pane) {
 css();
 
 g.UI = UI;
+
+/* After UPDATE NOW: the window it reopened says what came in, once, from the
+   top only, so a home screen full of frames says it one time. */
+if (g.top === g) {
+  let n = null;
+  try { n = g.sessionStorage.getItem('mb.updated'); if (n != null) g.sessionStorage.removeItem('mb.updated'); } catch (e) {}
+  if (n != null) {
+    const k = +n;
+    const say = k > 0 ? 'Updated. ' + k + (k === 1 ? ' file was' : ' files were') + ' newer.'
+      : k === 0 ? 'Already the newest.' : 'Reopened from the network.';
+    setTimeout(() => { try { UI.toast(say); } catch (e) {} }, 800);
+  }
+}
 })(window);

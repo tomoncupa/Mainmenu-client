@@ -59,7 +59,7 @@
 /* Replaced by tools/build-client.py. 'live' never changes here, which is
    correct: with nothing stamped, every entry is refreshed by the rule above
    on every online fetch, so there is no old copy to throw away. */
-const STAMP = '64100bec';
+const STAMP = '081a90c7';
 const CACHE = 'mb-' + STAMP;
 
 const PRECACHE = [
@@ -78,27 +78,27 @@ const PRECACHE = [
   "log/index.html",
   "quest/",
   "quest/index.html",
-  "shared/chart.js?v=64100bec",
-  "shared/cloud.js?v=64100bec",
-  "shared/creatures.js?v=64100bec",
-  "shared/day.js?v=64100bec",
-  "shared/demo.js?v=64100bec",
-  "shared/health.js?v=64100bec",
-  "shared/icons.js?v=64100bec",
-  "shared/import.js?v=64100bec",
-  "shared/io.js?v=64100bec",
-  "shared/journal.js?v=64100bec",
-  "shared/measure.js?v=64100bec",
-  "shared/mobile.js?v=64100bec",
-  "shared/notice.js?v=64100bec",
-  "shared/nutrients.js?v=64100bec",
-  "shared/range.js?v=64100bec",
-  "shared/records.js?v=64100bec",
-  "shared/report.js?v=64100bec",
-  "shared/skins.js?v=64100bec",
+  "shared/chart.js?v=081a90c7",
+  "shared/cloud.js?v=081a90c7",
+  "shared/creatures.js?v=081a90c7",
+  "shared/day.js?v=081a90c7",
+  "shared/demo.js?v=081a90c7",
+  "shared/health.js?v=081a90c7",
+  "shared/icons.js?v=081a90c7",
+  "shared/import.js?v=081a90c7",
+  "shared/io.js?v=081a90c7",
+  "shared/journal.js?v=081a90c7",
+  "shared/measure.js?v=081a90c7",
+  "shared/mobile.js?v=081a90c7",
+  "shared/notice.js?v=081a90c7",
+  "shared/nutrients.js?v=081a90c7",
+  "shared/range.js?v=081a90c7",
+  "shared/records.js?v=081a90c7",
+  "shared/report.js?v=081a90c7",
+  "shared/skins.js?v=081a90c7",
   "shared/skins.json",
-  "shared/sound.js?v=64100bec",
-  "shared/ui.js?v=64100bec",
+  "shared/sound.js?v=081a90c7",
+  "shared/ui.js?v=081a90c7",
   "status/",
   "status/index.html",
   "style/",
@@ -132,6 +132,31 @@ self.addEventListener('activate', e => {
         (k !== CACHE && k.indexOf('mb-') === 0) ? caches.delete(k) : null)))
       .then(() => self.clients.claim())
   );
+});
+
+/* ── UPDATE NOW: every kept file asked for again, this minute ──
+   Tom, 2026-09-30: "I tired of having to reopen and close twice". The button
+   under the version line in every app's Settings posts {mb: 'refresh'} with a
+   port. Every file this device keeps is fetched from the network and kept,
+   and the answer says how many came back different (by ETag, else
+   Last-Modified, else length). The page then reloads with ?fresh=1, so
+   anything not kept yet comes from the network too. A file the network will
+   not give keeps its old copy, so no signal costs nothing. */
+self.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.mb !== 'refresh') return;
+  const port = e.ports && e.ports[0];
+  const sig = r => r ? (r.headers.get('etag') || r.headers.get('last-modified') || r.headers.get('content-length') || '') : '';
+  e.waitUntil(caches.open(CACHE).then(c => c.keys().then(reqs => Promise.all(reqs.map(req =>
+    c.match(req).then(old => fetch(fresh(req)).then(r => {
+      if (!r || !r.ok || r.type !== 'basic') return 0;
+      const was = sig(old), now = sig(r);
+      return c.put(req, r.clone()).then(() => (was && now && was === now) ? 0 : 1);
+    })).catch(() => 0)
+  )))).then(ns => {
+    freshUntil = Date.now() + FRESH_MS;
+    if (port) port.postMessage({ ok: 1, n: ns.reduce((a, b) => a + b, 0), of: ns.length });
+  }).catch(() => { if (port) port.postMessage({ ok: 0 }); }));
 });
 
 /* Only a real answer is worth keeping. An error page cached is an error page
