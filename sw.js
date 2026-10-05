@@ -59,7 +59,7 @@
 /* Replaced by tools/build-client.py. 'live' never changes here, which is
    correct: with nothing stamped, every entry is refreshed by the rule above
    on every online fetch, so there is no old copy to throw away. */
-const STAMP = '719e1ac9';
+const STAMP = '37293432';
 const CACHE = 'mb-' + STAMP;
 
 const PRECACHE = [
@@ -78,36 +78,34 @@ const PRECACHE = [
   "log/index.html",
   "quest/",
   "quest/index.html",
-  "shared/boot.js?v=719e1ac9",
-  "shared/chart.js?v=719e1ac9",
-  "shared/claude.js?v=719e1ac9",
-  "shared/cloud.js?v=719e1ac9",
-  "shared/creatures.js?v=719e1ac9",
-  "shared/day.js?v=719e1ac9",
-  "shared/demo.js?v=719e1ac9",
-  "shared/health.js?v=719e1ac9",
-  "shared/icons.js?v=719e1ac9",
-  "shared/import.js?v=719e1ac9",
-  "shared/io.js?v=719e1ac9",
-  "shared/journal.js?v=719e1ac9",
-  "shared/measure.js?v=719e1ac9",
-  "shared/mobile.js?v=719e1ac9",
-  "shared/notice.js?v=719e1ac9",
-  "shared/nutrients.js?v=719e1ac9",
-  "shared/range.js?v=719e1ac9",
-  "shared/records.js?v=719e1ac9",
-  "shared/report.js?v=719e1ac9",
-  "shared/skins.js?v=719e1ac9",
+  "shared/boot.js?v=37293432",
+  "shared/chart.js?v=37293432",
+  "shared/cloud.js?v=37293432",
+  "shared/creatures.js?v=37293432",
+  "shared/day.js?v=37293432",
+  "shared/demo.js?v=37293432",
+  "shared/health.js?v=37293432",
+  "shared/icons.js?v=37293432",
+  "shared/import.js?v=37293432",
+  "shared/io.js?v=37293432",
+  "shared/journal.js?v=37293432",
+  "shared/measure.js?v=37293432",
+  "shared/mobile.js?v=37293432",
+  "shared/notice.js?v=37293432",
+  "shared/nutrients.js?v=37293432",
+  "shared/range.js?v=37293432",
+  "shared/records.js?v=37293432",
+  "shared/report.js?v=37293432",
+  "shared/skins.js?v=37293432",
   "shared/skins.json",
-  "shared/sound.js?v=719e1ac9",
-  "shared/ui.js?v=719e1ac9",
+  "shared/sound.js?v=37293432",
+  "shared/ui.js?v=37293432",
   "status/",
   "status/index.html",
   "style/",
   "style/index.html",
   "train/",
-  "train/index.html",
-  "train/mock-strength-graphs.html"
+  "train/index.html"
 ];
 
 /* ── install: take a copy ──
