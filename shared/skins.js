@@ -177,7 +177,7 @@
    GENERATED — do not hand-edit between the markers. Edit shared/skins.json and
    run `py -3 tools/embed-skins.py`. It is not a build step: nothing has to run
    for the suite to work, and _smoke.html fails if the two ever drift. */
-/*SKINS-START*/const FALLBACK={"fields":[["bg","Canvas background"],["panel","Card fill"],["line","Card border"],["ink","Text"],["mut","Secondary text"],["acc","Accent — buttons, selection"]],"note":"Every app reads this file. A skin is the THEME layer: structure, fonts, corners, border weight, depth, motion, texture, its own CSS, and the default colours. The COLOUR layer sits on top and is edited in the app (Settings > Look > Colours), saved per skin in localStorage 'suite_palettes' - it never touches this file. Apps add no theme CSS of their own; a theme brings its own in `css` and the app never knows.","ranks":{"A":"#5FE39B","B":"#4FD8E8","C":"#6C8CFF","D":"#C79BF0","E":"#FF9F6B","F":"#FF6B6B","S":"#F2C14E"},"rev":14,"schema":1,"skins":[{"base":{"accent":"#F0B323","bg":"#080B10","panel":"#0E141D","text":"#DBE7F0"},"css":"/* BLOCK - lifted straight out of block/index.html, which was never wearing a\n   theme at all: it loads day.js and records.js and nothing else, and every\n   colour in it is its own.\n\n   Its structure was already right. Fifteen variables, borders doing all the\n   separating, almost no shadow anywhere, six-pixel corners, and two fonts - a\n   squared one for labels and a plain one for reading. That is a theme, it was\n   just written inside one app where nothing else could reach it.\n\n   Measured rather than eyeballed: 6px is the corner in 37 places, borders are\n   1px #1e2a38, and exactly three elements in the whole app carry a shadow. */\n\nbody { letter-spacing: var(--track-body) }\n\n/* Flat depth removes the shadow, so the edge has to come from a line. That is\n   how BLOCK does it too: a hairline round everything and no lift at all. */\n.card, .mb-sheet, .mb-menu, .mb-toast {\n  background: var(--surface-1);\n  border: var(--border-width) solid var(--border);\n}\nheader {\n  background: var(--surface-1);\n  border-bottom: var(--border-width) solid var(--border);\n}\nheader .logo { font-family: var(--font-display); letter-spacing: var(--track-cap) }\n\nh2 {\n  font-family: var(--font-display);\n  color: var(--text-muted);\n  letter-spacing: var(--track-cap);\n}\n\n.item, .mb-input, .mb-sel {\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n}\n.item .nm { font-family: var(--font-body) }\n\n.chk { border-color: var(--border-strong) }\n.chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg) }\n\n.stat { background: var(--surface-2); border: var(--border-width) solid var(--border) }\n.stat b { font-family: var(--font-display) }\n\nbutton.mb-btn, .mb-act, .mb-chip, .mb-x, .mb-opt {\n  font-family: var(--font-display);\n  letter-spacing: var(--track-cap);\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n  color: var(--text-2);\n}\nbutton.mb-btn:hover, .mb-chip:hover { border-color: var(--border-strong); color: var(--text-1) }\n.mb-btn.go { border-color: var(--accent); color: var(--accent); background: var(--surface-2) }\n#fab { background: var(--accent); color: var(--accent-fg) }","depth":"flat","font":["Chakra+Petch:wght@500;600;700","IBM+Plex+Sans:wght@400;500;600"],"icon":{"cap":"round","join":"round","weight":1.6},"id":"block","material":"plate","mode":"dark","motion":{"ease":"cubic-bezier(.2,0,0,1)","fast":"120ms","med":"200ms","sheet":"320ms","slow":"300ms","tap":"0ms"},"name":"Default","overrides":{"--border":"#1E2A38","--border-strong":"#2B3A4D","--danger":"#FF6B81","--success":"#6EE7A8","--surface-2":"#131B26","--surface-3":"#1B2634","--text-2":"#B8C9D8","--text-muted":"#7F93A8","--warn":"#FFB347"},"ramp":["#7EE8FA","#6EE7A8","#FFB347","#FF6B81","#A78BFA","#7F93A8"],"texture":{"body":"'IBM Plex Sans',system-ui,sans-serif","cut":"6px","display":"'Chakra Petch',system-ui,sans-serif","image":"none","size":"auto"},"track":{"body":"0","cap":".08em","tight":"0"},"weight":1},{"base":{"accent":"#6EE7FF","bg":"#0B0E14","panel":"#121826","text":"#FFFFFF"},"icon":{"cap":"round","join":"round","weight":1.75},"id":"ice","mode":"dark","name":"System","overrides":{"--border":"#22304A","--surface-2":"#0E1420","--text-2":"#E2E2E3","--text-muted":"#ACADAF"},"ramp":["#6EE7FF","#A78BFA","#FBBF24","#FB7185","#34D399","#94A3B8"],"texture":{"image":"radial-gradient(ellipse at 50% 40%,rgba(110,231,255,.05),transparent 60%)","size":"100% 100%"}},{"base":{"accent":"#F7F3E8","bg":"#1B2B23","panel":"#22352C","text":"#F2EFE4"},"font":"Gloria+Hallelujah","icon":{"cap":"round","join":"round","weight":2.2,"wobble":true},"id":"chalkboard","mode":"dark","name":"Chalkboard","overrides":{"--border":"#3A5245","--surface-2":"#16261F","--text-2":"#D8D7CD","--text-muted":"#A9ACA2"},"ramp":["#F7F3E8","#FFD9A0","#A8D8F0","#F0A8B8","#B8E0A8","#D0C8F0"],"texture":{"body":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","dots":"rgba(255,255,255,.02)","image":"radial-gradient(rgba(255,255,255,.02) 1px,transparent 1.5px)","size":"7px 7px"}},{"base":{"accent":"#3A4A9F","bg":"#F5F1E8","panel":"#FFFFFF","text":"#2B2A26"},"font":"Architects+Daughter","icon":{"cap":"round","join":"round","weight":1.9,"wobble":true},"id":"sketch","mode":"light","name":"Sketch","overrides":{"--border":"#C9C0B0","--surface-2":"#EFEAE0","--text-2":"#43423D","--text-muted":"#706E68"},"ramp":["#3A4A9F","#8F3B3B","#3F7A4E","#8A6D2F","#5B4A8A","#66655F"],"texture":{"body":"'Architects Daughter',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Architects Daughter',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}},{"base":{"accent":"#F4F1EA","bg":"#12151B","panel":"#181C24","text":"#F4F1EA"},"font":"Patrick+Hand","icon":{"cap":"round","join":"round","weight":2.3,"wobble":true},"id":"doodle","mode":"dark","name":"Doodle","overrides":{"--border":"#39414F","--surface-2":"#12151B","--text-2":"#D9D7D1","--text-muted":"#A7A6A4"},"ramp":["#F4F1EA","#FFD9A0","#9FD8F2","#F5A8B8","#B4E4A6","#CBC2F0"],"texture":{"body":"'Patrick Hand',system-ui,-apple-system,sans-serif","cut":"14px","display":"'Patrick Hand',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}}],"source":"ARC mindmapper"};/*SKINS-END*/
+/*SKINS-START*/const FALLBACK={"fields":[["bg","Canvas background"],["panel","Card fill"],["line","Card border"],["ink","Text"],["mut","Secondary text"],["acc","Accent — buttons, selection"]],"note":"Every app reads this file. A skin is the THEME layer: structure, fonts, corners, border weight, depth, motion, texture, its own CSS, and the default colours. The COLOUR layer sits on top and is edited in the app (Settings > Look > Colours), saved per skin in localStorage 'suite_palettes' - it never touches this file. Apps add no theme CSS of their own; a theme brings its own in `css` and the app never knows.","ranks":{"A":"#5FE39B","B":"#4FD8E8","C":"#6C8CFF","D":"#C79BF0","E":"#FF9F6B","F":"#FF6B6B","S":"#F2C14E"},"rev":15,"schema":1,"skins":[{"base":{"accent":"#F0B323","bg":"#080B10","panel":"#0E141D","text":"#DBE7F0"},"css":"/* BLOCK - lifted straight out of block/index.html, which was never wearing a\n   theme at all: it loads day.js and records.js and nothing else, and every\n   colour in it is its own.\n\n   Its structure was already right. Fifteen variables, borders doing all the\n   separating, almost no shadow anywhere, six-pixel corners, and two fonts - a\n   squared one for labels and a plain one for reading. That is a theme, it was\n   just written inside one app where nothing else could reach it.\n\n   Measured rather than eyeballed: 6px is the corner in 37 places, borders are\n   1px #1e2a38, and exactly three elements in the whole app carry a shadow. */\n\nbody { letter-spacing: var(--track-body) }\n\n/* Flat depth removes the shadow, so the edge has to come from a line. That is\n   how BLOCK does it too: a hairline round everything and no lift at all. */\n.card, .mb-sheet, .mb-menu, .mb-toast {\n  background: var(--surface-1);\n  border: var(--border-width) solid var(--border);\n}\nheader {\n  background: var(--surface-1);\n  border-bottom: var(--border-width) solid var(--border);\n}\nheader .logo { font-family: var(--font-display); letter-spacing: var(--track-cap) }\n\nh2 {\n  font-family: var(--font-display);\n  color: var(--text-muted);\n  letter-spacing: var(--track-cap);\n}\n\n.item, .mb-input, .mb-sel {\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n}\n.item .nm { font-family: var(--font-body) }\n\n.chk { border-color: var(--border-strong) }\n.chk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg) }\n\n.stat { background: var(--surface-2); border: var(--border-width) solid var(--border) }\n.stat b { font-family: var(--font-display) }\n\nbutton.mb-btn, .mb-act, .mb-chip, .mb-x, .mb-opt {\n  font-family: var(--font-display);\n  letter-spacing: var(--track-cap);\n  background: var(--surface-2);\n  border: var(--border-width) solid var(--border);\n  color: var(--text-2);\n}\nbutton.mb-btn:hover, .mb-chip:hover { border-color: var(--border-strong); color: var(--text-1) }\n.mb-btn.go { border-color: var(--accent); color: var(--accent); background: var(--surface-2) }\n#fab { background: var(--accent); color: var(--accent-fg) }","depth":"flat","font":["Chakra+Petch:wght@500;600;700","IBM+Plex+Sans:wght@400;500;600"],"icon":{"cap":"round","join":"round","weight":1.6},"id":"block","material":"plate","mode":"dark","motion":{"ease":"cubic-bezier(.2,0,0,1)","fast":"120ms","med":"200ms","sheet":"320ms","slow":"300ms","tap":"0ms"},"name":"Default","overrides":{"--border":"#1E2A38","--border-strong":"#2B3A4D","--danger":"#FF6B81","--success":"#6EE7A8","--surface-2":"#131B26","--surface-3":"#1B2634","--text-2":"#B8C9D8","--text-muted":"#7F93A8","--warn":"#FFB347"},"ramp":["#7EE8FA","#6EE7A8","#FFB347","#FF6B81","#A78BFA","#7F93A8"],"texture":{"body":"'IBM Plex Sans',system-ui,sans-serif","cut":"6px","display":"'Chakra Petch',system-ui,sans-serif","image":"none","size":"auto"},"track":{"body":"0","cap":".08em","tight":"0"},"weight":1},{"base":{"accent":"#6EE7FF","bg":"#0B0E14","panel":"#121826","text":"#FFFFFF"},"icon":{"cap":"round","join":"round","weight":1.75},"id":"ice","mode":"dark","name":"System","overrides":{"--border":"#22304A","--surface-2":"#0E1420","--text-2":"#E2E2E3","--text-muted":"#ACADAF"},"ramp":["#6EE7FF","#A78BFA","#FBBF24","#FB7185","#34D399","#94A3B8"],"texture":{"image":"radial-gradient(ellipse at 50% 40%,rgba(110,231,255,.05),transparent 60%)","size":"100% 100%"}},{"base":{"accent":"#F7F3E8","bg":"#1B2B23","panel":"#22352C","text":"#F2EFE4"},"font":"Gloria+Hallelujah","icon":{"cap":"round","join":"round","weight":2.2,"wobble":true},"id":"chalkboard","mode":"dark","name":"Chalkboard","overrides":{"--border":"#3A5245","--surface-2":"#16261F","--text-2":"#D8D7CD","--text-muted":"#A9ACA2"},"ramp":["#F7F3E8","#FFD9A0","#A8D8F0","#F0A8B8","#B8E0A8","#D0C8F0"],"texture":{"body":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Gloria Hallelujah',system-ui,-apple-system,sans-serif","dots":"rgba(255,255,255,.02)","image":"radial-gradient(rgba(255,255,255,.02) 1px,transparent 1.5px)","size":"7px 7px"}},{"base":{"accent":"#3A4A9F","bg":"#F5F1E8","panel":"#FFFFFF","text":"#2B2A26"},"font":"Architects+Daughter","icon":{"cap":"round","join":"round","weight":1.9,"wobble":true},"id":"sketch","mode":"light","name":"Sketch","overrides":{"--border":"#C9C0B0","--surface-2":"#EFEAE0","--text-2":"#43423D","--text-muted":"#706E68"},"ramp":["#3A4A9F","#8F3B3B","#3F7A4E","#8A6D2F","#5B4A8A","#66655F"],"texture":{"body":"'Architects Daughter',system-ui,-apple-system,sans-serif","cut":"0px","display":"'Architects Daughter',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}},{"base":{"accent":"#F4F1EA","bg":"#12151B","panel":"#181C24","text":"#F4F1EA"},"font":"Patrick+Hand","icon":{"cap":"round","join":"round","weight":2.3,"wobble":true},"id":"doodle","mode":"dark","name":"Doodle","overrides":{"--border":"#39414F","--surface-2":"#12151B","--text-2":"#D9D7D1","--text-muted":"#A7A6A4"},"ramp":["#F4F1EA","#FFD9A0","#9FD8F2","#F5A8B8","#B4E4A6","#CBC2F0"],"texture":{"body":"'Patrick Hand',system-ui,-apple-system,sans-serif","cut":"14px","display":"'Patrick Hand',system-ui,-apple-system,sans-serif","image":"none","size":"auto"}}],"source":"ARC mindmapper"};/*SKINS-END*/
 /* The skin is chosen PER APP on purpose — ARC can be Monarch while BLOCK is
    Ice. `Skins.for('block')` before restore()/apply() scopes it; without it
    everything shares the old single key, exactly as before. */
@@ -525,6 +525,18 @@ function tokens(base,cut,ranks,skin){
   t['--card-solid'] = M.solid1 + '%'; t['--card-solid-2'] = M.solid2 + '%'; t['--card-shadow'] = soft;
   t['--material'] = material;
 
+  /* B4, 2026-10-05: a hard offset shadow, a sticker on a board. It replaces
+     the depth family's shadows, at the theme's offset on a card and a little
+     under half of it on a row, and never blurs. */
+  const hard = skin && skin.shadow;
+  if (hard && hard.kind === 'hard' && /^#[0-9a-f]{3,8}$/i.test(String(hard.color || '#000000'))) {
+    const hx = isFinite(+hard.x) ? +hard.x : 6, hy = isFinite(+hard.y) ? +hard.y : 6, hc = hard.color || '#000000';
+    const at = f => Math.round(hx * f) + 'px ' + Math.round(hy * f) + 'px 0 ' + hc;
+    t['--e-1'] = at(.43); t['--e-2'] = at(.57); t['--e-3'] = at(1); t['--e-4'] = at(1); t['--e-5'] = at(1);
+    /* never the word none: a shadow list holding it is thrown out whole */
+    t['--card-shadow'] = at(1); t['--plate-shadow'] = at(.43); t['--rim'] = '0 0 0 transparent';
+  }
+
   /* Letter spacing. On a short leash on purpose. This is the one lever that
      can quietly wreck a line of text at a width nobody happened to test, so a
      theme gets the two tokens it already had plus body, and no more.         */
@@ -627,6 +639,120 @@ function tokens(base,cut,ranks,skin){
   if(nudged.length)t['--mb-nudged']=JSON.stringify(nudged);
 
   return t;
+}
+
+/* ══════════════ THE SCENE: what a theme draws behind every screen ══════════════
+   A2 (2026-10-01) put the Pattern on one shared layer. B1 to B6 (2026-10-05,
+   Tom: "Give STYLE real controls for those looks, so nobody needs CSS for
+   them") add the rest of what Sunset, Cloud and Pop had to type in by hand:
+   a page fill (a gradient or a mesh of soft spots), a sun and a horizon grid
+   behind everything, glass, card colours that cycle, and titles and numbers
+   that glow. Each is a field on the theme; this turns the fields into one
+   stylesheet, `#skin-scene-css`, rewritten on every apply and put between
+   the material and the theme's own CSS, so a theme's own CSS still wins.
+
+   Two layers, both fixed, both under everything and never in the way of a
+   tap: `body::before` is the page fill, the horizon grid and the sun, and
+   `body::after` is the Pattern, above them. The body is its own stack, so
+   both sit ON the body's background, never under it. Only a hex colour is
+   ever written into the stylesheet; anything else in a field is ignored. */
+const sceneHex=c=>/^#[0-9a-f]{3,8}$/i.test(String(c||''))?String(c):null;
+const sceneNum=(v,lo,hi,d)=>{if(v==null||v==='')return d;v=+v;return isFinite(v)?Math.max(lo,Math.min(hi,v)):d};
+const sceneSvg=svg=>'url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+/* B1: the page. A gradient of two to six colours at an angle, or a mesh of
+   soft spots over the page colour. Sunset's sky has six stops, which is why
+   a gradient takes six and not four. */
+function scenePage(pg){
+  if(!pg||!pg.kind)return [];
+  if(pg.kind==='gradient'){
+    const cs=(pg.colors||[]).map(sceneHex).filter(Boolean).slice(0,6);
+    if(cs.length<2)return [];
+    const st=Array.isArray(pg.stops)&&pg.stops.length===cs.length?pg.stops:cs.map((c,i)=>Math.round(i*100/(cs.length-1)));
+    return [{img:'linear-gradient('+sceneNum(pg.angle,0,360,180)+'deg,'+cs.map((c,i)=>c+' '+sceneNum(st[i],0,100,0)+'%').join(',')+')',size:'100% 100%',pos:'0 0'}];
+  }
+  if(pg.kind==='mesh'){
+    const sp=(pg.spots||[]).filter(x=>x&&sceneHex(x.c)).slice(0,5);
+    if(!sp.length)return [];
+    return sp.map(x=>{const r=sceneNum(x.r,10,90,44);
+      return {img:'radial-gradient('+r+'% '+(r+4)+'% at '+sceneNum(x.x,0,100,50)+'% '+sceneNum(x.y,0,100,50)+'%,'+x.c+' 0%,transparent 100%)',size:'100% 100%',pos:'0 0'}})
+      .concat([{img:'linear-gradient(var(--bg),var(--bg))',size:'100% 100%',pos:'0 0'}]);
+  }
+  return [];
+}
+/* B2: a striped disc on the horizon. Colours top to bottom, its middle
+   `x` percent across, its bottom `bottom` vh above the screen's foot, `size`
+   vh across, and a glow in its last colour unless it names one. */
+function sceneSun(sun){
+  if(!sun||sun.on===false)return null;
+  const cs=(sun.colors||[]).map(sceneHex).filter(Boolean).slice(0,4);
+  if(!cs.length)return null;
+  const glow=sceneHex(sun.glow)||cs[cs.length-1],S=sceneNum(sun.size,10,90,44),X=sceneNum(sun.x,0,100,50),B=sceneNum(sun.bottom,0,90,21);
+  const stops=cs.map((c,i)=>'<stop offset="'+(cs.length>1?Math.round(i*100/(cs.length-1)):0)+'%" stop-color="'+c+'"/>').join('');
+  let bars='<rect x="0" y="0" width="100" height="50" fill="#fff"/>';
+  for(let y=0;y<100;y+=4.2)if(y+2.6>50)bars+='<rect x="0" y="'+Math.max(50,y).toFixed(1)+'" width="100" height="'+(y+2.6-Math.max(50,y)).toFixed(1)+'" fill="#fff"/>';
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -60 220 220"><defs>'+
+    '<linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'+stops+'</linearGradient>'+
+    '<mask id="m" maskUnits="userSpaceOnUse" x="-60" y="-60" width="220" height="220">'+bars+'</mask>'+
+    '<filter id="f" x="-60" y="-60" width="220" height="220" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="0" stdDeviation="4.8" flood-color="'+glow+'" flood-opacity="'+sceneNum(sun.glowAlpha,0,1,.55)+'"/></filter></defs>'+
+    '<g mask="url(#m)" opacity="'+sceneNum(sun.opacity,0,1,.9)+'"><g filter="url(#f)"><circle cx="50" cy="50" r="50" fill="url(#g)"/></g></g></svg>';
+  return {img:sceneSvg(svg),size:(S*2.2)+'vh '+(S*2.2)+'vh',
+    pos:'calc('+X+'vw - '+(S*1.1)+'vh) calc(100vh - '+(B+S*1.6)+'vh)'};
+}
+/* B2: a floor in perspective, lines running to a point above it. `height`
+   vh tall, lines in `color` at `opacity`, the floor shaded down to `floor`. */
+function sceneGrid(gr,bg){
+  if(!gr||gr.on===false)return null;
+  const c=sceneHex(gr.color);if(!c)return null;
+  const o=sceneNum(gr.opacity,0,1,.75),H=sceneNum(gr.height,5,60,30),fl=sceneHex(gr.floor)||sceneHex(bg)||'#000000';
+  let ln='';
+  for(let k=-14;k<=14;k++){const xb=800+k*104,xt=xb+(800-xb)*300/1100;ln+='<line x1="'+xb.toFixed(0)+'" y1="300" x2="'+xt.toFixed(0)+'" y2="0"/>'}
+  for(let k=0;k<24;k++){const y=300/(1+k*.38);if(y<3)break;ln+='<line x1="0" y1="'+y.toFixed(1)+'" x2="1600" y2="'+y.toFixed(1)+'"/>'}
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 300" preserveAspectRatio="none"><defs>'+
+    '<linearGradient id="d" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+fl+'" stop-opacity=".2"/><stop offset="1" stop-color="'+fl+'" stop-opacity=".95"/></linearGradient>'+
+    '<linearGradient id="h" x1="0" y1="1" x2="0" y2="0"><stop offset=".35" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
+    '<mask id="m" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="300"><rect width="1600" height="300" fill="url(#h)"/></mask></defs>'+
+    '<g mask="url(#m)"><rect width="1600" height="300" fill="url(#d)"/><g stroke="'+c+'" stroke-opacity="'+o+'" stroke-width="2" vector-effect="non-scaling-stroke">'+ln+'</g></g></svg>';
+  return {img:sceneSvg(svg),size:'160vw '+H+'vh',pos:'50% 100%'};
+}
+function sceneText(s){
+  s=s||{};
+  let css='body{isolation:isolate}'+
+    'body::after{content:"";position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;'+
+      'pointer-events:none;background-image:var(--tex-image);background-size:var(--tex-size)}';
+  const sc=s.scene||{};
+  /* top first: the sun stands in front of the grid, and both on the page */
+  const L=[sceneSun(sc.sun),sceneGrid(sc.grid,s.base&&s.base.bg)].filter(Boolean).concat(scenePage(s.page));
+  if(L.length){
+    const still=!(s.page&&s.page.fixed===false);
+    css+='body::before{content:"";position:'+(still?'fixed':'absolute')+';top:0;left:0;right:0;'+(still?'bottom:0':'min-height:100%')+
+      ';z-index:-1;pointer-events:none;background-repeat:no-repeat;background-image:'+L.map(x=>x.img).join(',')+
+      ';background-size:'+L.map(x=>x.size).join(',')+';background-position:'+L.map(x=>x.pos).join(',')+'}';
+  }
+  /* B3: glass on the cards, the sheets and the dock */
+  const gl=s.glass;
+  if(gl){
+    const b=sceneNum(gl.blur,0,30,0),tint=sceneHex(gl.tint),a=sceneNum(gl.alpha,0,100,70);
+    if(b||tint)css+='.mb-card,.card,.mb-sheet,.mb-menu,nav,#nav,#tabs{'+
+      (b?'-webkit-backdrop-filter:blur('+b+'px) saturate(1.35);backdrop-filter:blur('+b+'px) saturate(1.35);':'')+
+      (tint?'background:color-mix(in srgb,'+tint+' '+a+'%,transparent);':'')+'}';
+  }
+  /* B5: every Main Menu card the next colour, the theme's own six or the
+     chart colours mixed into the card so words still read on them */
+  const cc=s.cards;
+  if(cc&&cc.kind==='cycle'){
+    const own=(cc.colors||[]).map(sceneHex).filter(Boolean);
+    for(let i=0;i<6;i++)css+='#grid > .w:nth-child(6n+'+(i+1)+'){background:'+
+      (own.length?own[i%own.length]:'color-mix(in srgb,var(--data-'+(i+1)+') '+sceneNum(cc.mix,10,100,35)+'%,var(--surface-1))')+'}';
+  }
+  /* B6: titles solid, in a gradient or glowing, and numbers that glow */
+  const ti=s.titles||{},T='.w-head,h2,.logo .wm';
+  if(ti.kind==='gradient'){
+    const cs=(ti.colors||[]).map(sceneHex).filter(Boolean).slice(0,4);
+    const st=Array.isArray(ti.stops)&&ti.stops.length===cs.length?ti.stops:null;
+    if(cs.length>=2)css+=T+'{background:linear-gradient(180deg,'+cs.map((c,i)=>c+(st?' '+sceneNum(st[i],0,100,0)+'%':'')).join(',')+');-webkit-background-clip:text;background-clip:text;color:transparent}.logo .wm b{color:transparent}';
+  }else if(ti.kind==='glow')css+=T+'{text-shadow:0 0 12px color-mix(in srgb,var(--accent) 70%,transparent)}';
+  if(ti.numGlow)css+='.ring .num,.stat b,.num{text-shadow:0 0 14px color-mix(in srgb,var(--accent) 85%,transparent),0 0 2px color-mix(in srgb,white 60%,transparent)}';
+  return css+'@media print{body::before,body::after{display:none}}';
 }
 
 const Skins={
@@ -833,26 +959,15 @@ const Skins={
     if(theme)document.head.insertBefore(el,theme);else document.head.appendChild(el);
   },
 
-  /* The scene: what a theme draws behind every screen, so no app has to.
-     Until 2026-10-01 the Pattern reached only the four apps that painted
-     `--tex-image` on their own body. One fixed layer, under everything and
-     never in the way of a tap. `isolation` makes the body its own stack, so
-     the layer sits ON the body's background, not under it: STATUS paints
-     `html` itself, and there an opaque body would hide a layer behind it.
-     The page's own wash (the Main Menu's gradients) is the body's background,
-     so it still shows through. A theme's own CSS comes after this and may
-     restyle `body::before` wholesale; `body::after` is left to it. */
-  sceneText(){
-    return 'body{isolation:isolate}'+
-      'body::before{content:"";position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;'+
-        'pointer-events:none;background-image:var(--tex-image);background-size:var(--tex-size)}'+
-      '@media print{body::before{display:none}}'},
-  sceneCSS(){
-    if(document.getElementById('skin-scene-css'))return;
-    const el=document.createElement('style');el.id='skin-scene-css';
-    el.textContent=this.sceneText();
-    const theme=document.getElementById('skin-theme-css');
-    if(theme)document.head.insertBefore(el,theme);else document.head.appendChild(el);
+  /* The scene's stylesheet for a theme (sceneText above), for STYLE's
+     preview frames as well as for this page. */
+  sceneText(skin){return sceneText(skin||this.current)},
+  sceneCSS(skin){
+    let el=document.getElementById('skin-scene-css');
+    if(!el){el=document.createElement('style');el.id='skin-scene-css';
+      const theme=document.getElementById('skin-theme-css');
+      if(theme)document.head.insertBefore(el,theme);else document.head.appendChild(el);}
+    el.textContent=sceneText(skin);
   },
 
   /* `pal` paints without saving — that is what makes live preview possible */
@@ -860,7 +975,7 @@ const Skins={
     const s=typeof idOrSkin==='string'?this.get(idOrSkin):idOrSkin;
     this.font(s);
     this.materialCSS();
-    this.sceneCSS();
+    this.sceneCSS(s);
     this.themeCSS(s);
     const use=pal||(this.isCustomised(s.id)?this.paletteFor(s.id):null);
     const t=use?Object.assign(this.tokensFor(s),this.palTokens(use)):this.tokensFor(s),
