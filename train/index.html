@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="41d99f5b">
+<html lang="en" data-built="5a7edaec">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.55, 2026-10-06">
+<meta name="mb-version" content="1.0.57, 2026-10-06">
 <title>TRAIN</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B0E14">
@@ -12,10 +12,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=41d99f5b"></script>
-<script src="../shared/boot.js?v=41d99f5b"></script>
-<script src="../shared/day.js?v=41d99f5b"></script>
-<script src="../shared/records.js?v=41d99f5b"></script>
+<script src="../shared/skins.js?v=5a7edaec"></script>
+<script src="../shared/boot.js?v=5a7edaec"></script>
+<script src="../shared/day.js?v=5a7edaec"></script>
+<script src="../shared/records.js?v=5a7edaec"></script>
 <script>
 /* ═══════════════════ A CLIENT'S TRAIN ═══════════════════
    Tom, 2026-09-22: COACH "should act exactly like train just on their
@@ -109,14 +109,14 @@
   };
 })();
 </script>
-<script src="../shared/mobile.js?v=41d99f5b"></script>
-<script src="../shared/sound.js?v=41d99f5b"></script>
-<script src="../shared/ui.js?v=41d99f5b"></script>
-<script src="../shared/io.js?v=41d99f5b"></script>
-<script src="../shared/icons.js?v=41d99f5b"></script>
-<script src="../shared/chart.js?v=41d99f5b"></script>
-<script src="../shared/range.js?v=41d99f5b"></script>
-<script src="../shared/health.js?v=41d99f5b"></script>
+<script src="../shared/mobile.js?v=5a7edaec"></script>
+<script src="../shared/sound.js?v=5a7edaec"></script>
+<script src="../shared/ui.js?v=5a7edaec"></script>
+<script src="../shared/io.js?v=5a7edaec"></script>
+<script src="../shared/icons.js?v=5a7edaec"></script>
+<script src="../shared/chart.js?v=5a7edaec"></script>
+<script src="../shared/range.js?v=5a7edaec"></script>
+<script src="../shared/health.js?v=5a7edaec"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -429,6 +429,11 @@ h2{font-family:var(--font-display);font-size:var(--f-1);font-weight:var(--w-bold
    callout, which would take the press away from the page. A card being
    sorted shows only its head, so a list of tall cards fits one screen. */
 .mvlist > [data-key]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* A row a hold picks up carries a grip at its start, so the move is something
+   you can see rather than something you have to know (2026-10-06). */
+.mvlist > .prow::before,.mvlist > .exblock > .head::before,.mvlist > .tset:not(.mb-swipe)::before,
+.mvlist > .tset > .mb-swipe-face::before{content:'';flex:0 0 auto;width:7px;height:13px;color:var(--text-muted);
+  opacity:.6;pointer-events:none;background:radial-gradient(circle,currentColor 1.1px,transparent 1.5px) 0 0/3.5px 4.33px}
 .mvlist > [data-key].lifted{background:var(--surface-3);box-shadow:var(--e-3),inset 0 0 0 var(--border-width) var(--accent);
   border-radius:var(--radius-md);border-bottom-color:transparent;position:relative;z-index:2}
 .mvlist.sorting > .exblock > :not(.head){display:none}
@@ -540,7 +545,9 @@ div.prow{padding:0}
 .prow .pmain{flex:1;min-width:0;display:flex;align-items:center;gap:var(--s-3);
   padding:var(--s-3) var(--s-4);min-height:var(--tap);border:0;background:none;
   color:inherit;font:inherit;text-align:left;cursor:pointer}
-.prow .rowmenu{color:var(--text-muted)}
+.prow .rowmenu,.exblock .head .rowmenu{color:var(--text-muted)}
+/* above the head's own 44px press area, which would otherwise take the tap */
+.exblock .head .rowmenu{position:relative;z-index:1}
 .prow .fav{color:var(--accent);display:flex}
 .prow .fav .mb-ico{width:1em;height:1em}
 .mrow{display:flex;align-items:center;gap:var(--s-2);min-height:var(--tap);
@@ -3315,6 +3322,8 @@ function drawWorkout(m) {
         UI.esc(grp.g.name) + '</span>' : '') +
       (showChk ? '<span class="tickdot' + (done ? '' : ' off') + '">' + (done ? ico('done') : '') + '</span>' : '');
     head.onclick = function () { TRAIN.openExercise(g.ex); };
+    /* the hold's menu, visible (2026-10-06) */
+    head.appendChild(rowMenuBtn('Options for ' + g.def.name, function (e) { TRAIN.dayExerciseMenu(g.ex, e); }));
     block.appendChild(head);
 
     /* Which session this exercise is measured against, and how its sets did. */
@@ -9596,10 +9605,12 @@ TRAIN.frameBlock = function (date) {
   /* Chart.spark's marks on a scale from zero: a sparkline fits its lowest
      week to the floor, and 74 to 54 sets read as a crash */
   var F = IO.frameSize(), hi = Math.max.apply(null, w.map(function (x) { return x.sets; })) || 1;
-  var c = Chart.make({ w: F.w, h: Math.round(F.w / 8), pad: { l: 3, r: 7, t: 7, b: 3 }, cls: 'mb-spark' });
+  /* the lowest and highest week labelled at their points, and this week's
+     count at its end (Chart.spark's marks, Tom 2026-10-06) */
+  var c = Chart.make({ w: F.w, h: Math.round(F.w / 8) + 24, pad: { l: 3, r: 7, t: 16, b: 15 }, cls: 'mb-spark' });
   var pts = w.map(function (x, i) { return [i, x.sets]; });
   c.xLinear(0, n - 1).ySet(0, hi, hi);
-  c.area(pts); c.line(pts); c.end(pts[n - 1]);
+  c.area(pts); c.line(pts); c.extremes(pts, String); c.end(pts[n - 1], String(last.sets));
   var line = c.el;
   return '<div class="fr-blk"><div class="fr-blk-t"><b>' + last.sets + '</b> ' + (last.sets === 1 ? 'set ' : 'sets ') +
     esc(when) + gain + '</div>' + line.outerHTML + '</div>';

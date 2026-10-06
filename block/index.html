@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="41d99f5b">
+<html lang="en" data-built="5a7edaec">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.21, 2026-10-02">
+<meta name="mb-version" content="1.0.22, 2026-10-06">
 <title>BLOCK — routine scheduler</title>
 <link rel="icon" href="icon-192.png">
 <!-- No font link. skins.js fetches the face the chosen theme asks for and
@@ -360,6 +360,12 @@ main{display:flex;flex:1;min-height:0}
 .b-ctl button.on{color:var(--acc)}
 .b-ctl .hov{opacity:0;transition:opacity .12s}
 .block:hover .b-ctl .hov{opacity:1}
+/* A touch screen has no hover, so the tools a mouse finds by pointing were
+   never there at all. Tom, 2026-10-06: shown on touch. */
+@media (hover:none){
+  .b-ctl .hov,.lane-tools .hov{opacity:1}
+  .chip .del{opacity:.6}
+}
 .b-badge{font-family:var(--f1);font-size:8.5px;font-weight:700;letter-spacing:.04em;border:1px solid var(--line);border-radius:3px;padding:1px 3px;color:var(--dim2);line-height:1.1}
 .b-badge.dim{opacity:0;transition:opacity .12s}
 .block:hover .b-badge.dim{opacity:.55}
@@ -680,11 +686,11 @@ footer .sp{flex:1}
 <!-- The touch layer. One line, and this app gets safe areas, real tap
      targets, no zoom-on-focus, contained overscroll, keyboard handling
      and the back gesture closing what is open. -->
-<script src="../shared/skins.js?v=41d99f5b"></script>
-<script src="../shared/icons.js?v=41d99f5b"></script>
-<script src="../shared/mobile.js?v=41d99f5b"></script>
-<script src="../shared/sound.js?v=41d99f5b"></script>
-<script src="../shared/ui.js?v=41d99f5b"></script>
+<script src="../shared/skins.js?v=5a7edaec"></script>
+<script src="../shared/icons.js?v=5a7edaec"></script>
+<script src="../shared/mobile.js?v=5a7edaec"></script>
+<script src="../shared/sound.js?v=5a7edaec"></script>
+<script src="../shared/ui.js?v=5a7edaec"></script>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 </head>
 <body>
@@ -773,7 +779,7 @@ footer .sp{flex:1}
 <div id="toast"></div>
 <div id="tip"></div>
 
-<script src="../shared/day.js?v=41d99f5b"></script>
+<script src="../shared/day.js?v=5a7edaec"></script>
 <script>
 /* Per app, not per suite: BLOCK can wear Block while STATUS wears Ice.
 
@@ -793,8 +799,8 @@ Skins.load('../shared/skins.json').then(() => {
    different paths rather than a different colour. */
 if (window.Icons) Icons.paint();
 </script>
-<script src="../shared/records.js?v=41d99f5b"></script>
-<script src="../shared/io.js?v=41d99f5b"></script>
+<script src="../shared/records.js?v=5a7edaec"></script>
+<script src="../shared/io.js?v=5a7edaec"></script>
 <script>
 /* ══════════════════════════ LIFEOS KERNEL v2 ══════════════════════════
    Identical in every app that shares data — edit the copy in index.html and
