@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="45e00e7a">
+<html lang="en" data-built="a7bb4193">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="mb-version" content="1.0.66, 2026-10-08">
+<meta name="mb-version" content="1.0.67, 2026-10-08">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,20 +16,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=45e00e7a"></script>
-<script src="../shared/boot.js?v=45e00e7a"></script>
-<script src="../shared/day.js?v=45e00e7a"></script>
-<script src="../shared/records.js?v=45e00e7a"></script>
-<script src="../shared/journal.js?v=45e00e7a"></script>
-<script src="../shared/chart.js?v=45e00e7a"></script>
-<script src="../shared/mobile.js?v=45e00e7a"></script>
-<script src="../shared/sound.js?v=45e00e7a"></script>
-<script src="../shared/ui.js?v=45e00e7a"></script>
-<script src="../shared/io.js?v=45e00e7a"></script>
-<script src="../shared/nutrients.js?v=45e00e7a"></script>
-<script src="../shared/icons.js?v=45e00e7a"></script>
-<script src="../shared/health.js?v=45e00e7a"></script>
-<script src="../shared/notice.js?v=45e00e7a"></script>
+<script src="../shared/skins.js?v=a7bb4193"></script>
+<script src="../shared/boot.js?v=a7bb4193"></script>
+<script src="../shared/day.js?v=a7bb4193"></script>
+<script src="../shared/records.js?v=a7bb4193"></script>
+<script src="../shared/journal.js?v=a7bb4193"></script>
+<script src="../shared/chart.js?v=a7bb4193"></script>
+<script src="../shared/mobile.js?v=a7bb4193"></script>
+<script src="../shared/sound.js?v=a7bb4193"></script>
+<script src="../shared/ui.js?v=a7bb4193"></script>
+<script src="../shared/io.js?v=a7bb4193"></script>
+<script src="../shared/nutrients.js?v=a7bb4193"></script>
+<script src="../shared/icons.js?v=a7bb4193"></script>
+<script src="../shared/health.js?v=a7bb4193"></script>
+<script src="../shared/notice.js?v=a7bb4193"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -1443,7 +1443,10 @@ function entries(date, fid) {
 }
 
 function value(date, fid) {
-  const e = entries(date, fid); if (!e.length) return null;
+  const e = entries(date, fid);
+  /* A day TRAIN has sets on is a ticked Trained, here too: the tile, its
+     history and the export all read this, and only logged() knew until 1.0.67. */
+  if (!e.length) return trainField(fid) && (field(fid) || {}).measure === 'check' && trainLogged(date) ? 1 : null;
   const f = field(fid) || {};
   if (f.agg === 'sum') return e.reduce((a, x) => a + x.v, 0);
   if (f.agg === 'avg') return e.reduce((a, x) => a + x.v, 0) / e.length;
