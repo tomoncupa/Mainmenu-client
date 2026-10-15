@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="d7ac6d8e">
+<html lang="en" data-built="9d352216">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="mb-version" content="1.0.1, 2026-09-25">
+<meta name="mb-version" content="1.0.2, 2026-10-15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,15 +21,15 @@
      home screen from the browser. Everything a line IS comes from
      shared/journal.js, the same engine STATUS, LOG and QUESTS write with, and
      what it asks for (times, mood) follows STATUS's Settings, BULLETS. -->
-<script src="../shared/skins.js?v=d7ac6d8e"></script>
-<script src="../shared/day.js?v=d7ac6d8e"></script>
-<script src="../shared/records.js?v=d7ac6d8e"></script>
-<script src="../shared/journal.js?v=d7ac6d8e"></script>
-<script src="../shared/mobile.js?v=d7ac6d8e"></script>
-<script src="../shared/sound.js?v=d7ac6d8e"></script>
-<script src="../shared/ui.js?v=d7ac6d8e"></script>
-<script src="../shared/io.js?v=d7ac6d8e"></script>
-<script src="../shared/icons.js?v=d7ac6d8e"></script>
+<script src="../shared/skins.js?v=9d352216"></script>
+<script src="../shared/day.js?v=9d352216"></script>
+<script src="../shared/records.js?v=9d352216"></script>
+<script src="../shared/journal.js?v=9d352216"></script>
+<script src="../shared/mobile.js?v=9d352216"></script>
+<script src="../shared/sound.js?v=9d352216"></script>
+<script src="../shared/ui.js?v=9d352216"></script>
+<script src="../shared/io.js?v=9d352216"></script>
+<script src="../shared/icons.js?v=9d352216"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -157,6 +157,18 @@ function build() {
      focus inside a tap, so opened from the home screen it waits for one. */
   UI.focusSoon(ta);
 }
+
+/* Tom, 2026-10-15: "opening BULLET should auto open the keyboard". iOS will
+   not raise it for a page that has just opened, from any address or icon, so
+   the next best is that the first tap ANYWHERE does it, not only a tap on the
+   box. It must be touchend: iOS only raises the keyboard for a focus inside
+   the touch itself, and a plain div gets no click. Controls keep their tap. */
+document.addEventListener('touchend', e => {
+  if (!ta || document.activeElement === ta) return;
+  if (e.target.closest('button, a, input, textarea, select, label, [contenteditable], .mb-sheet, .mb-veil')) return;
+  e.preventDefault();
+  ta.focus();
+}, { passive: false });
 
 /* ── what the kind asks for, from STATUS's Settings, BULLETS ── */
 function paintExtras() {
