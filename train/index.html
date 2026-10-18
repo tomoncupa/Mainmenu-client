@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="02f9fb20">
+<html lang="en" data-built="fe829398">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.66, 2026-10-18">
+<meta name="mb-version" content="1.0.68, 2026-10-18">
 <title>TRAIN</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B0E14">
@@ -12,10 +12,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=02f9fb20"></script>
-<script src="../shared/boot.js?v=02f9fb20"></script>
-<script src="../shared/day.js?v=02f9fb20"></script>
-<script src="../shared/records.js?v=02f9fb20"></script>
+<script src="../shared/skins.js?v=fe829398"></script>
+<script src="../shared/boot.js?v=fe829398"></script>
+<script src="../shared/day.js?v=fe829398"></script>
+<script src="../shared/records.js?v=fe829398"></script>
 <script>
 /* ═══════════════════ A CLIENT'S TRAIN ═══════════════════
    Tom, 2026-09-22: COACH "should act exactly like train just on their
@@ -109,14 +109,14 @@
   };
 })();
 </script>
-<script src="../shared/mobile.js?v=02f9fb20"></script>
-<script src="../shared/sound.js?v=02f9fb20"></script>
-<script src="../shared/ui.js?v=02f9fb20"></script>
-<script src="../shared/io.js?v=02f9fb20"></script>
-<script src="../shared/icons.js?v=02f9fb20"></script>
-<script src="../shared/chart.js?v=02f9fb20"></script>
-<script src="../shared/range.js?v=02f9fb20"></script>
-<script src="../shared/health.js?v=02f9fb20"></script>
+<script src="../shared/mobile.js?v=fe829398"></script>
+<script src="../shared/sound.js?v=fe829398"></script>
+<script src="../shared/ui.js?v=fe829398"></script>
+<script src="../shared/io.js?v=fe829398"></script>
+<script src="../shared/icons.js?v=fe829398"></script>
+<script src="../shared/chart.js?v=fe829398"></script>
+<script src="../shared/range.js?v=fe829398"></script>
+<script src="../shared/health.js?v=fe829398"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -138,6 +138,7 @@ header{
 .logo{font-family:var(--font-display);font-weight:var(--w-bold);font-size:var(--f-4);
   letter-spacing:.14em;padding-left:var(--s-2)}
 .logo b{color:var(--accent)}
+.logo.who{text-transform:none;letter-spacing:normal;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spacer{flex:1}
 /* One icon button shape for the whole app: a --tap target with a glyph a little bigger than the text. */
 .ico{width:var(--tap);height:var(--tap);flex:0 0 auto;border:0;background:none;
@@ -611,6 +612,17 @@ div.prow{padding:0}
 .dhead .mb-ico{width:1em;height:1em}
 .kindsel{margin-top:var(--s-2)}
 
+/* Motion: a new day slides in from its side, a new screen rises in. */
+@keyframes mvR{from{opacity:0;transform:translateX(var(--s-7))}to{opacity:1;transform:none}}
+@keyframes mvL{from{opacity:0;transform:translateX(calc(var(--s-7) * -1))}to{opacity:1;transform:none}}
+@keyframes mvUp{from{opacity:0;transform:translateY(var(--s-5))}to{opacity:1;transform:none}}
+#main.mv-r{animation:mvR var(--dur-med) var(--ease-out)}
+#main.mv-l{animation:mvL var(--dur-med) var(--ease-out)}
+#main.mv-up{animation:mvUp var(--dur-med) var(--ease-out)}
+@media (prefers-reduced-motion:reduce){#main.mv-r,#main.mv-l,#main.mv-up{animation:none}}
+/* a slide must not flash a sideways scrollbar */
+main.mb-scroll:has(> #main.mv-r),main.mb-scroll:has(> #main.mv-l){overflow-x:hidden}
+
 /* ══════════ TRAINING, NOT WORKING OUT ══════════ */
 /* The session strip: its name, and the block and week it sits in. */
 .sesshead{display:flex;align-items:center;gap:var(--s-2);padding:var(--s-2) var(--s-2) var(--s-2) var(--s-4);
@@ -896,7 +908,7 @@ var CLIENT = Rec.client || null;
 if (!CLIENT) IO.register({ app: APP.id, name: APP.name, types: APP.types,
   sheets: function () { return exportSheets(); } });
 /* and the bar says whose training this is, where TRAIN's name would be */
-var CLIENT_NAME = CLIENT ? String((Rec.get('cperson', null, CLIENT) || {}).name || 'Client').toUpperCase() : '';
+var CLIENT_NAME = CLIENT ? String((Rec.get('cperson', null, CLIENT) || {}).name || 'Client') : '';
 if (CLIENT) document.title = CLIENT_NAME + ' · TRAIN';
 
 /* Everything hangs off one global on purpose. `var` at the top level of a
@@ -3220,10 +3232,34 @@ TRAIN.back = function () {
   return false;
 };
 
+/* Motion. Tom, 2026-10-18: TRAIN felt stiff, because every screen and day
+   was wiped and redrawn in place, so things blinked instead of moved. A new
+   day slides in from the side it came from and a new screen rises in. A
+   redraw of the same screen on the same day, which every save causes, does
+   not move at all. */
+var lastDrawn = null;
+function motion(m) {
+  var now = { scr: TRAIN.screen, date: TRAIN.date }, was = lastDrawn;
+  lastDrawn = now;
+  if (!was) return;
+  var cls = '';
+  if (was.scr !== now.scr) cls = 'mv-up';
+  else if (was.date !== now.date && (now.scr === 'workout' || now.scr === 'training')) cls = now.date > was.date ? 'mv-r' : 'mv-l';
+  if (!cls) return;
+  m.classList.remove('mv-up', 'mv-r', 'mv-l');
+  m.offsetHeight;                    /* force layout so the same class can play again */
+  m.classList.add(cls);
+  /* A page that is not being drawn never runs an animation and would sit on
+     its first, see-through frame. A timer runs anyway and takes it off. */
+  clearTimeout(motion.t);
+  motion.t = setTimeout(function () { m.classList.remove(cls); }, 600);
+}
+
 function draw() {
   drawChrome();
   var m = document.getElementById('main');
   m.innerHTML = '';
+  motion(m);
   if (TRAIN.screen === 'picker') return drawPicker(m);
   if (TRAIN.screen === 'training') return drawTraining(m);
   if (TRAIN.screen === 'calendar') return drawCalendar(m);
@@ -3299,7 +3335,7 @@ function drawChrome() {
   var spacer = document.querySelector('header .spacer');
   if (spacer) spacer.style.flex = title == null ? '' : '0 0 auto';
   if (title == null) {
-    if (CLIENT) logo.textContent = CLIENT_NAME; else logo.innerHTML = 'TRA<b>IN</b>';
+    if (CLIENT) { logo.textContent = CLIENT_NAME; logo.classList.add('who'); } else logo.innerHTML = 'TRA<b>IN</b>';
     logo.style.cssText = '';
   } else {
     logo.textContent = title;
@@ -10758,7 +10794,7 @@ TRAIN.settingsPanel = function () {
       sw('Details Under Each Set', 'Split, setup and the change from last time, in words', 'rowDetail', 0, function () { draw(); });
 
       group('TRAINING');
-      num('Default Weight Increment', CLIENT ? 'What + and − move by, for ' + (CLIENT_NAME.charAt(0) + CLIENT_NAME.slice(1).toLowerCase()) + ' only' : 'What + and − move by', 'increment', 2.5);
+      num('Default Weight Increment', CLIENT ? 'What + and − move by, for ' + CLIENT_NAME + ' only' : 'What + and − move by', 'increment', 2.5);
       sw('Auto-Select Next Set', 'Load the next unfinished set after saving', 'autoNext', 1);
       sw('Track Personal Records', 'Flag a set that beats your best', 'trackPRs', 1);
       sw('Keep Screen On', TRAIN.canWake() ? 'While TRAIN is open' : 'Not supported by this browser', 'keepAwake', 0,
@@ -11001,6 +11037,23 @@ function boot() {
    exercises are small rows, already here from localStorage, so if the store
    has not answered in a moment and there is a log to show, show it. Seeding
    and the record pass still wait for ready, because they must see every row. */
+/* ── inside COACH: one bar, not two ──
+   Tom, 2026-10-18: COACH opened this as a second app on top, with its own
+   bar and a DONE. Now COACH hides its bar; this one already names the
+   client, and gains the way back. Only on a client's profile inside a frame. */
+(function () {
+  if (!Rec.client || window.parent === window) return;
+  var head = document.querySelector('header');
+  if (!head) return;
+  var bk = document.createElement('button');
+  bk.className = 'ico mb-press mb-tap';
+  bk.id = 'toCoach';
+  bk.setAttribute('aria-label', 'Back to COACH');
+  bk.innerHTML = ico('back');
+  bk.onclick = function () { Mobile.feedback('open'); window.parent.postMessage({ mb: 'coach-close' }, '*'); };
+  head.insertBefore(bk, head.firstChild);
+})();
+
 var trainBooted = false;
 setTimeout(function () {
   if (trainBooted || !(Rec.count('set') || Rec.count('exercise'))) return;
