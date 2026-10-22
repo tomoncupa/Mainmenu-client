@@ -288,6 +288,21 @@ function lift(fg,bg,need){
    Sketch's secondary text measured 4.52 against its page and 4.25 against a
    tile, so the floor left it alone and thirteen elements on one screen still
    failed. */
+/* For a mark that must clear several grounds at once: the smallest move
+   toward black or toward white that clears every one of them, whichever
+   moves the colour less. Neither end clears all: the end that comes closest. */
+function liftEvery(fg,need,grounds){
+  const worst=c=>Math.min.apply(null,grounds.map(g=>contrast(c,g)));
+  if(!grounds.length||worst(fg)>=need)return fg;
+  const ends=['#000000','#FFFFFF'].filter(e=>worst(e)>=need);
+  if(!ends.length)return worst('#000000')>=worst('#FFFFFF')?'#000000':'#FFFFFF';
+  let best=null;
+  ends.forEach(e=>{let lo=0,hi=1;
+    for(let i=0;i<12;i++){const m=(lo+hi)/2;if(worst(mix(fg,e,m))>=need)hi=m;else lo=m}
+    const c=mix(fg,e,hi);if(!best||contrast(c,fg)<contrast(best,fg))best=c});
+  return best;
+}
+
 function liftAll(fg,need,grounds){
   let out=fg;
   grounds.forEach(g=>{if(g&&/^#/.test(g)){const c=lift(fg,g,need);
@@ -603,9 +618,9 @@ function tokens(base,cut,ranks,skin){
      shown in STYLE rather than silently corrected, because the fix belongs in
      the theme.
 
-     Nothing else moves. The chart ramp, the four meaning colours and every
-     measurement pass through untouched: a series colour is judged against its
-     neighbours rather than against a paragraph. */
+     The chart ramp, the four meaning colours and the ranks are floored too,
+     to 3 rather than 4.5, at the end (the marks block below). Every
+     measurement passes through untouched. */
   const nudged=[];
   const GROUND=()=>[t['--bg'],t['--surface-1'],t['--surface-2'],t['--surface-3']];
   const floorIt=(k,against,need)=>{
@@ -642,6 +657,26 @@ function tokens(base,cut,ranks,skin){
       nudged.push({token:k,was:was,now:now,need:4.5,
         had:+contrast(was,t['--text-1']).toFixed(2),deadEnd:true})}
   });
+
+  /* Marks: the meaning colours, the chart ramp and the rank colours, floored
+     to 3 to 1, the graphic ratio, on the same four grounds. Added 2026-10-22:
+     LOG, QUESTS, STATUS and KITCHEN moved meaning off words and onto dots,
+     lines and rings beside them, and on Craft Day those marks measured 1.0 to
+     1.2 and vanished (--danger 1.06 on the page, --data-3 1.00 on a row).
+     After the surfaces, so it measures the grounds as they finally are. Same
+     rule as the words: only lightness moves, and a mark that already clears
+     all four comes back exactly as written, which keeps Block untouched. */
+  /* One push that clears all four at once, not the biggest of four pushes:
+     on a theme whose grounds sit either side of a mark (Craft Day's greys,
+     Craft's brown page under a grey card) the biggest push went one way and
+     failed the ground on the other side. */
+  const marks=['--success','--warn','--danger','--info','--data-1','--data-2','--data-3',
+   '--data-4','--data-5','--data-6'].concat(Object.keys(t).filter(k=>/^--rank-/.test(k)));
+  const grounds=GROUND().filter(g=>g&&/^#/.test(g));
+  marks.forEach(k=>{const was=t[k];if(!/^#/.test(String(was)))return;
+    const now=liftEvery(was,3,grounds);if(now===was)return;
+    t[k]=now;nudged.push({token:k,was:was,now:now,need:3,
+      had:+Math.min.apply(null,grounds.map(g=>contrast(was,g))).toFixed(2),mark:true})});
   if(nudged.length)t['--mb-nudged']=JSON.stringify(nudged);
 
   return t;
@@ -1089,7 +1124,7 @@ const Skins={
   autoRamp(base){return autoRamp(base)},
   /* the families kept in shared/fonts, and where one is fetched from */
   localFonts:LOCAL_FONTS,fontHref:fontHref,
-  util:{mix,contrast,readable,lum,rgb2hsl,hsl2rgb,lift,liftAll}
+  util:{mix,contrast,readable,lum,rgb2hsl,hsl2rgb,lift,liftAll,liftEvery}
 };
 g.Skins=Skins;
 })(typeof window!=='undefined'?window:globalThis);
