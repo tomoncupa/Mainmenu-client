@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="eb2d5e46">
+<html lang="en" data-built="57cafced">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.80, 2026-10-22">
+<meta name="mb-version" content="1.0.81, 2026-10-23">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -30,18 +30,18 @@ try { if (window.frameElement && typeof parent.stayIn === 'function') location.r
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=eb2d5e46"></script>
-<script src="shared/boot.js?v=eb2d5e46"></script>
-<script src="shared/day.js?v=eb2d5e46"></script>
-<script src="shared/records.js?v=eb2d5e46"></script>
-<script src="shared/journal.js?v=eb2d5e46"></script>
-<script src="shared/measure.js?v=eb2d5e46"></script>
-<script src="shared/chart.js?v=eb2d5e46"></script>
-<script src="shared/mobile.js?v=eb2d5e46"></script>
-<script src="shared/sound.js?v=eb2d5e46"></script>
-<script src="shared/ui.js?v=eb2d5e46"></script>
-<script src="shared/io.js?v=eb2d5e46"></script>
-<script src="shared/icons.js?v=eb2d5e46"></script>
+<script src="shared/skins.js?v=57cafced"></script>
+<script src="shared/boot.js?v=57cafced"></script>
+<script src="shared/day.js?v=57cafced"></script>
+<script src="shared/records.js?v=57cafced"></script>
+<script src="shared/journal.js?v=57cafced"></script>
+<script src="shared/measure.js?v=57cafced"></script>
+<script src="shared/chart.js?v=57cafced"></script>
+<script src="shared/mobile.js?v=57cafced"></script>
+<script src="shared/sound.js?v=57cafced"></script>
+<script src="shared/ui.js?v=57cafced"></script>
+<script src="shared/io.js?v=57cafced"></script>
+<script src="shared/icons.js?v=57cafced"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -5480,7 +5480,8 @@ const setIsWarm = p => p.warm === 1 || p.warm === true ||
 /* the same test as TRAIN.counts in train/index.html: change both. A set
    counts unless it is a plan still waiting; saving a set no longer ticks it,
    so "done" alone missed every set of today's session. */
-const setCounts = (p, date, today) => !p.plan || !!p.done || date < today;
+/* TRAIN.counts since TRAIN 1.0.78: a plan counts once ticked or updated, never by its day passing */
+const setCounts = (p, date, today) => !p.plan || !!p.done;
 function bodyHeat(from, to) {
   const exs = Rec.map('exercise'), cats = Rec.map('excat'), today = LifeOS.day();
   const v = {}, offN = {};
