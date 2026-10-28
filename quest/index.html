@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="5e965154">
+<html lang="en" data-built="486a3f88">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.23, 2026-10-22">
+<meta name="mb-version" content="1.0.24, 2026-10-26">
 <title>QUESTS</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B0E14">
@@ -13,17 +13,17 @@
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
 <!-- The shared foundation. quest/CLAUDE.md is this app's brief. -->
-<script src="../shared/skins.js?v=5e965154"></script>
-<script src="../shared/boot.js?v=5e965154"></script>
-<script src="../shared/day.js?v=5e965154"></script>
-<script src="../shared/records.js?v=5e965154"></script>
-<script src="../shared/journal.js?v=5e965154"></script>
-<script src="../shared/mobile.js?v=5e965154"></script>
-<script src="../shared/sound.js?v=5e965154"></script>
-<script src="../shared/ui.js?v=5e965154"></script>
-<script src="../shared/io.js?v=5e965154"></script>
-<script src="../shared/health.js?v=5e965154"></script>
-<script src="../shared/icons.js?v=5e965154"></script>
+<script src="../shared/skins.js?v=486a3f88"></script>
+<script src="../shared/boot.js?v=486a3f88"></script>
+<script src="../shared/day.js?v=486a3f88"></script>
+<script src="../shared/records.js?v=486a3f88"></script>
+<script src="../shared/journal.js?v=486a3f88"></script>
+<script src="../shared/mobile.js?v=486a3f88"></script>
+<script src="../shared/sound.js?v=486a3f88"></script>
+<script src="../shared/ui.js?v=486a3f88"></script>
+<script src="../shared/io.js?v=486a3f88"></script>
+<script src="../shared/health.js?v=486a3f88"></script>
+<script src="../shared/icons.js?v=486a3f88"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1090,7 +1090,8 @@ function blockRow(b, d, mins, next) {
     else { Rec.set('tick', d, b.actId, { src: APP.id }); Mobile.feedback('tick'); }
   };
   const body = el('div', 'body');
-  body.appendChild(el('div', 'tt', esc(b.name)));
+  /* a block linked in BLOCK opens its spot from its words (shared/ui.js, GO) */
+  body.appendChild(el('div', 'tt', b.link ? UI.linkHTML(b.link, esc(b.name)) : esc(b.name)));
   const meta = el('div', 'meta');
   if (timed) meta.appendChild(el('span', now ? 'soon' : '', ico('timer') + esc(clock12(hm(s)) + (b.dur ? ' to ' + clock12(hm(end)) : ''))));
   if (b.why) meta.appendChild(el('span', null, esc(b.why)));

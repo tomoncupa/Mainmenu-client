@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="5e965154">
+<html lang="en" data-built="486a3f88">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.82, 2026-10-25">
+<meta name="mb-version" content="1.0.88, 2026-10-27">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -30,18 +30,18 @@ try { if (window.frameElement && typeof parent.stayIn === 'function') location.r
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=5e965154"></script>
-<script src="shared/boot.js?v=5e965154"></script>
-<script src="shared/day.js?v=5e965154"></script>
-<script src="shared/records.js?v=5e965154"></script>
-<script src="shared/journal.js?v=5e965154"></script>
-<script src="shared/measure.js?v=5e965154"></script>
-<script src="shared/chart.js?v=5e965154"></script>
-<script src="shared/mobile.js?v=5e965154"></script>
-<script src="shared/sound.js?v=5e965154"></script>
-<script src="shared/ui.js?v=5e965154"></script>
-<script src="shared/io.js?v=5e965154"></script>
-<script src="shared/icons.js?v=5e965154"></script>
+<script src="shared/skins.js?v=486a3f88"></script>
+<script src="shared/boot.js?v=486a3f88"></script>
+<script src="shared/day.js?v=486a3f88"></script>
+<script src="shared/records.js?v=486a3f88"></script>
+<script src="shared/journal.js?v=486a3f88"></script>
+<script src="shared/measure.js?v=486a3f88"></script>
+<script src="shared/chart.js?v=486a3f88"></script>
+<script src="shared/mobile.js?v=486a3f88"></script>
+<script src="shared/sound.js?v=486a3f88"></script>
+<script src="shared/ui.js?v=486a3f88"></script>
+<script src="shared/io.js?v=486a3f88"></script>
+<script src="shared/icons.js?v=486a3f88"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -671,10 +671,11 @@ body.dragging #cardframes{z-index:0}
 .hrow+.hrow{border-top:1px solid var(--line)}
 /* DRINKS: a drink is a row you tap to open ELEMENT over the home screen */
 .row.drink{cursor:pointer;align-items:flex-start}
-.row.drink .n{white-space:normal}
-.row.drink .n small{display:block;color:var(--dim2);font-size:var(--f-1);font-family:var(--f1);letter-spacing:.06em;margin-top:var(--s-1)}
-.row.drink .dl{display:block;margin-top:var(--s-1);font-size:var(--f-1);color:var(--dim)}
-.row.drink .dl i{font-style:normal;color:var(--txt);font-variant-numeric:tabular-nums}
+.row.weigh{align-items:flex-start}
+.row.drink .n,.row.weigh .n{white-space:normal}
+.row.drink .n small,.row.weigh .n small{display:block;color:var(--dim2);font-size:var(--f-1);font-family:var(--f1);letter-spacing:.06em;margin-top:var(--s-1)}
+.row.drink .dl,.row.weigh .dl{display:block;margin-top:var(--s-1);font-size:var(--f-1);color:var(--dim)}
+.row.drink .dl i,.row.weigh .dl i{font-style:normal;color:var(--txt);font-variant-numeric:tabular-nums}
 /* WORK DONE */
 table.wd{width:100%;border-collapse:collapse;font-size:var(--f-2)}
 table.wd th{font-family:var(--f1);font-size:var(--f-1);letter-spacing:.14em;color:var(--dim2);font-weight:400;text-align:right;padding:0 0 var(--s-1) var(--s-2)}
@@ -1180,8 +1181,16 @@ function goTo(to) {
   if (f.dataset.loaded) send(); else f.addEventListener('load', () => setTimeout(send, 50), { once: true });
 }
 
-/* apps can ask the shell to move: postMessage({lifeos:1, nav:'home'}) */
-window.addEventListener('message', e => { const m = e.data; if (m && m.lifeos === 1 && m.nav && app(m.nav)) go(m.nav); });
+/* apps can ask the shell to move: postMessage({lifeos:1, nav:'home'}), and
+   to open a spot there too, {nav:'status', show:'check'}: a linked todo or
+   block pressed inside an app (UI.go, shared/ui.js, 2026-10-26) */
+window.addEventListener('message', e => {
+  const m = e.data;
+  if (!m || m.lifeos !== 1 || !m.nav || !app(m.nav)) return;
+  if (typeof m.show === 'string' && m.show) goTo([m.nav, m.show]); else go(m.nav);
+});
+/* UI.go on this page itself */
+window.mbHome = to => goTo(to);
 
 function drawNav() {
   const n = $('#nav'); n.innerHTML = '';
@@ -1727,7 +1736,7 @@ function todayItems() {
     const end = isTodo && n.at ? (n.done ? n.byWas : (n.byAuto ? null : n.by)) : null;
     const span = end ? ((toMin(end) - toMin(n.at)) % 1440 + 1440) % 1440 : 0;
     out.push({
-      kind: n.kind, name: n.text || '', at: mins,
+      kind: n.kind, name: n.text || '', link: n.link || '', at: mins,
       dur: n.dur || span || 0, tag: '', colour: '', done: !!n.done, todo: isTodo,
       /* Only a todo has something to tick. An entry is a record of a thing
          that already happened and there is nothing to say about it. */
@@ -1796,7 +1805,7 @@ const LINK_RE = /\[[^\]]{1,120}\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+
 function linkIn(x) {
   /* The block's own link first. Falling back to one written into a note keeps
      anything set up before the link field existed working. */
-  if (x && x.link && LINK_OK.test(x.link)) return x.link;
+  if (x && x.link && (LINK_OK.test(x.link) || (typeof UI !== 'undefined' && UI.spot && UI.spot(x.link)))) return x.link;
   const m = LINK_RE.exec(String((x && x.note) || ''));
   return m ? (m[1] || m[2]) : null;
 }
@@ -2264,6 +2273,41 @@ const WM = (() => {
   return { num, month, back, monthLabel, monthIn, monthOut, billsOwed };
 })();
 
+/* A copy of ELEMENT's own `toStatus`, for TO WEIGH's tick:
+   what went down today, summed from the `dose` rows, written to STATUS as
+   zinc and magnesium readings and as salt and citrate meals. Change both. */
+function mixToStatus(d) {
+  const wb = Rec.setting('mix', 'writeBack');
+  if (wb != null && !wb) return;
+  const n = v => { const x = parseFloat(String(v).replace(/,/g, '')); return isFinite(x) ? x : 0; };
+  const sum = { na: 0, k: 0, zn: 0, mg: 0 };
+  Rec.all('dose', { date: d }).forEach(r => { const p = r.payload; if (p && sum[p.nut] != null) sum[p.nut] += n(p.mg); });
+  [['zinc', sum.zn], ['magnesium', sum.mg]].forEach(([fid, mg]) => {
+    const r = Rec.get('ev', d, fid);
+    const e = (r && r.e ? r.e : []).filter(x => x.src !== 'mix');
+    if (mg > 0) e.push({ t: Date.now(), v: Math.round(mg), src: 'mix' });
+    if (e.length) Rec.set('ev', d, fid, { e: e });
+    else if (r) Rec.del('ev', d, fid);
+  });
+  const meal = (key, name, na, k) => {
+    if (!(na > 0 || k > 0)) { if (Rec.get('meal', d, key)) Rec.del('meal', d, key); return; }
+    Rec.set('meal', d, key, {
+      fid: null, name: name, serve: 'mixed by ELEMENT', unit: 'g', amt: 0, mult: 1,
+      kcal: 0, p: 0, c: 0, f: 0, na: Math.round(na), k: Math.round(k), ca: 0, caff: 0,
+      price: 0, t: Date.now(), src: 'mix',
+    });
+  };
+  meal('mix-salt', 'Salt (ELEMENT)', sum.na, 0);
+  meal('mix-cit', 'Potassium citrate (ELEMENT)', 0, sum.k);
+}
+
+/* HALF-LIFE's stores: the share of a dose a store keeps until it is full.
+   A guess fitted to creatine studies: 20 g a day fills it in under a week,
+   3 to 5 g a day in about four. */
+const STORE_TAKE = 0.5;
+/* at or over this share of full, a store reads SATURATED */
+const STORE_SAT = 0.9;
+
 const WIDGETS = {
   /* ══════════════ TODAY ══════════════
      The day as one list. BLOCK owns the blocks and STATUS owns the bullets,
@@ -2324,8 +2368,7 @@ const WIDGETS = {
           band.innerHTML =
             '<div class="nlab">' + lab + (when ? '<i>' + esc(when) + '</i>' : '') + '</div>' +
             '<div class="nname">' + (nn.it.at != null ? '<b>' + MIN2(nn.it.at) + '</b> ' : '') +
-            (bhref ? '<a class="rlink" href="' + esc(bhref) + '" target="_blank" rel="noopener noreferrer">' +
-              esc(nn.it.name) + '</a>' : esc(nn.it.name)) + '</div>';
+            (bhref ? UI.linkHTML(bhref, esc(nn.it.name), 'rlink') : esc(nn.it.name)) + '</div>';
           /* The band is the tick target too, so following the day never means
              hunting for the right row in the list under it. */
           if (nn.it.tick) {
@@ -2403,10 +2446,7 @@ const WIDGETS = {
         /* Two targets, two meanings, the same split as everywhere else: the
            box ticks it, the words take you to the thing. */
         const href = linkIn(x);
-        r.appendChild(href
-          ? el('div', 'n', '<a class="rlink" href="' + esc(href) +
-              '" target="_blank" rel="noopener noreferrer">' + esc(x.name) + '</a>')
-          : el('div', 'n', esc(x.name)));
+        r.appendChild(el('div', 'n', href ? UI.linkHTML(href, esc(x.name), 'rlink') : esc(x.name)));
         if (x.tag) r.appendChild(el('div', 'tag', esc(x.tag)));
         if (x.dur) r.appendChild(el('div', 'd', DUR(x.dur)));
         if (x.tick) {
@@ -3156,6 +3196,61 @@ const WIDGETS = {
           (partOn(cfg, 'doses') ? '<span class="dl">' + d.doses.map(x => esc(x.name) + ' <i>' + x.g.toFixed(3) + 'g</i>').join(' · ') + '</span>' : '') + '</div>';
         r.onclick = openIt;
         r.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openIt(); } };
+        list.appendChild(r);
+      });
+      body.appendChild(list);
+    },
+  },
+
+  /* ══════════════ TO WEIGH ══════════════
+     Tom, 2026-10-25: ELEMENT's powders still to weigh today, in grams, each
+     drink or meal with a tick. The grams are ELEMENT's, read from the plan it
+     publishes (`mix.plan`, each dose with its mineral and mg since ELEMENT
+     1.0.11); this card does no sums of its own. A tick writes the `dose` rows
+     the way ELEMENT's `tickCard` does and then `mixToStatus`, a copy of
+     ELEMENT's `toStatus`, so STATUS's sodium, potassium, zinc and magnesium
+     move at once. Change ELEMENT's and these together. */
+  toweigh: {
+    nm: 'TO WEIGH', w: 4, h: 4, app: 'mix', fit: 1, to: ['over', 'mix'],
+    plan: () => WIDGETS.drinks.plan(),
+    sub: () => {
+      const p = WIDGETS.toweigh.plan();
+      if (!p) return 'no plan today';
+      const left = p.filter(d => !d.done).length;
+      return left ? left + ' of ' + p.length + ' left' : 'all taken';
+    },
+    parts: [['done', 'Taken today'], ['sub', 'Details']],
+    tick(s, on) {
+      const d = LifeOS.day();
+      if (on && s.doses.some(x => !x.nut)) { toast('Open ELEMENT once today to tick from here'); openOver('mix'); return; }
+      s.doses.forEach(x => {
+        if (on) Rec.set('dose', d, x.id, { nut: x.nut, mg: x.mg, g: x.g, slot: s.id, t: Date.now() });
+        else Rec.del('dose', d, x.id);
+      });
+      mixToStatus(d);
+      if (typeof Mobile !== 'undefined') Mobile.feedback(on ? 'success' : 'untick');
+      drawHome();
+    },
+    draw(body, cfg) {
+      const p = WIDGETS.toweigh.plan();
+      if (!p) {
+        body.appendChild(el('div', 'empty', 'No plan today.'));
+        const bar = el('div', 'tbar');
+        bar.appendChild(tbtn('OPEN ELEMENT', () => openOver('mix'), 'go'));
+        body.appendChild(bar);
+        return;
+      }
+      const show = p.filter(s => !s.done || partOn(cfg, 'done'));
+      if (!show.length) { body.appendChild(el('div', 'empty', 'All taken today.')); return; }
+      const list = el('div', 'rowlist');
+      show.forEach(s => {
+        const r = el('div', 'row weigh' + (s.done ? ' done' : ''));
+        const ck = el('button', 'chk' + (s.done ? ' on' : ''), (typeof Icons !== 'undefined' && Icons.svg('done', { size: 14 })) || '✓');
+        ck.setAttribute('aria-label', (s.done ? 'Untick ' : 'Taken: ') + s.nm);
+        ck.onclick = ev => { ev.stopPropagation(); WIDGETS.toweigh.tick(s, !s.done); };
+        r.appendChild(ck);
+        r.appendChild(el('div', 'n', '<b>' + esc(s.nm) + '</b>' + (partOn(cfg, 'sub') && s.sub ? '<small>' + esc(s.sub) + '</small>' : '') +
+          '<span class="dl">' + s.doses.map(x => esc(x.name) + ' <i>' + x.g.toFixed(3) + 'g</i>').join(' · ') + '</span>'));
         list.appendChild(r);
       });
       body.appendChild(list);
@@ -4097,7 +4192,23 @@ const WIDGETS = {
      ("A2"), a longer one may sit anywhere as a whole word. The number
      after it times `per` is the amount; no number counts as `bare` units,
      or not at all when `bare` is blank. Entries, events and done todos
-     count; open todos, ideas and cancelled lines do not. */
+     count; open todos, ideas and cancelled lines do not. A tracker may also
+     name `field`, a STATUS measure: every reading of it counts as a dose
+     at its own time, and so does the food behind it when the measure reads
+     one (`from`, caffeine off a meal), the way STATUS's `entries` adds
+     `fromFood`. Copy of that rule: change both.
+     STORES (Tom, 2026-10-27, for creatine: "build a muscle-stores view
+     instead of a half-life"). A tracker with `kind: 'store'` is not a sum of
+     halvings: it is the extra held over the body's own level, which fills
+     until it is full and drains slowly. Each dose adds dose x STORE_TAKE,
+     and what would pass `cap` is not kept; between doses the extra halves
+     every `half` hours. It reads as % full, 0 being the body's own level and
+     100 `cap` over it, and SATURATED from STORE_SAT up, the question a
+     store is read for. A taper (keep less the fuller it is) was tried first and read 75% on a
+     steady 5 g a day, which the studies call full.
+     `cap` (default 30 g over a baseline of about 120 g), STORE_TAKE and the
+     three-week drain are guesses from the loading studies, labelled so on the
+     card's dialog; Tom can change cap and drain there. */
   halflife: {
     nm: 'HALF-LIFE', w: 5, h: 6, app: 'status', to: ['status'],
     days: [[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], day0: 7,
@@ -4113,7 +4224,15 @@ const WIDGETS = {
         return n.length <= 2 ? new RegExp('^' + q + '(?![\\p{L}])' + num, 'u') : new RegExp('(?:^|[^\\p{L}\\d])' + q + '(?![\\p{L}])' + num, 'iu');
       });
       const per = Number(x.per) || 1, bare = x.bare === '' || x.bare == null ? null : Number(x.bare), out = [];
-      noteRows().forEach(r => {
+      if (x.field) {
+        const F = (Rec.map('field') || {})[x.field] || {}, fp = F.per == null ? 1 : (Number(F.per) || 0);
+        Rec.all('ev').forEach(r => {
+          if (r.key !== x.field) return;
+          ((r.payload && r.payload.e) || []).forEach(e => { const v = Number(e.v); if (e.t && v > 0) out.push([e.t, v * per]); });
+        });
+        if (F.from) Rec.all('meal').forEach(r => { const m = r.payload || {}, v = (parseFloat(m[F.from]) || 0) * fp; if (m.t && v > 0) out.push([m.t, v * per]); });
+      }
+      if (res.length) noteRows().forEach(r => {
         const p = r.payload || {};
         if (typeof p.text !== 'string' || p.cancelled || p.kind === 'idea' || (p.kind === 'todo' && !p.done)) return;
         const text = p.text.trim();
@@ -4135,6 +4254,16 @@ const WIDGETS = {
       return out.sort((a, b) => a[0] - b[0]);
     },
     left: (doses, half, at) => doses.reduce((s, d) => d[0] <= at ? s + d[1] * Math.pow(0.5, (at - d[0]) / 3600000 / half) : s, 0),
+    /* the extra held in a store at `at`, doses oldest first */
+    store(doses, half, cap, at) {
+      let e = 0, was = null;
+      for (let i = 0; i < doses.length && doses[i][0] <= at; i++) {
+        if (was != null) e *= Math.pow(0.5, (doses[i][0] - was) / 3600000 / half);
+        e = Math.min(cap, e + doses[i][1] * STORE_TAKE);
+        was = doses[i][0];
+      }
+      return was == null ? 0 : e * Math.pow(0.5, (at - was) / 3600000 / half);
+    },
     sub: cfg => {
       const L = WIDGETS.halflife.list();
       return L.length ? '' : 'nothing tracked';
@@ -4154,11 +4283,35 @@ const WIDGETS = {
           f.unit = box('text', x.unit || 'mg');
           f.half = box('text', fmtHalf(x.half), '9 hours');
           f.bare = box('decimal', x.bare);
+          f.kind = el('select', 'mb-input');
+          f.kind.appendChild(new Option('Half-life', '', false, x.kind !== 'store'));
+          f.kind.appendChild(new Option('Store that fills up', 'store', false, x.kind === 'store'));
+          f.cap = box('decimal', x.cap == null ? 30 : x.cap);
+          const capRow = UI.row('Full at', 'How much over your own level fills it, in the dose unit. A guess: about 30 g for creatine.', f.cap);
+          const showCap = () => { capRow.style.display = f.kind.value === 'store' ? '' : 'none'; };
+          f.kind.onchange = () => { showCap(); if (f.kind.value === 'store' && !f.half.value.trim()) f.half.value = '21 days'; };
+          /* a STATUS measure that holds amounts; a done-or-not or a 1-to-5 has no dose in it */
+          const F = Rec.map('field') || {};
+          f.field = el('select', 'mb-input');
+          f.field.appendChild(new Option('None', ''));
+          Object.keys(F).filter(k => F[k] && F[k].on !== 0 && F[k].measure !== 'check' && F[k].measure !== 'scale')
+            .sort((a, c) => (F[a].order || 99) - (F[c].order || 99))
+            .forEach(k => f.field.appendChild(new Option(F[k].label || k, k, false, x.field === k)));
+          f.field.onchange = () => {
+            const m = F[f.field.value];
+            if (!m) return;
+            if (!f.name.value.trim()) f.name.value = m.label || f.field.value;
+            if (m.unit && (!f.unit.value.trim() || (!x.key && f.unit.value === 'mg'))) f.unit.value = m.unit;
+            if (m.half && !f.half.value.trim()) f.half.value = fmtHalf(m.half);
+          };
           b.appendChild(UI.row('Name', 'What the card calls it.', f.name));
+          b.appendChild(UI.row('STATUS measure', 'Its readings, and the food behind it, count as doses.', f.field));
           b.appendChild(UI.row('Written as', 'The words a dose starts with, comma separated. One or two letters must start the line.', f.match));
           b.appendChild(UI.row('Each 1 is', 'What the number after it is worth.', f.per));
           b.appendChild(UI.row('Unit', 'Shown after the amount.', f.unit));
-          b.appendChild(UI.row('Half-life', 'Hours or days, such as 9 hours or 4.5 days.', f.half));
+          b.appendChild(UI.row('Counts as', 'A store fills up with each dose and drains slowly, like creatine in muscle.', f.kind));
+          b.appendChild(capRow); showCap();
+          b.appendChild(UI.row('Half-life', 'Hours or days, such as 9 hours or 4.5 days. For a store, how fast the extra drains: a guess of 21 days for creatine.', f.half));
           b.appendChild(UI.row('No number', 'How many a line without a number counts as. Blank skips it.', f.bare));
           UI.focusSoon(f.name);
         },
@@ -4172,12 +4325,12 @@ const WIDGETS = {
           const hm = /^(\d+(?:\.\d+)?)\s*(d|days?|h|hrs?|hours?)?$/i.exec(v('half'));
           const half = hm ? Number(hm[1]) * (/^d/i.test(hm[2] || '') ? 24 : 1) : 0;
           const per = Number(v('per') || 1), bare = v('bare');
-          if (!v('name') || !v('match')) { toast('Needs a name and how it is written', { bad: true }); return false; }
+          if (!v('name') || !(v('match') || v('field'))) { toast('Needs a name, and a STATUS measure or how it is written', { bad: true }); return false; }
           if (!(half > 0)) { toast('Half-life needs a number of hours or days', { bad: true }); return false; }
-          if (!(per > 0) || (bare !== '' && !(Number(bare) >= 0))) { toast('Amounts need to be numbers', { bad: true }); return false; }
+          if (!(per > 0) || (bare !== '' && !(Number(bare) >= 0)) || (f.kind.value === 'store' && !(Number(v('cap')) > 0))) { toast('Amounts need to be numbers', { bad: true }); return false; }
           const id = x.key ? x.key : 'halflife.' + Date.now().toString(36);
           const was = x.key ? (Rec.setting('lifeos', id) || {}) : { ord: WIDGETS.halflife.list().length };
-          Rec.setting('lifeos', id, Object.assign({}, was, { name: v('name'), match: v('match'), per: per, unit: v('unit'), half: half, bare: bare === '' ? '' : Number(bare) }));
+          Rec.setting('lifeos', id, Object.assign({}, was, { name: v('name'), field: v('field'), match: v('match'), per: per, unit: v('unit'), half: half, bare: bare === '' ? '' : Number(bare), kind: f.kind.value, cap: Number(v('cap')) || 30 }));
           drawHome();
         } }]),
       });
@@ -4216,9 +4369,11 @@ const WIDGETS = {
         return (ds === LifeOS.day() ? 'today' : Day.short(ds)) + ' ' + hm;
       };
       L.forEach((x, i) => {
-        const doses = H.doses(x), half = Number(x.half) || 1, u = x.unit || '';
+        const doses = H.doses(x), half = Number(x.half) || 1, st = x.kind === 'store', cap = Number(x.cap) || 30;
+        const u = st ? '%' : x.unit || '';
+        const val = ms => st ? Math.min(100, 100 * H.store(doses, half, cap, ms) / cap) : H.left(doses, half, ms);
         const pts = [];
-        const at = ms => { const v = H.left(doses, half, ms); pts.push([(ms - t0) / DAY, v, amt(v) + ' ' + u + ' · ' + when(ms)]); };
+        const at = ms => { const v = val(ms); pts.push([(ms - t0) / DAY, v, (st ? Math.round(v) + '% full' : amt(v) + ' ' + u) + ' · ' + when(ms)]); };
         /* a point every few hours, and one either side of each dose so the
            rise is a step, not a slope */
         const inside = doses.filter(d => d[0] > t0 && d[0] <= now).map(d => d[0]);
@@ -4232,8 +4387,19 @@ const WIDGETS = {
         const cur = pts[pts.length - 1][1], last = doses.filter(d => d[0] <= now).pop();
         const strip = el('div', 'strip');
         strip.style.cssText = 'flex:1 1 0;min-height:112px;display:flex;flex-direction:column;min-width:0';
-        const said = last ? 'last dose ' + when(last[0]) : 'no doses written yet';
-        const head = Chart.header({ size: 'sm', label: x.name, value: amt(cur), unit: u, when: 'now', sub: said });
+        const sat = v => st && v >= STORE_SAT * 100;
+        /* a reading names the last dose before its own moment, not today's */
+        const sayAt = (v, ms) => {
+          const was = ms == null ? last : doses.filter(d => d[0] <= ms).pop();
+          return (sat(v) ? 'Saturated, ' : st && was ? 'about ' + amt(v * cap / 100) + ' ' + (x.unit || '') + ' over your own level, ' : '') +
+            (was ? 'last dose ' + when(was[0]) : 'no doses written yet');
+        };
+        /* now, a saturated store also says how long it stays so with no dose */
+        const dayOf = ms => { const d = new Date(ms); return d.getFullYear() + '-' + zpad(d.getMonth() + 1) + '-' + zpad(d.getDate()); };
+        const satTill = sat(cur) ? now + half * 3600000 * Math.log2(cur / (STORE_SAT * 100)) : 0;
+        const said = satTill ? 'Saturated until ' + Day.short(dayOf(satTill)) + ' with no dose, last dose ' + when(last[0]) : sayAt(cur);
+        const shown = v => st ? String(Math.round(v)) : amt(v);
+        const head = Chart.header({ size: 'sm', label: x.name, value: shown(cur), unit: st ? '% full' : u, when: 'now', sub: said });
         strip.appendChild(head.el);
         const box = el('div', 'fits');
         box.style.cssText = 'flex:1 1 auto;min-height:72px';
@@ -4243,7 +4409,7 @@ const WIDGETS = {
         const lastStrip = i === L.length - 1, span = (now - t0) / DAY;
         Chart.mount(box, { pad: { l: 46, r: 12, t: 8, b: lastStrip ? 22 : 6 }, label: x.name + ', ' + days + ' days' }, c => {
           c.xLinear(0, span);
-          c.yFit(pts.map(p => p[1]), { min: 0, lines: 2 });
+          if (st) c.ySet(0, 100, 50); else c.yFit(pts.map(p => p[1]), { min: 0, lines: 2 });
           c.grid();
           /* the days along the bottom: a linear axis has no dates of its own */
           if (lastStrip) {
@@ -4255,8 +4421,8 @@ const WIDGETS = {
           }
           c.area(pts); c.line(pts);
           c.dots(pts.filter((p, j) => j && pts[j - 1][0] === p[0] - 1 / DAY));
-          c.end(pts[pts.length - 1], amt(cur));
-          c.scrub(pts, { onMove: p => head.set(amt(p[1]), said, when(t0 + p[0] * DAY)), onLeave: head.reset });
+          c.end(pts[pts.length - 1], shown(cur));
+          c.scrub(pts, { onMove: p => head.set(shown(p[1]), sayAt(p[1], t0 + p[0] * DAY), when(t0 + p[0] * DAY)), onLeave: head.reset });
         });
       });
     },
@@ -6839,6 +7005,7 @@ const ABOUT = {
   rhythms: 'BLOCK’s Every blocks and Habits: owed, due, coming up and this period’s count, tickable.',
   measure: 'Any measure you track in STATUS, charted.',
   halflife: 'How much of a dose you write in STATUS is still in you, by its half-life.',
+  toweigh: 'ELEMENT’s powders still to weigh today, in grams, with a tick for each drink.',
   macros: 'Protein, carbs, fat and calories today against your targets.',
   meals: 'What you have eaten today.',
   records: 'The records TRAIN marked, newest first.',
