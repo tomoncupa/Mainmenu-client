@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="6a712d9c">
+<html lang="en" data-built="486a3f88">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.88, 2026-10-27">
+<meta name="mb-version" content="1.0.89, 2026-10-29">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -30,18 +30,18 @@ try { if (window.frameElement && typeof parent.stayIn === 'function') location.r
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=6a712d9c"></script>
-<script src="shared/boot.js?v=6a712d9c"></script>
-<script src="shared/day.js?v=6a712d9c"></script>
-<script src="shared/records.js?v=6a712d9c"></script>
-<script src="shared/journal.js?v=6a712d9c"></script>
-<script src="shared/measure.js?v=6a712d9c"></script>
-<script src="shared/chart.js?v=6a712d9c"></script>
-<script src="shared/mobile.js?v=6a712d9c"></script>
-<script src="shared/sound.js?v=6a712d9c"></script>
-<script src="shared/ui.js?v=6a712d9c"></script>
-<script src="shared/io.js?v=6a712d9c"></script>
-<script src="shared/icons.js?v=6a712d9c"></script>
+<script src="shared/skins.js?v=486a3f88"></script>
+<script src="shared/boot.js?v=486a3f88"></script>
+<script src="shared/day.js?v=486a3f88"></script>
+<script src="shared/records.js?v=486a3f88"></script>
+<script src="shared/journal.js?v=486a3f88"></script>
+<script src="shared/measure.js?v=486a3f88"></script>
+<script src="shared/chart.js?v=486a3f88"></script>
+<script src="shared/mobile.js?v=486a3f88"></script>
+<script src="shared/sound.js?v=486a3f88"></script>
+<script src="shared/ui.js?v=486a3f88"></script>
+<script src="shared/io.js?v=486a3f88"></script>
+<script src="shared/icons.js?v=486a3f88"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -4210,7 +4210,7 @@ const WIDGETS = {
      three-week drain are guesses from the loading studies, labelled so on the
      card's dialog; Tom can change cap and drain there. */
   halflife: {
-    nm: 'HALF-LIFE', w: 5, h: 6, app: 'status', to: ['status'],
+    nm: 'HALF-LIFE', w: 5, h: 6, app: 'status', fit: 1, to: ['status'],
     days: [[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], day0: 7,
     list: () => Rec.all('setting').filter(r => r.key.indexOf('lifeos.halflife.') === 0 && r.payload && r.payload.v && r.payload.v.name)
       .map(r => Object.assign({}, r.payload.v, { key: r.key.slice(7) })).sort((a, b) => (a.ord || 0) - (b.ord || 0)),
