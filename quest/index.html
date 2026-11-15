@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="7bce0246">
+<html lang="en" data-built="2ed6329d">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.28, 2026-11-16">
+<meta name="mb-version" content="1.0.30, 2026-11-16">
 <title>QUESTS</title>
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B0E14">
@@ -13,17 +13,18 @@
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
 <!-- The shared foundation. quest/CLAUDE.md is this app's brief. -->
-<script src="../shared/skins.js?v=7bce0246"></script>
-<script src="../shared/boot.js?v=7bce0246"></script>
-<script src="../shared/day.js?v=7bce0246"></script>
-<script src="../shared/records.js?v=7bce0246"></script>
-<script src="../shared/journal.js?v=7bce0246"></script>
-<script src="../shared/mobile.js?v=7bce0246"></script>
-<script src="../shared/sound.js?v=7bce0246"></script>
-<script src="../shared/ui.js?v=7bce0246"></script>
-<script src="../shared/io.js?v=7bce0246"></script>
-<script src="../shared/health.js?v=7bce0246"></script>
-<script src="../shared/icons.js?v=7bce0246"></script>
+<script src="../shared/skins.js?v=2ed6329d"></script>
+<script src="../shared/boot.js?v=2ed6329d"></script>
+<script src="../shared/day.js?v=2ed6329d"></script>
+<script src="../shared/records.js?v=2ed6329d"></script>
+<script src="../shared/journal.js?v=2ed6329d"></script>
+<script src="../shared/todoist.js?v=2ed6329d"></script>
+<script src="../shared/mobile.js?v=2ed6329d"></script>
+<script src="../shared/sound.js?v=2ed6329d"></script>
+<script src="../shared/ui.js?v=2ed6329d"></script>
+<script src="../shared/io.js?v=2ed6329d"></script>
+<script src="../shared/health.js?v=2ed6329d"></script>
+<script src="../shared/icons.js?v=2ed6329d"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -239,6 +240,21 @@ h1 small{font-family:var(--font-body);font-size:var(--f-2);color:var(--text-mute
 .wk.now{box-shadow:0 0 0 var(--border-width) var(--text-muted)}
 .hfix{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-1) var(--s-3);font-size:var(--f-2);color:var(--text-2)}
 .hfix .nx{overflow-wrap:anywhere;min-width:0}
+/* the week draft: Tom, 2026-11-16 */
+.wkd .sum{font-family:var(--font-display);font-size:var(--f-3);margin-bottom:var(--s-2)}
+.drow{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) 0;border-bottom:var(--border-width) solid var(--border)}
+.drow .body{flex:1;min-width:0}
+.drow .tt{overflow-wrap:anywhere}
+.drow .meta{font-size:var(--f-1);color:var(--text-muted);margin-top:var(--s-1)}
+.drow .for{font-size:var(--f-2);color:var(--text-2);margin-bottom:var(--s-1);overflow-wrap:anywhere}
+.drow .tk{margin:0}
+.drow .tk i{display:flex;align-items:center;justify-content:center;color:transparent}
+.drow .tk i svg{width:var(--f-2);height:var(--f-2)}
+.drow.keep .tk i{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.drow:not(.keep) .tt,.drow:not(.keep) .for{color:var(--text-muted)}
+.dday{flex:none;font-size:var(--f-2);color:var(--text-2)}
+.dbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-3)}
+.dbar .go{margin-left:0}
 
 .aimcard .aimtx{font-family:var(--font-display);font-size:var(--f-4)}
 .aimcard .why{color:var(--text-2)}
@@ -907,6 +923,156 @@ function addAimTask(a) {
     addQuest(Object.assign({}, p, { text: p.text || v, aim: a.key }));
   } }] });
 }
+
+/* ══════════════ THE WEEK DRAFT ══════════════
+   Tom, 2026-11-16, from Superfocus: a draft of the week's changes, "4 added,
+   1 moved", each one kept or dropped, applied with one press. Rules, no AI,
+   and nothing in it needs Todoist: a person with only QUESTS gets a box per
+   goal to type its next step. quest/CLAUDE.md, Week draft. */
+const DAY_CAP = 3, LATE_DAYS = 30, ADD_MAX = 5;
+const MACHINE = { wealth: 1, arc: 1, goals: 1 };
+let DRAFT = { ws: '', off: {}, day: {}, txt: {} }, DRAFT_OPEN = false;
+function draftRange() {
+  const t = T(), sun = Day.dow(t) === 0, s = sun ? Day.shift(t, 1) : t;
+  const e = Day.shift(weekStart(s), 6), days = [];
+  for (let d = s; d <= e; d = Day.shift(d, 1)) days.push(d);
+  return { s: s, e: e, ws: weekStart(s), days: days };
+}
+function draftWeek() {
+  const t = T(), r = draftRange(), load = {}, items = [], used = {};
+  if (DRAFT.ws !== r.ws) DRAFT = { ws: r.ws, off: {}, day: {}, txt: {} };
+  r.days.forEach(d => { load[d] = 0; });
+  const open = quests().filter(x => !x.done);
+  open.forEach(x => { const d = dueOf(x); if (d in load) load[d]++; });
+  const roomy = () => r.days.slice().sort((a, b) => load[a] - load[b] || a.localeCompare(b))[0];
+  const earliest = () => r.days.find(d => load[d] < DAY_CAP) || roomy();
+  const put = (id, d) => { const day = DRAFT.day[id] && r.days.indexOf(DRAFT.day[id]) > -1 ? DRAFT.day[id] : d; load[day]++; return day; };
+  const movable = x => !x.rep && !(x.td && x.td.rec) && !MACHINE[srcOf(x)];
+  /* each goal with nothing due this week: its open task, or a box for one */
+  openAims().forEach(a => {
+    const nx = aimNext(a);
+    if (nx.kind === 'next') return;
+    if (nx.kind === 'sched' && movable(nx.x)) {
+      used[nx.x.key] = 1;
+      items.push({ id: nx.x.key, op: 'add', x: nx.x, a: a, day: put(nx.x.key, roomy()) });
+    } else if (nx.kind === 'add') items.push({ id: 'g:' + a.key, op: 'step', a: a, day: put('g:' + a.key, roomy()) });
+  });
+  open.filter(x => movable(x) && !used[x.key] && dueOf(x) && dueOf(x) < t).sort(sortQ).forEach(x => {
+    used[x.key] = 1;
+    if (Day.diff(t, dueOf(x)) > LATE_DAYS) items.push({ id: x.key, op: 'inbox', x: x });
+    else items.push({ id: x.key, op: 'move', x: x, day: put(x.key, earliest()) });
+  });
+  const spare = r.days.reduce((n, d) => n + Math.max(0, DAY_CAP - load[d]), 0);
+  open.filter(x => movable(x) && !used[x.key] && !dueOf(x) && (x.pri || aimOf(x))).sort(sortQ)
+    .slice(0, Math.min(ADD_MAX, spare)).forEach(x => items.push({ id: x.key, op: 'add', x: x, day: put(x.key, roomy()) }));
+  return { r: r, items: items };
+}
+const draftDone = r => S.get('weekDraft', '') === r.ws;
+const kept = it => !DRAFT.off[it.id] && (it.op !== 'step' || !!(DRAFT.txt[it.id] || '').trim());
+const shortDay = d => asDate(d).toLocaleDateString('en-US', { weekday: 'short' });
+function draftSummary(items) {
+  const n = { add: 0, move: 0, inbox: 0 };
+  items.forEach(it => { n[it.op === 'step' ? 'add' : it.op]++; });
+  return [n.add && n.add + ' added', n.move && n.move + ' moved', n.inbox && n.inbox + ' back to Inbox'].filter(Boolean).join(', ');
+}
+function drawDraft(list, force) {
+  const dw = draftWeek(), r = dw.r, items = dw.items;
+  if (!force && (draftDone(r) || !items.length)) return;
+  const box = el('section', 'grp brief wkd');
+  const md = d => asDate(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const range = md(r.s) + ' to ' + (r.s.slice(0, 7) === r.e.slice(0, 7) ? String(+r.e.slice(8)) : md(r.e));
+  box.appendChild(el('div', 'gh', '<span class="gi">' + ico('schedule') + '</span><b>Week draft</b><span class="when">' + esc(range) + '</span>'));
+  const bx = el('div', 'bx');
+  if (!items.length) {
+    bx.appendChild(el('p', 'why', openAims().length ? 'Nothing to change this week.' : 'No goals to plan the week around.'));
+    if (!openAims().length) { const g = el('button', 'addg', ico('goal') + '<span>Set a goal</span>'); g.type = 'button'; g.onclick = () => go('goals'); bx.appendChild(g); }
+    box.appendChild(bx); list.appendChild(box); return;
+  }
+  bx.appendChild(el('p', 'sum', esc(draftSummary(items))));
+  const keepBtn = el('button', 'mb-btn mb-press mb-tap go');
+  const count = () => { const n = items.filter(kept).length; keepBtn.textContent = n ? 'KEEP ' + n : 'KEEP'; keepBtn.disabled = !n; };
+  const groups = [['step', 'For your goals'], ['add', 'Added'], ['move', 'Moved'], ['inbox', 'Back to Inbox']];
+  groups.forEach(g => {
+    const mine = items.filter(it => it.op === g[0] || (g[0] === 'step' && it.op === 'add' && it.a));
+    if (g[0] === 'add') mine.splice(0, mine.length, ...items.filter(it => it.op === 'add' && !it.a));
+    if (!mine.length) return;
+    bx.appendChild(el('h4', null, esc(g[1])));
+    mine.forEach(it => {
+      const row = el('div', 'drow' + (kept(it) ? ' keep' : ''));
+      const tk = el('button', 'tk', '<i>' + ico('done') + '</i>');
+      tk.type = 'button';
+      const label = it.x ? it.x.text : 'Next step for ' + it.a.text;
+      tk.setAttribute('aria-label', 'Keep: ' + label);
+      tk.setAttribute('aria-pressed', DRAFT.off[it.id] ? 'false' : 'true');
+      tk.onclick = () => {
+        DRAFT.off[it.id] = !DRAFT.off[it.id];
+        row.classList.toggle('keep', kept(it));
+        tk.setAttribute('aria-pressed', DRAFT.off[it.id] ? 'false' : 'true');
+        count();
+      };
+      row.appendChild(tk);
+      const body = el('div', 'body');
+      if (it.op === 'step') {
+        body.appendChild(el('div', 'for', '<span class="hat">^</span> ' + esc(it.a.text)));
+        const i = UI.field('text', { value: DRAFT.txt[it.id] || '', placeholder: 'Its next step this week' });
+        i.setAttribute('autocapitalize', 'sentences');
+        i.setAttribute('aria-label', 'Next step for ' + it.a.text);
+        i.oninput = () => { DRAFT.txt[it.id] = i.value; row.classList.toggle('keep', kept(it)); count(); };
+        body.appendChild(i);
+      } else {
+        body.appendChild(el('div', 'tt', esc(it.x.text)));
+        const was = dueOf(it.x);
+        body.appendChild(el('div', 'meta', it.a ? '<span><span class="hat">^</span> ' + esc(it.a.text) + '</span>'
+          : was ? '<span>Was ' + esc(dayWord(was)) + '</span>' : ''));
+      }
+      row.appendChild(body);
+      if (it.op === 'inbox') row.appendChild(el('span', 'dday', 'No date'));
+      else {
+        const dd = el('button', 'chip dday', esc(shortDay(it.day)));
+        dd.type = 'button';
+        dd.setAttribute('aria-label', 'Day: ' + DAYNAME[Day.dow(it.day)] + '. Change it');
+        dd.onclick = () => choose(dd, 'Which day', r.days.map(d => ({ label: dayWord(d), rt: shortDay(d), on: d === it.day,
+          fn: () => { DRAFT.day[it.id] = d; it.day = d; dd.textContent = shortDay(d); } })));
+        row.appendChild(dd);
+      }
+      bx.appendChild(row);
+    });
+  });
+  const bar = el('div', 'dbar');
+  const skip = el('button', 'mb-btn mb-press mb-tap flat', 'NOT THIS WEEK');
+  skip.onclick = () => { S.set('weekDraft', r.ws); DRAFT_OPEN = false; UI.undo('Week draft hidden', () => S.set('weekDraft', '')); };
+  keepBtn.onclick = () => applyDraft(r, items.filter(kept));
+  count();
+  bar.appendChild(skip); bar.appendChild(keepBtn);
+  bx.appendChild(bar);
+  box.appendChild(bx);
+  list.appendChild(box);
+}
+function applyDraft(r, items) {
+  if (!items.length) return;
+  const undo = [];
+  items.forEach(it => {
+    if (it.op === 'step') {
+      const v = DRAFT.txt[it.id].trim(), p = parseQuest(v);
+      const before = new Set(Rec.all('note', { date: T() }).map(x => x.key));
+      addQuest(Object.assign({}, p, { text: p.text || v, aim: it.a.key, due: p.due || it.day }));
+      Rec.all('note', { date: T() }).filter(x => !before.has(x.key)).forEach(x => undo.push({ date: T(), key: x.key, keep: null }));
+      return;
+    }
+    const keep = Rec.get('note', it.x.date, it.x.key);
+    if (!keep) return;
+    undo.push({ date: it.x.date, key: it.x.key, keep: keep });
+    saveRow(it.x, { due: it.op === 'inbox' ? '' : it.day });
+  });
+  S.set('weekDraft', r.ws);
+  DRAFT_OPEN = false;
+  DRAFT = { ws: '', off: {}, day: {}, txt: {} };
+  Mobile.feedback('success');
+  UI.undo('Kept ' + items.length + ' change' + (items.length === 1 ? '' : 's'), () => {
+    undo.forEach(u => { if (u.keep) Rec.set('note', u.date, u.key, u.keep); else Rec.del('note', u.date, u.key); publishNotes(u.date); });
+    S.set('weekDraft', '');
+  });
+}
 /* ── reviews ──
    1 month weekly, 6 months monthly, 1 year quarterly, 5 and 10 years yearly.
    One todo per rhythm per period, dated and due on the period's first day,
@@ -990,232 +1156,9 @@ function removeQuest(x) {
 }
 
 /* ══════════════ TODOIST ══════════════
-   quest/CLAUDE.md, "Todoist sync". Tom, 2026-10-29: his Todoist tasks come in
-   as todos, and a tick, a new date or a delete made here (or in STATUS, LOG
-   or the home screen, which all tick the same row) goes back. Todos typed
-   here stay here. One call to Todoist's sync endpoint reads every open task,
-   project and section.
-
-   The row is keyed `td-<todoist id>` and dated the day Todoist says it was
-   added, so every device makes the same row. `td` on it is what Todoist said
-   last time: a field that differs from `td` was changed here, a Todoist
-   field that differs from `td` was changed there, and nothing is lost that
-   QUESTS cannot show yet (section, description, parent).
-
-   The key is the setting `todoist.key`, not `quest.*`: the sheet takes every
-   `quest.*` setting (shared/io.js), and a key does not belong on a sheet. It
-   rides live sync, so pasting it once reaches every signed-in device. */
-const TD = (() => {
-  const API = 'https://api.todoist.com/api/v1/';
-  const KEY_RE = /^td-([A-Za-z0-9]+)$/;
-  const FIELDS = ['text', 'pri', 'proj', 'tags', 'due', 'at'];
-  const RES = JSON.stringify(['items', 'projects', 'sections']);
-  const key = () => String(Rec.setting('todoist', 'key') || '').trim();
-  const st = { busy: false, at: 0, n: 0, err: '', quiet: false };
-  let last = 0, soonT = null, uid = 0;
-  const same = (a, b) => JSON.stringify(a == null ? null : a) === JSON.stringify(b == null ? null : b);
-  const localYmd = t => t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
-  const say = () => { const b = document.getElementById('td-state'); if (b) b.textContent = line(); };
-
-  function call(path, body) {
-    const o = { method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + key() } };
-    if (body) {
-      o.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-      o.body = new URLSearchParams(body).toString();
-    }
-    return fetch(API + path, o).then(r => {
-      if (r.status === 401 || r.status === 403) throw new Error('key');
-      if (r.status === 404) return null;
-      if (!r.ok) throw new Error('http ' + r.status);
-      return r.json();
-    });
-  }
-  const read = () => call('sync', { sync_token: '*', resource_types: RES });
-
-  /* Todoist's due: a date, a floating date and time, or a fixed one ending
-     in Z. `raw` is kept as sent, for the recurring check in push. */
-  function dueParts(d) {
-    if (!d || !d.date) return { due: '', at: null, raw: '', rec: '' };
-    const s = String(d.date);
-    let due = s.slice(0, 10), at = null;
-    if (s.length > 10) {
-      if (/(Z|[+-]\d\d:?\d\d)$/.test(s)) { const t = new Date(s); due = localYmd(t); at = pad(t.getHours()) + ':' + pad(t.getMinutes()); }
-      else at = s.slice(11, 16);
-    }
-    return { due: due, at: at, raw: s, rec: d.is_recurring ? String(d.string || '') : '' };
-  }
-
-  /* What a Todoist task says, in QUESTS's fields, and the `td` to keep.
-     Todoist numbers priority backwards: 4 is p1. Its Inbox is QUESTS's Inbox,
-     which is no project (Tom, 3A). */
-  function said(it, P, SEC) {
-    const d = dueParts(it.due), p = P[it.project_id], s = SEC[it.section_id];
-    const proj = p && !p.inbox_project ? slug(p.name) : '';
-    const row = {
-      text: String(it.content || ''), pri: it.priority > 1 ? 5 - it.priority : 0, proj: proj,
-      tags: (it.labels || []).map(slug).filter(Boolean), due: d.due, at: d.at,
-    };
-    const td = Object.assign({}, row, {
-      id: it.id, raw: d.raw, rec: d.rec, done: 0, projId: it.project_id || '',
-      sec: it.section_id || '', secName: s ? s.name : '', parent: it.parent_id || '',
-      desc: it.description || '', labels: it.labels || [],
-    });
-    return { row: row, td: td, projName: p ? p.name : '' };
-  }
-
-  /* Every Todoist row here, alive or deleted, found by its key on any date
-     (root brief, Known traps: look on every date, and the tombstone too). */
-  function index() {
-    const rows = {}, tombs = {};
-    Rec.all('note').forEach(r => { const m = KEY_RE.exec(r.key); if (m) rows[m[1]] = r; });
-    Rec.tombstones('note').forEach(r => { const m = KEY_RE.exec(r.key); if (m && !rows[m[1]]) tombs[m[1]] = r; });
-    return { rows: rows, tombs: tombs };
-  }
-  const days = new Set();
-  function put(r, payload) { Rec.set('note', r.date, r.key, payload); days.add(r.date); }
-
-  /* A recurring task closed here has done a round, as Journal.tick does for
-     QUESTS's own repeats: a finished copy on the day it was done, `of`
-     pointing back, and the todo open again. The copy's key comes from the
-     round's due date, so two devices finishing one round make one copy. */
-  function round(r) {
-    const p = Rec.get('note', r.date, r.key);
-    if (!p) return;
-    const d = p.doneOn || T();
-    Rec.set('note', d, r.key + '-r' + String(p.td.due || d), Object.assign({}, p, {
-      done: 1, doneOn: d, due: p.td.due || d, of: r.key, td: null, rep: null, t: Date.now(), made: d,
-    }));
-    days.add(d);
-    put(r, Object.assign({}, p, { done: 0, doneAt: null, doneOn: null, by: p.byWas || null, byWas: null, byAuto: 0 }));
-  }
-
-  /* What changed here goes to Todoist: a tick, an untick, a new date or time,
-     a delete. Text, priority and project changed here stay here (Tom's 1A).
-     A recurring task is closed only while Todoist still has it on the date
-     this device last saw, or two devices would each move it on a round. */
-  async function push(data) {
-    const live = {};
-    (data.items || []).forEach(it => { if (!it.checked && !it.is_deleted) live[it.id] = it; });
-    const ix = index(), cmds = [], after = {};
-    const add = (type, args, fn) => {
-      const u = 'mb' + Date.now().toString(36) + (uid++).toString(36) + Math.random().toString(36).slice(2, 6);
-      cmds.push({ type: type, uuid: u, args: args });
-      after[u] = fn;
-    };
-    const setTd = (r, ch) => () => {
-      const p = Rec.get('note', r.date, r.key);
-      if (p) put(r, Object.assign({}, p, { td: Object.assign({}, p.td, ch) }));
-    };
-    Object.keys(ix.tombs).forEach(id => { if (live[id]) add('item_delete', { id: id }, () => {}); });
-    Object.keys(ix.rows).forEach(id => {
-      const r = ix.rows[id], p = r.payload, td = p.td, it = live[id];
-      if (!td || p.cancelled) return;
-      if (p.done && !td.done) {
-        if (!it) return;
-        if (td.rec) {
-          if (String((it.due && it.due.date) || '') !== td.raw) { round(r); return; }
-          add('item_close', { id: id }, () => round(r));
-        } else add('item_close', { id: id }, setTd(r, { done: 1 }));
-      } else if (!p.done && td.done) {
-        add('item_uncomplete', { id: id }, setTd(r, { done: 0 }));
-      } else if (!p.done && it && ((p.due || '') !== td.due || (p.at || null) !== (td.at || null))) {
-        const due = p.due ? Object.assign({ date: p.due + (p.at ? 'T' + p.at + ':00' : '') },
-          td.rec ? { string: td.rec, is_recurring: true, lang: 'en' } : {}) : null;
-        add('item_update', { id: id, due: due }, setTd(r, { due: p.due || '', at: p.at || null }));
-      }
-    });
-    if (!cmds.length) return false;
-    const res = await call('sync', { commands: JSON.stringify(cmds) });
-    const ok = (res && res.sync_status) || {};
-    cmds.forEach(c => { if (ok[c.uuid] === 'ok') after[c.uuid](); });
-    return true;
-  }
-
-  /* What changed in Todoist comes here. A task that has left Todoist's open
-     list was finished or deleted there; Todoist is asked which. */
-  async function apply(data) {
-    const P = {}, SEC = {}, seen = {}, ix = index();
-    (data.projects || []).forEach(p => { P[p.id] = p; });
-    (data.sections || []).forEach(s => { SEC[s.id] = s; });
-    (data.items || []).forEach(it => {
-      if (it.checked || it.is_deleted) return;
-      seen[it.id] = 1;
-      const f = said(it, P, SEC), r = ix.rows[it.id];
-      if (f.row.proj) ensureProject(f.row.proj, f.projName);
-      if (!r) {
-        if (ix.tombs[it.id]) return;
-        const t = Date.parse(it.added_at) || Date.now(), d = localYmd(new Date(t));
-        put({ date: d, key: 'td-' + it.id }, Object.assign({
-          kind: 'todo', t: t, made: d, at: null, dur: null, ord: it.child_order || 0,
-          done: 0, cancelled: 0, src: 'todoist', rep: null,
-        }, f.row, { td: f.td }));
-        return;
-      }
-      const p = r.payload, was = p.td || {}, next = Object.assign({}, p);
-      FIELDS.forEach(k => { if (!same(was[k], f.row[k])) next[k] = f.row[k]; });
-      if (was.done) Object.assign(next, { done: 0, doneAt: null, doneOn: null });
-      next.td = Object.assign({}, f.td, { done: 0 });
-      if (!same(next, p)) put(r, next);
-    });
-    const gone = Object.keys(ix.rows).filter(id => !seen[id] && ix.rows[id].payload.td).slice(0, 20);
-    for (const id of gone) {
-      const r = ix.rows[id], p = r.payload;
-      if (p.td.done) continue;
-      if (p.done) { put(r, Object.assign({}, p, { td: Object.assign({}, p.td, { done: 1 }) })); continue; }
-      const it = await call('tasks/' + id);
-      if (!it || it.is_deleted) { Rec.del('note', r.date, r.key); days.add(r.date); }
-      else if (it.checked) {
-        const t = Date.parse(it.completed_at) || Date.now(), d = localYmd(new Date(t));
-        put(r, Object.assign({}, p, { done: 1, doneOn: d, doneAt: pad(new Date(t).getHours()) + ':' + pad(new Date(t).getMinutes()),
-          byAuto: 1, td: Object.assign({}, p.td, { done: 1 }) }));
-      }
-    }
-  }
-
-  async function once() {
-    st.busy = true; st.err = ''; say();
-    try {
-      let data = await read();
-      st.quiet = true;
-      if (await push(data)) data = await read();
-      await apply(data);
-      st.n = (data.items || []).filter(it => !it.checked && !it.is_deleted).length;
-      st.at = Date.now();
-    } catch (e) {
-      st.err = e && e.message === 'key' ? 'key' : 'net';
-    }
-    st.quiet = false; st.busy = false; last = Date.now();
-    days.forEach(d => publishNotes(d)); days.clear();
-    say(); draw();
-  }
-
-  /* One QUESTS per device talks to Todoist at a time: the home screen frames
-     QUESTS too. Not in the demo, which is a made-up person. */
-  function run(force) {
-    if (!key() || st.busy || window.MB_DEMO) return Promise.resolve();
-    if (!force && Date.now() - last < 45000) return Promise.resolve();
-    if (navigator.locks && navigator.locks.request)
-      return navigator.locks.request('mb-todoist', { ifAvailable: true }, l => l ? once() : null);
-    return once();
-  }
-  /* A tick anywhere on a Todoist row goes a few seconds later, after the
-     six-second Undo has had its chance. */
-  function soon(list) {
-    if (st.quiet || !key() || !(list || []).some(r => r && r.type === 'note' && /^td-/.test(r.key))) return;
-    clearTimeout(soonT);
-    soonT = setTimeout(() => run(true), 8000);
-  }
-  function line() {
-    if (!key()) return 'Not connected. Paste your key to bring your Todoist tasks in.';
-    if (st.busy) return 'Syncing with Todoist.';
-    if (st.err === 'key') return 'Todoist refused this key. Copy it again from Todoist.';
-    if (st.err) return 'Could not reach Todoist. It tries again in 5 minutes.';
-    if (!st.at) return 'Waiting to sync.';
-    const m = Math.round((Date.now() - st.at) / 60000);
-    return 'Synced ' + (m < 1 ? 'just now' : m + ' min ago') + '. ' + st.n + ' open tasks in Todoist.';
-  }
-  return { run: run, soon: soon, line: line, key: key, st: st, _said: said, _dueParts: dueParts };
-})();
+   quest/CLAUDE.md, "Todoist sync". The engine is shared/todoist.js since
+   2026-11-16, so STATUS runs it too: it ran only while QUESTS was open. */
+const TD = TodoistSync;
 
 /* ══════════════ VIEWS ══════════════
    Todoist's four: Inbox (no project), Today (overdue, then today), Upcoming
@@ -1341,7 +1284,9 @@ function go(v) { VIEW = v; S.set('view', v); draw(); }
    show:'today'}). Tom, 2026-09-22. */
 addEventListener('message', e => {
   const m = e.data;
-  if (m && m.lifeos === 1 && typeof m.show === 'string' && m.show) go(m.show);
+  if (!(m && m.lifeos === 1 && typeof m.show === 'string' && m.show)) return;
+  /* `week` is Upcoming with the week draft open, the home screen's PLAN THE WEEK */
+  if (m.show === 'week') { DRAFT_OPEN = true; go('upcoming'); } else go(m.show);
 });
 function drawSide() {
   const side = $('#side'), c = counts();
@@ -1671,8 +1616,24 @@ function aimSheet(a, hid) {
   });
 }
 
+/* A redraw would wipe a step half typed into the week draft, so it waits until
+   the box is left (root brief, Known traps: a board that redraws on every write). */
+let DRAW_HELD = false;
+document.addEventListener('focusout', e => {
+  if (!DRAW_HELD || !e.target.closest || !e.target.closest('.wkd')) return;
+  /* and while a menu opened from the card (a day chip) is up, it waits for that too */
+  const later = () => {
+    const f = document.activeElement;
+    if (f && f.closest && f.closest('.wkd input')) return;
+    if (POP || document.querySelector('.mb-sheet.on, .mb-veil.on')) { setTimeout(later, 400); return; }
+    DRAW_HELD = false; draw();
+  };
+  setTimeout(later, 400);
+});
 function draw() {
   if (!$('#main')) return;
+  const fa = document.activeElement;
+  if (fa && fa.closest && fa.closest('.wkd input')) { DRAW_HELD = true; return; }
   briefTodos();
   reviewTodos();
   if (VIEW.indexOf('p:') === 0 && !Rec.get('project', null, VIEW.slice(2))) VIEW = 'today';
@@ -1696,7 +1657,13 @@ function draw() {
     bk.onclick = () => { calDay = ''; draw(); };
     list.appendChild(bk);
   }
-  if (VIEW === 'today') { drawBrief(list); if (S.get('showAim', 1) !== 0) drawAimCard(list); }
+  if (VIEW === 'today') {
+    drawBrief(list);
+    /* the week draft comes to Today on Sunday and Monday, and lives on Upcoming */
+    if (Day.dow(T()) < 2) drawDraft(list, false);
+    if (S.get('showAim', 1) !== 0) drawAimCard(list);
+  }
+  if (VIEW === 'upcoming') drawDraft(list, DRAFT_OPEN);
   const any = info.groups.some(g => g.items.length);
   info.groups.forEach(g => {
     if (!g.items.length && g.id !== T() && !g.day) return;
@@ -2431,17 +2398,16 @@ document.addEventListener('keydown', e => {
   if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); if (ADD) ADD.focus(); }
 });
 
-Rec.on(list => { if (!TD.st.quiet) draw(); TD.soon(list); });
+Rec.on(() => { if (!TD.st.quiet) draw(); });
 Day.on(draw);
 draw();
 Rec.ready(draw);
 /* Now and Next on BLOCK's rows move with the clock. */
 setInterval(() => { if (!POP) draw(); }, 60000);
 if (location.hash === '#add' && ADD) UI.focusSoon(ADD.input);
-/* Todoist: on open, on coming back to the page, and every five minutes. */
-Rec.ready(() => TD.run(true));
-document.addEventListener('visibilitychange', () => { if (!document.hidden) TD.run(); });
-setInterval(() => TD.run(), 300000);
+/* Todoist: on open, on coming back to the page, every five minutes, and
+   8 s after a tick on one of its rows (shared/todoist.js). */
+TD.start({ app: APP.id, draw: draw });
 </script>
 </body>
 </html>
