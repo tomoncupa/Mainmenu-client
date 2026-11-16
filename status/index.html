@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="be731817">
+<html lang="en" data-built="1c9d25cc">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="mb-version" content="1.0.102, 2026-11-16">
+<meta name="mb-version" content="1.0.104, 2026-11-16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,23 +16,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=be731817"></script>
-<script src="../shared/day.js?v=be731817"></script>
-<script src="../shared/records.js?v=be731817"></script>
-<script src="../shared/journal.js?v=be731817"></script>
-<script src="../shared/todoist.js?v=be731817"></script>
-<script src="../shared/dose.js?v=be731817"></script>
-<script src="../shared/grade.js?v=be731817"></script>
-<script src="../shared/chapter.js?v=be731817"></script>
-<script src="../shared/chart.js?v=be731817"></script>
-<script src="../shared/mobile.js?v=be731817"></script>
-<script src="../shared/sound.js?v=be731817"></script>
-<script src="../shared/ui.js?v=be731817"></script>
-<script src="../shared/io.js?v=be731817"></script>
-<script src="../shared/nutrients.js?v=be731817"></script>
-<script src="../shared/icons.js?v=be731817"></script>
-<script src="../shared/health.js?v=be731817"></script>
-<script src="../shared/notice.js?v=be731817"></script>
+<script src="../shared/skins.js?v=1c9d25cc"></script>
+<script src="../shared/day.js?v=1c9d25cc"></script>
+<script src="../shared/records.js?v=1c9d25cc"></script>
+<script src="../shared/journal.js?v=1c9d25cc"></script>
+<script src="../shared/todoist.js?v=1c9d25cc"></script>
+<script src="../shared/dose.js?v=1c9d25cc"></script>
+<script src="../shared/grade.js?v=1c9d25cc"></script>
+<script src="../shared/chapter.js?v=1c9d25cc"></script>
+<script src="../shared/chart.js?v=1c9d25cc"></script>
+<script src="../shared/mobile.js?v=1c9d25cc"></script>
+<script src="../shared/sound.js?v=1c9d25cc"></script>
+<script src="../shared/ui.js?v=1c9d25cc"></script>
+<script src="../shared/io.js?v=1c9d25cc"></script>
+<script src="../shared/nutrients.js?v=1c9d25cc"></script>
+<script src="../shared/icons.js?v=1c9d25cc"></script>
+<script src="../shared/health.js?v=1c9d25cc"></script>
+<script src="../shared/notice.js?v=1c9d25cc"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -503,6 +503,16 @@ label.fl:first-child{margin-top:0}
    Two changes and no new colours. A label that is a direct child of the pane
    is a SECTION HEADING and is drawn like one. Everything under it sits on the
    same card the switches already use, so a group reads as a group. */
+/* Settings across the whole screen, STATUS.exe only (deskWide). The panel fills the window and each
+   tab flows into as many columns as fit; a heading never ends a column on its own. */
+body .mb-sheet.stwide{top:var(--s-4);left:var(--s-4);right:var(--s-4);bottom:var(--s-4);
+  width:auto;max-width:none;max-height:none;margin:0;transform:none;opacity:1;
+  border:1px solid var(--border-strong);border-radius:var(--radius-lg)}
+body .mb-sheet.stwide .mb-grab{display:none}
+.mb-sheet.stwide .mb-sheet-body > div{columns:420px auto;column-gap:var(--s-6)}
+.mb-sheet.stwide .mb-sheet-body > div > *{break-inside:avoid}
+.mb-sheet.stwide .mb-sheet-body > div > .mb-group,
+.mb-sheet.stwide .mb-sheet-body > div > label.fl{break-after:avoid}
 .setpane > label.fl{
   text-transform:uppercase;letter-spacing:.12em;font-size:var(--f-1);
   color:var(--text-2);margin:var(--s-5) 0 var(--s-2);
@@ -924,6 +934,18 @@ body.checking .deskx { display: none; }
    thing the way out has to be the one part that is always on screen, and the
    desktop app draws no scrollbar to tell you there is more below. */
 .nwgo { position: sticky; bottom: 0; }
+/* The questions. One column in a small window; on a wide desktop screen the
+   check uses the screen (Tom, 2026-11-16: "make full use of the space of a
+   desktop screen. So that means no scrolling if possible"): the window widens
+   and the questions sit side by side, as many across as fit. */
+.nwgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--nw-gap); }
+.nwq { display: flex; flex-direction: column; gap: var(--nw-gap); min-width: 0; }
+.nwq .nwlabel + .nwscale, .nwq .nwlabel + .nwdoing { margin-top: calc(var(--nw-gap) * -0.6); }
+@media (min-width: 1200px) and (min-aspect-ratio: 3/2) {
+  .nwin { width: min(100%, 92vw); }
+  .nwgrid { grid-template-columns: repeat(auto-fit, minmax(clamp(320px, 48vmin, 640px), 1fr));
+    column-gap: calc(var(--nw-gap) * 2.5); }
+}
 /* Not disabled: a dead button tells you nothing. It stays pressable and says
    what is still missing, which is the only thing worth knowing at that point. */
 .nwgo.waiting { background: var(--nw-panel); color: var(--nw-mute); border-color: var(--nw-line); }
@@ -7371,7 +7393,7 @@ function fieldRow(pane, label, key, val, hint) {
 }
 
 function openSettings() {
-  UI.settings(APP.id, [
+  return deskWide(UI.settings(APP.id, [
     /* It holds what each letter needs, so it says so. The id stays `quests`,
        which drawSettingsPane and the tab order use. Tom, 2026-09-15. */
     { id: 'quests', name: 'GRADES', draw: drawQuestsTab },
@@ -7394,7 +7416,25 @@ function openSettings() {
     append: { data: drawSyncTab },
     /* STATUS draws the whole sheet setup itself, so not the short one as well */
     sync: false,
-  });
+  }));
+}
+/* Tom, 2026-11-16: "Make the desktop settings of status take advantage of all the desktop real
+   estate ... don't limit it to the current status size window. Only for the exe file." Inside
+   STATUS.exe, Settings asks for the whole screen the window is on (`wide|1`), fills it, and lays
+   each tab in columns; closing it in any way gives the screen back (`wide|0`), and STATUS.exe puts
+   the window where it was. A browser tab and the phone are unchanged. */
+function deskWide(h) {
+  if (!HOSTED || !h || !h.panel) return h;
+  h.panel.classList.add('stwide');
+  ovPost('wide|1');
+  let back = false;
+  const give = () => { if (!back) { back = true; ovPost('wide|0'); } };
+  const close = h.close;
+  h.close = function (v) { give(); return close.call(h, v); };
+  /* anything that takes the panel off the page without close() */
+  const watch = new MutationObserver(() => { if (!h.panel.isConnected) { give(); watch.disconnect(); } });
+  watch.observe(document.body, { childList: true });
+  return h;
 }
 
 /* Move a field up or down the list. `order` already decided the tile order on
@@ -9716,8 +9756,13 @@ function checkDraw() {
   win.appendChild(el('div', 'nwask', checkOnly || checkMorn.length ? 'New day.' : 'How are you?'));
 
   const fs = checkFields();
+  /* Each question with its answer, so a wide screen can lay them side by side (.nwgrid). */
+  const grid = el('div', 'nwgrid');
+  win.appendChild(grid);
   fs.forEach(f => {
-    win.appendChild(el('div', 'nwlabel', esc(String(f.label || f.id).toUpperCase())));
+    const q = el('div', 'nwq');
+    grid.appendChild(q);
+    q.appendChild(el('div', 'nwlabel', esc(String(f.label || f.id).toUpperCase())));
     /* A number is typed, and optional: it is a reading you may not have.
        Yesterday's summary is words, in the same kind of box. */
     if (f.measure === 'number' || f.measure === 'amount' || f.measure === 'text') {
@@ -9738,7 +9783,7 @@ function checkDraw() {
         const nx = boxes[boxes.indexOf(i) + 1];
         if (nx) nx.focus(); else go.click();
       };
-      win.appendChild(i);
+      q.appendChild(i);
       return;
     }
     const row = el('div', 'nwscale');
@@ -9762,7 +9807,7 @@ function checkDraw() {
       };
       row.appendChild(btn);
     });
-    win.appendChild(row);
+    q.appendChild(row);
   });
 
   /* What he is up to, saved as an entry bullet at this minute. Optional: the
@@ -10172,6 +10217,10 @@ function drawProgramSettings(pane) {
   }));
   pane.appendChild(toggleRow('Start with Windows', 'STATUS opens when you sign in to the PC', !!h.boot, v => {
     ovPost('boot|' + (v ? 1 : 0)); if (deskHostInfo) deskHostInfo.boot = v ? 1 : 0; drawSettingsPane('desk');
+  }));
+  /* Tom, 2026-11-16: "Make the status tray icon toggleable in desktop settings." Off by default. */
+  pane.appendChild(toggleRow('Tray icon', 'A STATUS icon beside the clock, with the right click menu', !!h.tray, v => {
+    ovPost('tray|' + (v ? 1 : 0)); if (deskHostInfo) deskHostInfo.tray = v ? 1 : 0; drawSettingsPane('desk');
   }));
   const said = String(h.key || 'Ctrl+B');
   const known = DESK_KEYS.find(k => k.name.toLowerCase() === said.toLowerCase());
