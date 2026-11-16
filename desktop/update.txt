@@ -1,4 +1,4 @@
 # The newest Motherbase Setup. Written by tools/build-client.py.
-file=Motherbase Setup 2026-11-13.exe
-sha256=d061149a476a60bf9062958615eafe0b5631c96c7e12b1dbec0805bd8963f7be
-size=1194496
+file=Motherbase Setup 2026-11-16.exe
+sha256=5597b0bb8415c89f4437ed863014c2e61c20bd97a6be50b0bb559d13dc6fe750
+size=1201152
