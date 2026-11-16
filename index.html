@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="ed51a81d">
+<html lang="en" data-built="3b9dfba0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.124, 2026-11-16">
+<meta name="mb-version" content="1.0.125, 2026-11-16">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -30,22 +30,22 @@ try { if (window.frameElement && typeof parent.stayIn === 'function') location.r
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=ed51a81d"></script>
-<script src="shared/boot.js?v=ed51a81d"></script>
-<script src="shared/day.js?v=ed51a81d"></script>
-<script src="shared/records.js?v=ed51a81d"></script>
-<script src="shared/journal.js?v=ed51a81d"></script>
-<script src="shared/dose.js?v=ed51a81d"></script>
-<script src="shared/grade.js?v=ed51a81d"></script>
-<script src="shared/chapter.js?v=ed51a81d"></script>
-<script src="shared/goals.js?v=ed51a81d"></script>
-<script src="shared/measure.js?v=ed51a81d"></script>
-<script src="shared/chart.js?v=ed51a81d"></script>
-<script src="shared/mobile.js?v=ed51a81d"></script>
-<script src="shared/sound.js?v=ed51a81d"></script>
-<script src="shared/ui.js?v=ed51a81d"></script>
-<script src="shared/io.js?v=ed51a81d"></script>
-<script src="shared/icons.js?v=ed51a81d"></script>
+<script src="shared/skins.js?v=3b9dfba0"></script>
+<script src="shared/boot.js?v=3b9dfba0"></script>
+<script src="shared/day.js?v=3b9dfba0"></script>
+<script src="shared/records.js?v=3b9dfba0"></script>
+<script src="shared/journal.js?v=3b9dfba0"></script>
+<script src="shared/dose.js?v=3b9dfba0"></script>
+<script src="shared/grade.js?v=3b9dfba0"></script>
+<script src="shared/chapter.js?v=3b9dfba0"></script>
+<script src="shared/goals.js?v=3b9dfba0"></script>
+<script src="shared/measure.js?v=3b9dfba0"></script>
+<script src="shared/chart.js?v=3b9dfba0"></script>
+<script src="shared/mobile.js?v=3b9dfba0"></script>
+<script src="shared/sound.js?v=3b9dfba0"></script>
+<script src="shared/ui.js?v=3b9dfba0"></script>
+<script src="shared/io.js?v=3b9dfba0"></script>
+<script src="shared/icons.js?v=3b9dfba0"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -7952,8 +7952,20 @@ function startMove(ev, i) {
      WEIGHT is its range and not plain WEIGHT */
   const W = WIDGETS[layout[i].t];
   gh.innerHTML = '<div class="w-head">' + esc(W.nmFor ? W.nmFor(layout[i]) : W.nm) + '</div>';
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', endMove, { once: true });
+  /* the shared drag always ends once: a release never heard (Alt+Tab, a
+     touch the browser took back, Escape) drops nothing and leaves no ghost,
+     where it used to leave `moving` set and the board refusing to redraw */
+  Mobile.drag(ev, { slop: 0, move: onMove, drop: endMove, tap: endMove, cancel: cancelMove });
+}
+function cancelMove() {
+  if (!moving) return;
+  window.removeEventListener('pointermove', onMove);
+  document.body.classList.remove('dragging');
+  $('#ghost').style.display = 'none';
+  moving.node.classList.remove('drag');
+  hint();
+  moving = null;
+  drawHome();
 }
 function onMove(ev) {
   if (!moving) return;
@@ -7993,8 +8005,19 @@ function startResize(ev, i, node) {
   document.body.classList.add('dragging');
   sizing = { i: i, node: node, fit: fit, cols: m.cols, colw: m.colw, gap: m.gap, x: ev.clientX, y: ev.clientY, w: layout[i].w,
     h: fit ? (effH[i] || layout[i].h) : layout[i].h, h0: layout[i].h, hs: layout[i].hs };
-  window.addEventListener('pointermove', onResize);
-  window.addEventListener('pointerup', endResize, { once: true });
+  Mobile.drag(ev, { slop: 0, move: onResize, drop: endResize, tap: endResize, cancel: cancelResize });
+}
+/* a resize that never hears its release goes back to the size it had */
+function cancelResize() {
+  if (!sizing) return;
+  window.removeEventListener('pointermove', onResize);
+  document.body.classList.remove('dragging');
+  const c = layout[sizing.i];
+  if (c) {
+    c.w = sizing.w; c.h = sizing.h0;
+    if (sizing.hs === undefined) delete c.hs; else c.hs = sizing.hs;
+  }
+  sizing = null; drawHome();
 }
 function onResize(ev) {
   if (!sizing) return;
