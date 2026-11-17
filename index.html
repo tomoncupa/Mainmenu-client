@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="22acceaa">
+<html lang="en" data-built="284808e2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.132, 2026-11-17">
+<meta name="mb-version" content="1.0.133, 2026-11-17">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -30,23 +30,23 @@ try { if (window.frameElement && typeof parent.stayIn === 'function') location.r
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=22acceaa"></script>
-<script src="shared/boot.js?v=22acceaa"></script>
-<script src="shared/day.js?v=22acceaa"></script>
-<script src="shared/records.js?v=22acceaa"></script>
-<script src="shared/journal.js?v=22acceaa"></script>
-<script src="shared/dose.js?v=22acceaa"></script>
-<script src="shared/grade.js?v=22acceaa"></script>
-<script src="shared/chapter.js?v=22acceaa"></script>
-<script src="shared/goals.js?v=22acceaa"></script>
-<script src="shared/measure.js?v=22acceaa"></script>
-<script src="shared/chart.js?v=22acceaa"></script>
-<script src="shared/muscles.js?v=22acceaa"></script>
-<script src="shared/mobile.js?v=22acceaa"></script>
-<script src="shared/sound.js?v=22acceaa"></script>
-<script src="shared/ui.js?v=22acceaa"></script>
-<script src="shared/io.js?v=22acceaa"></script>
-<script src="shared/icons.js?v=22acceaa"></script>
+<script src="shared/skins.js?v=284808e2"></script>
+<script src="shared/boot.js?v=284808e2"></script>
+<script src="shared/day.js?v=284808e2"></script>
+<script src="shared/records.js?v=284808e2"></script>
+<script src="shared/journal.js?v=284808e2"></script>
+<script src="shared/dose.js?v=284808e2"></script>
+<script src="shared/grade.js?v=284808e2"></script>
+<script src="shared/chapter.js?v=284808e2"></script>
+<script src="shared/goals.js?v=284808e2"></script>
+<script src="shared/measure.js?v=284808e2"></script>
+<script src="shared/chart.js?v=284808e2"></script>
+<script src="shared/muscles.js?v=284808e2"></script>
+<script src="shared/mobile.js?v=284808e2"></script>
+<script src="shared/sound.js?v=284808e2"></script>
+<script src="shared/ui.js?v=284808e2"></script>
+<script src="shared/io.js?v=284808e2"></script>
+<script src="shared/icons.js?v=284808e2"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -7628,7 +7628,7 @@ const PLANDAY = {
       if (!A.length) return block();
       const boxes = {};
       UI.dialog({
-        title: 'YOUR PLANS · ' + lab(s.day).toUpperCase(), width: 460,
+        title: 'VISION GOALS · ' + lab(s.day).toUpperCase(), width: 460,
         body: b => {
           b.appendChild(el('p', 'pdsay', 'When will each moment happen ' + (s.day === today ? 'today' : 'tomorrow') + '? Blank skips it.'));
           A.forEach(a => {
