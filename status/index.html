@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-built="af6c88e4">
+<html lang="en" data-built="c23c1fc1">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
-<meta name="mb-version" content="1.0.117, 2026-11-17">
+<meta name="mb-version" content="1.0.119, 2026-11-18">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,24 +16,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="../shared/fonts/fonts.css" rel="stylesheet">
 
-<script src="../shared/skins.js?v=af6c88e4"></script>
-<script src="../shared/day.js?v=af6c88e4"></script>
-<script src="../shared/records.js?v=af6c88e4"></script>
-<script src="../shared/journal.js?v=af6c88e4"></script>
-<script src="../shared/todoist.js?v=af6c88e4"></script>
-<script src="../shared/dose.js?v=af6c88e4"></script>
-<script src="../shared/grade.js?v=af6c88e4"></script>
-<script src="../shared/chapter.js?v=af6c88e4"></script>
-<script src="../shared/flow.js?v=af6c88e4"></script>
-<script src="../shared/chart.js?v=af6c88e4"></script>
-<script src="../shared/mobile.js?v=af6c88e4"></script>
-<script src="../shared/sound.js?v=af6c88e4"></script>
-<script src="../shared/ui.js?v=af6c88e4"></script>
-<script src="../shared/io.js?v=af6c88e4"></script>
-<script src="../shared/nutrients.js?v=af6c88e4"></script>
-<script src="../shared/icons.js?v=af6c88e4"></script>
-<script src="../shared/health.js?v=af6c88e4"></script>
-<script src="../shared/notice.js?v=af6c88e4"></script>
+<script src="../shared/skins.js?v=c23c1fc1"></script>
+<script src="../shared/day.js?v=c23c1fc1"></script>
+<script src="../shared/records.js?v=c23c1fc1"></script>
+<script src="../shared/journal.js?v=c23c1fc1"></script>
+<script src="../shared/todoist.js?v=c23c1fc1"></script>
+<script src="../shared/dose.js?v=c23c1fc1"></script>
+<script src="../shared/grade.js?v=c23c1fc1"></script>
+<script src="../shared/chapter.js?v=c23c1fc1"></script>
+<script src="../shared/flow.js?v=c23c1fc1"></script>
+<script src="../shared/chart.js?v=c23c1fc1"></script>
+<script src="../shared/mobile.js?v=c23c1fc1"></script>
+<script src="../shared/sound.js?v=c23c1fc1"></script>
+<script src="../shared/ui.js?v=c23c1fc1"></script>
+<script src="../shared/io.js?v=c23c1fc1"></script>
+<script src="../shared/nutrients.js?v=c23c1fc1"></script>
+<script src="../shared/icons.js?v=c23c1fc1"></script>
+<script src="../shared/health.js?v=c23c1fc1"></script>
+<script src="../shared/notice.js?v=c23c1fc1"></script>
 
 <style>
 /* ── the system, decided once ──────────────────────────────────────────
@@ -9430,6 +9430,12 @@ const DESK_DEF = { on: 1, min: 60, max: 90, from: 8, to: 21 };
 
 let deskSmall = false;   /* showing the widget rather than the whole app */
 let deskNext = 0;        /* when the next check in is due, ms */
+/* carried over a reload onto newer code, so catching up never pushes a
+   check back (the bottom of the file, "catching up while open all day") */
+try {
+  deskNext = +sessionStorage.getItem('mb.status.deskNext') || 0;
+  sessionStorage.removeItem('mb.status.deskNext');
+} catch (e) {}
 let deskAsking = false;  /* one status check at a time, never a pile of them */
 let deskWipe = 0;
 let deskShowing = 0;     /* asking the launcher to bring the window forward */
@@ -10638,7 +10644,9 @@ function topFeels() { return Journal.topFeels(); }
 
    Messages: `ov|show|pos|top` (pos tl tr bl br; top always, full or never)
    and `ovimg|w|h|<png as base64>`, `ovimg|0|0|` for nothing to show. */
-const OV_DEF = { show: 1, pos: 'tr', size: 'm', text: 90, back: 60, top: 'always' };
+/* Off unless switched on, Tom, 2026-11-18: "Disable the goals overlay".
+   Settings, DESKTOP, S-RANK OVERLAY, Show it brings it back. */
+const OV_DEF = { show: 0, pos: 'tr', size: 'm', text: 90, back: 60, top: 'always' };
 const OV_SIZES = {
   s: { L: 16, lab: 12, t: 12, pad: 8, gap: 8, w: 200 },
   m: { L: 20, lab: 12, t: 14, pad: 12, gap: 8, w: 260 },
@@ -10986,6 +10994,37 @@ if (DESK) {
      new code when it opens. Every 20 minutes it asks the network for its own
      page; a newer version reloads it, but only while nothing is open or half
      typed and he has not touched it for two minutes. */
+  /* 2026-11-18, Tom: "Status Check ins seem to have stopped". It had
+     reloaded every 20 minutes all day, and each load rolls the check timer
+     afresh (60 to 90 minutes), so no timed check ever came due. Its fetch
+     went through sw.js, which answers a kept copy first; with a new ?cb=
+     each time there was never one at that address, so it took the first
+     copy of this page under ANY address, an old version, and "different"
+     was always true. Now it asks sw.js's own `check`, which asks the
+     network for this page's own address, reloads only on a NEWER version,
+     and carries the check timer over the reload. */
+  const deskVer = s => (/^\s*([\d.]+)/.exec(s || '') || [])[1] || '';
+  const deskNewer = (a, b) => {
+    const x = a.split('.').map(Number), y = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+    }
+    return false;
+  };
+  const deskLatest = () => {
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+    if (sw && typeof MessageChannel !== 'undefined') return new Promise(res => {
+      const ch = new MessageChannel();
+      const t = setTimeout(() => res(''), 20000);
+      ch.port1.onmessage = e => { clearTimeout(t); const d = e.data || {}; res(d.ok ? deskVer(d.v) : ''); };
+      try { sw.postMessage({ mb: 'check', page: location.href, files: [], fetch: false }, [ch.port2]); }
+      catch (err) { clearTimeout(t); res(''); }
+    });
+    return fetch(location.pathname + '?cb=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.ok ? r.text() : '')
+      .then(t => deskVer((/name="mb-version" content="([^"]+)"/.exec(t || '') || [])[1]))
+      .catch(() => '');
+  };
   let deskTouched = Date.now();
   ['keydown', 'pointerdown'].forEach(t => addEventListener(t, () => { deskTouched = Date.now(); }, true));
   setInterval(() => {
@@ -10993,16 +11032,22 @@ if (DESK) {
     const a = document.activeElement;
     if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.value) return;
     if (Date.now() - deskTouched < 120000) return;
-    const mine = (document.querySelector('meta[name="mb-version"]') || {}).content || '';
-    fetch(location.pathname + '?fresh=1&cb=' + Date.now(), { cache: 'no-store' })
-      .then(r => r.ok ? r.text() : '')
-      .then(t => {
-        const m = /name="mb-version" content="([^"]+)"/.exec(t || '');
-        if (!m || !mine || m[1] === mine || checkOn || Date.now() - deskTouched < 120000) return;
-        const q = new URLSearchParams(location.search); q.set('fresh', '1');
-        location.replace(location.pathname + '?' + q.toString());
-      }).catch(() => {});
+    const mine = deskVer((document.querySelector('meta[name="mb-version"]') || {}).content);
+    deskLatest().then(v => {
+      window.deskVerSeen = { at: Date.now(), mine: mine, net: v };
+      if (!v || !mine || !deskNewer(v, mine) || checkOn || Date.now() - deskTouched < 120000) return;
+      try { if (deskNext) sessionStorage.setItem('mb.status.deskNext', String(deskNext)); } catch (e) {}
+      const q = new URLSearchParams(location.search); q.set('fresh', '1');
+      location.replace(location.pathname + '?' + q.toString());
+    });
   }, 20 * 60 * 1000);
+  /* every check before this one fetched this page under a new ?cb= and
+     sw.js kept each copy: take them out, or an address with no kept copy
+     of its own can still be handed one of those old versions */
+  if (window.caches) caches.keys().then(ns => ns.filter(n => /^mb-/.test(n)).forEach(n =>
+    caches.open(n).then(c => c.keys().then(ks => ks.forEach(r => {
+      if (/\/status\/index\.html\?(.*&)?cb=/.test(r.url)) c.delete(r);
+    }))))).catch(() => {});
   /* what is left for an S moves with the clock too: a walk passes, passive
      steps still to come run down */
   setInterval(() => { if (deskSmall && !deskPanel && !checkOn) deskBar(); }, 5 * 60 * 1000);
