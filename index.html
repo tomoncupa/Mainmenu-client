@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" data-built="2daa0ea4">
+<html lang="en" data-built="ab6002f6">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
-<meta name="mb-version" content="1.0.140, 2026-11-24">
+<meta name="mb-version" content="1.0.141, 2026-11-24">
 <script>
 /* An app's home button, pressed in one of this page's own frames, opens
    this page inside the frame: a second home screen in a box, loading app
@@ -44,26 +44,26 @@ html.wmode #cardframes, html.wmode #over:empty { display: none; }
 <!-- The shared foundation. The home screen used to carry its own colours, its
      own dialog and its own toast; now it wears the same ones as every app, so
      a theme picked here is the theme everywhere. mobile.js before ui.js. -->
-<script src="shared/skins.js?v=2daa0ea4"></script>
-<script src="shared/boot.js?v=2daa0ea4"></script>
-<script src="shared/day.js?v=2daa0ea4"></script>
-<script src="shared/records.js?v=2daa0ea4"></script>
-<script src="shared/journal.js?v=2daa0ea4"></script>
-<script src="shared/dose.js?v=2daa0ea4"></script>
-<script src="shared/grade.js?v=2daa0ea4"></script>
-<script src="shared/chapter.js?v=2daa0ea4"></script>
-<script src="shared/flow.js?v=2daa0ea4"></script>
-<script src="shared/e1rm.js?v=2daa0ea4"></script>
-<script src="shared/goals.js?v=2daa0ea4"></script>
-<script src="shared/measure.js?v=2daa0ea4"></script>
-<script src="shared/chart.js?v=2daa0ea4"></script>
-<script src="shared/muscles.js?v=2daa0ea4"></script>
-<script src="shared/muscle-key.js?v=2daa0ea4"></script>
-<script src="shared/mobile.js?v=2daa0ea4"></script>
-<script src="shared/sound.js?v=2daa0ea4"></script>
-<script src="shared/ui.js?v=2daa0ea4"></script>
-<script src="shared/io.js?v=2daa0ea4"></script>
-<script src="shared/icons.js?v=2daa0ea4"></script>
+<script src="shared/skins.js?v=ab6002f6"></script>
+<script src="shared/boot.js?v=ab6002f6"></script>
+<script src="shared/day.js?v=ab6002f6"></script>
+<script src="shared/records.js?v=ab6002f6"></script>
+<script src="shared/journal.js?v=ab6002f6"></script>
+<script src="shared/dose.js?v=ab6002f6"></script>
+<script src="shared/grade.js?v=ab6002f6"></script>
+<script src="shared/chapter.js?v=ab6002f6"></script>
+<script src="shared/flow.js?v=ab6002f6"></script>
+<script src="shared/e1rm.js?v=ab6002f6"></script>
+<script src="shared/goals.js?v=ab6002f6"></script>
+<script src="shared/measure.js?v=ab6002f6"></script>
+<script src="shared/chart.js?v=ab6002f6"></script>
+<script src="shared/muscles.js?v=ab6002f6"></script>
+<script src="shared/muscle-key.js?v=ab6002f6"></script>
+<script src="shared/mobile.js?v=ab6002f6"></script>
+<script src="shared/sound.js?v=ab6002f6"></script>
+<script src="shared/ui.js?v=ab6002f6"></script>
+<script src="shared/io.js?v=ab6002f6"></script>
+<script src="shared/icons.js?v=ab6002f6"></script>
 <!-- shared/import.js is fetched when "Bring in an old spreadsheet" is used
      (needImport), not on every open. -->
 <style>
@@ -1150,6 +1150,7 @@ const APPS = [
   { id: 'flow',   nm: 'FLOW',   ic: '◇', file: 'flow/index.html',   ds: 'BLOCK’s flow on the phone, today’s notes and bullets', shares: 'the flow walk, notes and bullets', phone: 1 },
   { id: 'kitchen', nm: 'KITCHEN', ic: '▥', file: 'kitchen/index.html', ds: 'what is on the shelf, the week of meals, and what is short', shares: 'foods, meals and purchases', phone: 1 },
   { id: 'style',  nm: 'STYLE',  ic: '◧', file: 'style/index.html',  ds: 'pick, compare, edit and add themes',         shares: 'the themes every app wears' },
+  { id: 'loadout', nm: 'LOADOUT', ic: '▧', file: 'loadout/index.html', ds: 'tools for changing a pattern: pick, try, keep what works', shares: 'tool todos, with QUESTS' },
 ];
 const app = id => APPS.find(a => a.id === id);
 
